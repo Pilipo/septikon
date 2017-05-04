@@ -11,10 +11,11 @@
 			"type": "battle",
 			"name": "thermite",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "biomass",
 				"resourceCostCount": 2,
-				"callback": "fireThermite",
-				"gunnerTargetID": null
+				"callback": "fire",
+				"args": "thermite"
 			},
 			"locations": ["6,20", "7,1", "7,7", "23,13", "23,19", "24,0"]
 		},
@@ -23,22 +24,24 @@
 			"type": "battle",
 			"name": "shield",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "energy",
 				"resourceCostCount": 1,
-				"callback": "fireShield",
-				"gunnerTargetID": null
+				"callback": "fire",
+				"args": "shield"
 			},
-			"locations": ["6,0", "6,6", "6,13", "6,19", "7,2", "7,12", "23,8", "23,18", "24,1", "24,7", "24,14"]
+			"locations": ["6,6", "6,13", "6,19", "7,2", "7,12", "23,8", "23,18", "24,1", "24,7", "24,14"]
 		},
 		"battleBiodrone": {
 			"id": "003",
 			"type": "battle",
 			"name": "biodrone",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "biodrone",
 				"resourceCostCount": 1,
-				"callback": "fireBiodrone",
-				"gunnerTargetID": null
+				"callback": "fire",
+				"args": "biodrone"
 			},
 			"locations": ["6,5", "7,3", "7,15", "23,5", "23,17", "24,15"]
 		},
@@ -47,22 +50,24 @@
 			"type": "battle",
 			"name": "satellite",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "metal",
 				"resourceCostCount": 1,
-				"callback": "fireSatellite",
-				"gunnerTargetID": null
+				"callback": "fire",
+				"args": "satellite"
 			},
-			"locations": ["6,14", "7,4", "7,17", "23,3", "23,16", "24,6", "24,20"]
+			"locations": ["6,0", "6,14", "7,4", "7,17", "23,3", "23,16", "24,6", "24,20"]
 		},
 		"battleLaser": {
 			"id": "005",
 			"type": "battle",
 			"name": "laser",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "energy",
 				"resourceCostCount": 1,
-				"callback": "fireLaser",
-				"gunnerTargetID": null
+				"callback": "fire",
+				"args": "laser"
 			},
 			"locations": ["6,3", "6,7", "6,8", "6,12", "6,16", "7,5", "7,6", "7,9", "7,18", "7,19", "23,1", "23,2", "23,11", "23,14", "23,15", "24,4", "24,8", "24,12", "24,13", "24,17"]
 		},
@@ -71,10 +76,11 @@
 			"type": "battle",
 			"name": "repair",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "metal",
 				"resourceCostCount": 1,
-				"callback": "repairTile",
-				"tileTargetID": null
+				"callback": "repair",
+                "args": 1
 			},
 			"locations": ["6,1", "6,10", "6,18", "7,8", "7,13", "23,7", "23,12", "24,2", "24,10", "24,19"]
 		},
@@ -83,10 +89,11 @@
 			"type": "battle",
 			"name": "rocket",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "rocket",
 				"resourceCostCount": 1,
-				"callback": "fireRocket",
-				"gunnerTargetID": null
+				"callback": "fire",
+				"args": "rocket"
 			},
 			"locations": ["6,4", "6,11", "7,10", "7,16", "23,4", "23,10", "24,9", "24,16"]
 		},
@@ -95,10 +102,10 @@
 			"type": "battle",
 			"name": "espionage",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "biomass",
 				"resourceCostCount": 3,
-				"callback": "commitEspionage",
-				"cloneTargetID": null
+				"callback": "espionage"
 			},
 			"locations": ["6,15", "7,11", "23,9", "24,5"]
 		},
@@ -107,10 +114,10 @@
 			"type": "battle",
 			"name": "takeover",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": "energy",
 				"resourceCostCount": 2,
-				"callback": "takeoverSatellite",
-				"satelliteTargetID": null
+				"callback": "takeover"
 			},
 			"locations": ["6,17", "7,14", "23,6", "24,3"]
 		},
@@ -119,10 +126,11 @@
 			"type": "battle",
 			"name": "repairTwo",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": ["energy", "oxygen"],
 				"resourceCostCount": [1, 1],
-				"callback": "repairTwo",
-				"tileTargetIDs": null
+				"callback": "repair",
+				"args": 2
 			},
 			"locations": ["6,9", "24,11"]
 		},
@@ -131,10 +139,10 @@
 			"type": "battle",
 			"name": "counterEspionage",
 			"properties": {
+                "action": "optional",
 				"resourceCostType": ["biomass", "oxygen"],
 				"resourceCostCount": [1, 1],
-				"callback": "counterEspionage",
-				"cloneTargetIDs": null
+				"callback": "counter"
 			},
 			"locations": ["6,2", "24,18"]
 		},
@@ -173,6 +181,7 @@
 			"type": "production",
 			"name": "lichen",
 			"properties": {
+                "action": "required",
 				"resourceYieldType": "biomass",
 				"resourceYieldCount": 1
 			},
@@ -183,6 +192,7 @@
 			"type": "production",
 			"name": "lichenTwo",
 			"properties": {
+                "action": "required",
 				"resourceYieldType": "biomass",
 				"resourceYieldCount": 2
 			},
@@ -194,6 +204,7 @@
 			"type": "production",
 			"name": "chemicalReactor",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "biomass",
 				"resourceCostCount": 1,
 				"resourceYieldType": "oxygen",
@@ -207,6 +218,7 @@
 			"type": "production",
 			"name": "chemicalReactorTwo",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "biomass",
 				"resourceCostCount": 2,
 				"resourceYieldType": "oxygen",
@@ -219,6 +231,7 @@
 			"type": "production",
 			"name": "airFilter",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "oxygen",
 				"resourceCostCount": 2,
 				"resourceYieldType": "oxygen",
@@ -231,6 +244,7 @@
 			"type": "production",
 			"name": "biocollector",
 			"properties": {
+                "action": "required",
 				"resourceCostType": ["oxygen", "biomass"],
 				"resourceCostCount": [1, 1],
 				"resourceYieldType": "biodrone",
@@ -243,6 +257,7 @@
 			"type": "production",
 			"name": "uraniumMine",
 			"properties": {
+                "action": "required",
 				"resourceCostType": ["oxygen", "energy"],
 				"resourceCostCount": [1, 1],
 				"resourceYieldType": "uranium",
@@ -255,6 +270,7 @@
 			"type": "production",
 			"name": "nuclearReactor",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "uranium",
 				"resourceCostCount": 1,
 				"resourceYieldType": "energy",
@@ -267,6 +283,7 @@
 			"type": "production",
 			"name": "thermalGenerator",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "biomass",
 				"resourceCostCount": 1,
 				"resourceYieldType": "energy",
@@ -279,6 +296,7 @@
 			"type": "production",
 			"name": "foundry",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "energy",
 				"resourceCostCount": 1,
 				"resourceYieldType": "metal",
@@ -291,6 +309,7 @@
 			"type": "production",
 			"name": "foundryTwo",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "energy",
 				"resourceCostCount": 2,
 				"resourceYieldType": "metal",
@@ -303,6 +322,7 @@
 			"type": "production",
 			"name": "rocketWorkshop",
 			"properties": {
+                "action": "required",
 				"resourceCostType": "energy",
 				"resourceCostCount": 1,
 				"resourceYieldType": "rocket",
@@ -315,8 +335,8 @@
 			"type": "production",
 			"name": "sensorCabin",
 			"properties": {
-				"callback": "consumeEnemyBiodrone",
-				"biodroneTargetID": null
+                "action": "required",
+				"callback": "killBiodrone"
 			},
 			"locations": ["0,13", "30,7"]
 		},
@@ -325,6 +345,7 @@
 			"type": "production",
 			"name": "nuclearArmory",
 			"properties": {
+                "action": "required",
 				"resourceCostType": ["oxygen", "energy", "uranium"],
 				"resourceCostCount": [1, 1, 1],
 				"resourceYieldType": "nuke",
@@ -337,10 +358,11 @@
 			"type": "production",
 			"name": "prodRepair",
 			"properties": {
+                "action": "required",
 				"resourceCostType": ["energy"],
 				"resourceCostCount": [1],
-				"callback": "repairTile",
-				"tileTargetID": null
+				"callback": "repair",
+				"tileTargetID": 1
 			},
 			"locations": ["0,8", "30,12"]
 		},

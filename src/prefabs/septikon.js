@@ -7,11 +7,6 @@ class Septikon {
   constructor(game) { 
     this.game = game;
     
-    this.localTeam = new Team();
-    this.remoteTeam = new Team();
-    
-    this.gm = new Master();
-    
     this.tileArray = [];
     this.bgRatio = 0;
     this.worldRatio = 0;
@@ -59,11 +54,12 @@ class Septikon {
     console.log("You clicked " + obj.tileName + " of the " + obj.tileType + " type. Its address is the NorthWest corner of " + obj.tileX + " and " + obj.tileY + ". This is also known as " + obj.x + " and " + obj.y + ".");
     //console.log("It contains the properties: " + obj.properties);
     //console.log(obj);
-    console.log("Is it damaged?: " + obj.tileDamaged);
-    console.log("NORTH: " + this.checkWall(this.directionEnum.NORTH, {x:obj.tileX, y:obj.tileY}));
-    console.log("SOUTH: " + this.checkWall(this.directionEnum.SOUTH, {x:obj.tileX, y:obj.tileY}));
-    console.log("EAST: " + this.checkWall(this.directionEnum.EAST, {x:obj.tileX, y:obj.tileY}));
-    console.log("WEST: " + this.checkWall(this.directionEnum.WEST, {x:obj.tileX, y:obj.tileY}));
+    //console.log("Is it damaged?: " + obj.tileDamaged);
+    //console.log(obj);
+    //console.log("NORTH: " + this.checkWall(this.directionEnum.NORTH, {x:obj.tileX, y:obj.tileY}));
+    //console.log("SOUTH: " + this.checkWall(this.directionEnum.SOUTH, {x:obj.tileX, y:obj.tileY}));
+    //console.log("EAST: " + this.checkWall(this.directionEnum.EAST, {x:obj.tileX, y:obj.tileY}));
+    //console.log("WEST: " + this.checkWall(this.directionEnum.WEST, {x:obj.tileX, y:obj.tileY}));
     
     if((typeof obj.legalFor !== 'undefined')){
         obj.legalFor.move({x:obj.tileX, y:obj.tileY});
@@ -76,14 +72,15 @@ class Septikon {
 	for(var direction in this.directionEnum) {	
 		// NEED TO CHECK FOR LOCKS
 		var moveCheck = this.getCoordFromDirection(currentCoord,direction);
-        // need to: 
-        // - check for damage
-        // - check for walls
-        // - check for previous coord (no moving backward...)
-        
-		if(this.checkWall(this.directionEnum[direction], currentCoord) === true && ((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(moveCheck) !== JSON.stringify(previousCoord)) ))) {
-			if(moves==0){
-				legalMoves.push(moveCheck);
+        var tileToCheck = this.tileArray[moveCheck.x][moveCheck.y];
+
+        // tile is legal IF direction is ok AND tile is not damaged AND ( there is no previous coordinate OR this is not the previous coordinate )
+		if(this.checkWall(this.directionEnum[direction], currentCoord) === true && tileToCheck.tileDamaged === false && ((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(moveCheck) !== JSON.stringify(previousCoord)) ))) {
+			// Check if tile is occupied
+            if(moves==0){
+                if(tileToCheck.tileOccupied === false) {
+                    legalMoves.push(moveCheck);
+                }
 			}
 			else {
 				var returnArray = (this.getLegalMoves(moves, moveCheck, currentCoord));
@@ -96,7 +93,7 @@ class Septikon {
 	}
 	return legalMoves;
   }
-  
+    
   getCoordFromDirection(originCoord,direction) {
 
 	var dir={NORTH:{x:0,y:-1},EAST:{x:1,y:0},SOUTH:{x:0,y:1},WEST:{x:-1,y:0}};
@@ -126,6 +123,7 @@ class Septikon {
     this.test.animations.play('boom', 20, false, true);
     
   }
+  
   checkWall(direction, currentCoordinate) {
     this.wallGrid = this.game.cache.getJSON('wallGrid');
 	switch (direction){
@@ -157,6 +155,21 @@ class Septikon {
 			return false;
 	}
     
+  }
+  
+  setup() {
+    this.background = this.game.add.sprite(0,0,'background');
+    this.createTileArray(31, 21);
+
+    this.localTeam = new Team(this.game);
+    //this.remoteTeam = new Team(this.game);
+    
+    this.gm = new Master();
+
+  }
+  
+  startGame() {
+    this.background = this.game.add.sprite(0,0,'background');
   }
     
   createTileArray(columns, rows, showTiles = false) {
@@ -226,6 +239,7 @@ class Septikon {
                 var y = coords[1];
                 
                 this.tileArray[x][y].tileDamaged = false;
+                this.tileArray[x][y].tileOccupied = false;
                 this.tileArray[x][y].tileX = x;
                 this.tileArray[x][y].tileY = y;
                 this.tileArray[x][y].tileType = obj[prop].type;
@@ -236,7 +250,7 @@ class Septikon {
                     console.log(x + ":" + y + " not found!");
                  
                 if (typeof obj[prop].properties != 'undefined') {
-                    this.tileArray[x][y]['tileProperies'] = obj[prop].properties;
+                    this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
                 }
             }
         }

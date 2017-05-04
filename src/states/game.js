@@ -1,4 +1,3 @@
-import Clone from '../prefabs/clone';
 import Dice from '../prefabs/dice';
 
 class Game extends Phaser.State {
@@ -8,10 +7,11 @@ class Game extends Phaser.State {
   }
   
   create() {
-  
+      this.game.septikon.startGame();
+
     //add background image
-    this.background = this.game.add.sprite(0,0,'background');
-    this.game.septikon.createTileArray(31, 21);
+    //this.background = this.game.add.sprite(0,0,'background');
+    //this.game.septikon.createTileArray(31, 21);
     
 
     //this.game.Septikon.bgRatio = this.background.texture.width / this.background.texture.height;
@@ -33,9 +33,6 @@ class Game extends Phaser.State {
     this.rollText.anchor.set(0.5,0);
 
     //setup prefabs
-    var point = (this.game.septikon.tileToPixels(8,10));
-    this.clone = new Clone(this.game,point.x,point.y);
-    this.game.add.existing(this.clone);
   }
   
   update() {

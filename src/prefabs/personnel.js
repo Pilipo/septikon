@@ -1,8 +1,9 @@
-class Personnel {
+class Personnel extends Phaser.Sprite {
 
   //initialization code in the constructor
-  constructor() { 
-  }
+    constructor(game, x, y, frame) {
+        super(game, x, y, 'clone', frame);  
+    }
   
 }
 
