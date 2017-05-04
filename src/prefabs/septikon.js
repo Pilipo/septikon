@@ -7,14 +7,18 @@ class Septikon {
   constructor(game) { 
     this.game = game;
     
+    this.shownTiles = [];
     this.tileArray = [];
     this.bgRatio = 0;
     this.worldRatio = 0;
     this.turnStateEnum = Object.freeze({
         START: 0,
-        MOVE: 1,
-        ACTION: 2,
-        END: 3
+        SELECT_CLONE: 1, 
+        MOVE_CLONE: 2,
+        SELECT_GUNNER: 3,
+        SELECT_ACTION_ORDER: 4, 
+        ACTION: 5,
+        END: 6
     });
     this.directionEnum = Object.freeze({
         NORTH:1,
@@ -51,7 +55,21 @@ class Septikon {
   }
   
   tileClicked(obj) {
-    console.log("You clicked " + obj.tileName + " of the " + obj.tileType + " type. Its address is the NorthWest corner of " + obj.tileX + " and " + obj.tileY + ". This is also known as " + obj.x + " and " + obj.y + ".");
+    if(this.turnState == this.turnStateEnum.MOVE_CLONE) {
+        
+        if(this.localTeam.moveSelectedClone({x:obj.tileX, y:obj.tileY})) {
+            this.turnState = this.turnStateEnum.SELECT_ACTION_ORDER;
+            this.hideTiles();
+        }
+    }
+
+    if(this.turnState == this.turnStateEnum.SELECT_CLONE) {
+        if(this.localTeam.selectCloneForMove({x:obj.tileX, y:obj.tileY})){
+            this.turnState = this.turnStateEnum.MOVE_CLONE;
+        }
+    }
+    
+    //console.log("You clicked " + obj.tileName + " of the " + obj.tileType + " type. Its address is the NorthWest corner of " + obj.tileX + " and " + obj.tileY + ". This is also known as " + obj.x + " and " + obj.y + ".");
     //console.log("It contains the properties: " + obj.properties);
     //console.log(obj);
     //console.log("Is it damaged?: " + obj.tileDamaged);
@@ -66,12 +84,143 @@ class Septikon {
     }
   }
   
+  triggerTile(caller) {
+  
+    var tile = this.tileArray[caller.currentTileCoordinates.x][caller.currentTileCoordinates.y]
+    caller.isGunner = false;
+    var props = tile.tileProperties;
+    
+    switch(tile.tileType) {
+        case 'surface': 
+            caller.isGunner = true;
+            break;
+            
+        case 'battle':
+            if (typeof props.resourceCostCount != 'undefined') {
+                // CAN THIS TEAM AFFORD THE COST?
+                // EXCHANGE RESOURCES // PAY UP!!
+                // Get the available resource count and prepare to offer "gunner" clones for selection.
+                //console.log("Is this resource available?");
+                //console.log(this);
+                //console.log(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount));
+                if(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount) == true){
+                    this.localTeam.removeRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount);
+                    //console.log("New count of " + props.resourceCostType + " is " + this.localTeam.getRecCount(this.localTeam.recEnum[props.resourceCostType.toUpperCase()]));
+                    this[props.callback](props.args, caller);
+               }
+            }
+            
+            // OFFER GUNNERS AND AWAIT SELECTION (remember the cost per gunner)
+            // This will require an array of clones associated with the team. 
+            // Iterate the array looking for 'isGunner == true'
+            // Highlight all "gunner" clones
+            // Allow selection of only as many as team can afford
+            
+            // This will call the method defined in JSON. In this case firing a weapon.
+            // Iterate the selected gunners and call the method.
+            
+            break;
+            
+        case 'armory':
+            //SET TEAM WEAPONS!
+            // This requires a Team property for storing a weapons (arms?) array.
+            break;
+            
+        case 'production':
+            // NOTE: These are required if resources allow
+            if (typeof props.resourceCostCount != 'undefined') {
+                // CAN THIS TEAM AFFORD THE COST?
+                // Requires Team object to check for resources
+                
+                // Get cost count
+                // Get cost type
+                
+                // Get yield count
+                // Get yield type
+                
+                // Execute transaction
+            }
+            break;
+            
+        case 'lock':
+            // NOTHING HERE (maybe an update feature??)
+            return;
+            
+        default:
+            break;
+    }; 
+            
+    // COMMIT ACTION
+    this.finishTurn();
+  }
+  
+    fire(weaponType, caller) {
+    console.log("Firing the " + weaponType);
+    
+    switch (weaponType) {
+        case 'laser':
+            this.shootTile(caller.currentTileCoordinates);
+            break;
+            
+        case 'satellite':
+            // PLACE A SATELLITE
+            break;
+            
+        case 'thermite':
+            this.shootTile(caller.currentTileCoordinates, true);
+            break;
+            
+        case 'shield':
+            break;
+            
+        case 'biodrone':
+            break;
+            
+        case 'rocket': 
+            break;
+            
+        default:
+            break;
+    };
+    
+    this.game.septikon.turnState = this.game.septikon.turnStateEnum.END;
+    //this.finishTurn();
+  }
+  
+  repair(count) {
+    console.log("repair " + count + " of the things!");
+  }
+  
+  espionage() {
+    console.log("Gimme yer clone!!");
+  }
+  
+  takeover() {
+    console.log("Gimme yer satellite!!");
+  }
+  
+  counter() {
+    console.log("Gimme back my clone!!");
+  }
+  
+  killBiodrone() {
+    console.log("Yer sould better belong to Jesus! Cuz yer ass belongs to me!");
+  }
+  
+  finishTurn() {
+    this.turnState = this.game.septikon.turnStateEnum.START;
+    //console.log("Alas. Your turn is over. ");
+  }
+
   getLegalMoves(moves, currentCoord, previousCoord) {
 	moves--;
 	var legalMoves = [];
 	for(var direction in this.directionEnum) {	
 		// NEED TO CHECK FOR LOCKS
 		var moveCheck = this.getCoordFromDirection(currentCoord,direction);
+        if (moveCheck == false)
+            continue;
+            
         var tileToCheck = this.tileArray[moveCheck.x][moveCheck.y];
 
         // tile is legal IF direction is ok AND tile is not damaged AND ( there is no previous coordinate OR this is not the previous coordinate )
@@ -97,9 +246,29 @@ class Septikon {
   getCoordFromDirection(originCoord,direction) {
 
 	var dir={NORTH:{x:0,y:-1},EAST:{x:1,y:0},SOUTH:{x:0,y:1},WEST:{x:-1,y:0}};
-	
-	return {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
+    
+    var obj = {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
+    if(obj.x < 0 || obj.y < 0) 
+        return false;
+	else
+        return {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
 		
+  }
+  
+  showTiles(tilesArray) {
+    for (var i in tilesArray) {
+        this.shownTiles.push(tilesArray[i]);
+        tilesArray[i].alpha = 0.5;
+    }
+  }
+  
+  hideTiles(tileArray) {
+    if(!tileArray) {
+        for (var i in this.shownTiles) {
+            this.shownTiles[i].alpha = 0;
+        }
+        this.shownTiles = [];
+    }
   }
 
   shootTile(cloneCoordinates) {
@@ -160,7 +329,7 @@ class Septikon {
   setup() {
     this.background = this.game.add.sprite(0,0,'background');
     this.createTileArray(31, 21);
-
+    
     this.localTeam = new Team(this.game);
     //this.remoteTeam = new Team(this.game);
     
@@ -170,6 +339,7 @@ class Septikon {
   
   startGame() {
     this.background = this.game.add.sprite(0,0,'background');
+    this.createTileArray(31, 21);
   }
     
   createTileArray(columns, rows, showTiles = false) {
@@ -205,6 +375,8 @@ class Septikon {
             
             var x = this.tileStartCoordinates.x + (this.tileWidth * column) + (this.padding * column - 1);
             var y = this.tileStartCoordinates.y + (this.tileHeight * row) + (this.padding * row - 1);
+            graphics.generateTexture();
+            
             var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
             if (showTiles)
                 currentTile.alpha = 0.5;

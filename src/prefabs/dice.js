@@ -27,10 +27,8 @@ class Dice extends Phaser.Sprite {
   clicked () {
     if(this.game.septikon.turnState == this.game.septikon.turnStateEnum.START ) {
         this.game.global.lastDiceRoll = Math.floor(Math.random() * 6) + 1;
-        //this.game.global.lastDiceRoll = 2;
-        this.game.septikon.turnState = this.game.septikon.turnStateEnum.MOVE;
-        //console.log(this.game.septikon.checkWall(this.game.septikon.directionEnum.NORTH, {x:8, y:9}));
-       this.game.state.states.game.clone.getLegalMoves();
+        this.game.septikon.turnState = this.game.septikon.turnStateEnum.SELECT_CLONE;
+        this.game.septikon.localTeam.offerLegalClones();
     } else {
         console.log("Dice already rolled for this turn (turn state: " + this.game.septikon.turnState + "). The value is: " + this.game.global.lastDiceRoll);
     }
