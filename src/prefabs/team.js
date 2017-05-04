@@ -12,6 +12,7 @@ class Team {
     this.game = game;
     
     this.personnel = [];
+    this.selectedGunners = [];
   }
   
   //Resource Interface
@@ -37,9 +38,12 @@ class Team {
     return this.rec.remove(type, count);
   }
   
-  addClone(x, y) {
+  addClone(x, y, props) {
     var point = this.game.septikon.tileToPixels(x,y);
     var clone = new Clone(this.game,point.x,point.y);
+    for (var i in props) {
+        clone[i] = props[i];
+    }
     this.personnel.push(clone);
     this.game.stage.addChild(clone);
   }
@@ -64,14 +68,41 @@ class Team {
     
   offerLegalClones() {
     // Offer clones that have legal moves
-    var returnArray = [];
     for(var i in this.personnel) {
         var moves = this.personnel[i].getLegalMoves();
 
         if(moves != false) {
-            returnArray.push(this.personnel[i]);
             this.personnel[i].highlightOn();
         }
+    }
+  }
+  
+  offerGunners() {
+    // Offer gunner 
+    var gunnerFound = false;
+    for(var i in this.personnel) {
+        if(this.personnel[i].isGunner) {
+            gunnerFound = true;
+            //this.personnel[i].highlightOn();
+        }
+    }
+    return gunnerFound;
+  }
+  
+  selectGunner(coords) {
+    var clone = this.getClone(coords);
+    if(!clone)
+        return false;
+    if(!clone.isGunner)
+        return false;
+        
+    var existingGunner = this.selectedGunners.indexOf(clone);
+    if(existingGunner >= 0){
+        clone.highlightOff();
+        this.selectedGunners.splice(existingGunner, 1);
+    } else {
+        clone.highlightOn();
+        this.selectedGunners.push(clone);
     }
   }
   
