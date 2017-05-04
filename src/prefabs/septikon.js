@@ -55,10 +55,14 @@ class Septikon {
   }
   
   tileClicked(obj) {
+    if(this.turnState == this.turnStateEnum.SELECT_GUNNER) {
+        this.localTeam.selectGunner({x:obj.tileX, y:obj.tileY});        
+    }
+
     if(this.turnState == this.turnStateEnum.MOVE_CLONE) {
         
         if(this.localTeam.moveSelectedClone({x:obj.tileX, y:obj.tileY})) {
-            this.turnState = this.turnStateEnum.SELECT_ACTION_ORDER;
+            this.turnState = this.turnStateEnum.SELECT_GUNNER;
             this.hideTiles();
         }
     }
@@ -68,6 +72,8 @@ class Septikon {
             this.turnState = this.turnStateEnum.MOVE_CLONE;
         }
     }
+    
+
     
     //console.log("You clicked " + obj.tileName + " of the " + obj.tileType + " type. Its address is the NorthWest corner of " + obj.tileX + " and " + obj.tileY + ". This is also known as " + obj.x + " and " + obj.y + ".");
     //console.log("It contains the properties: " + obj.properties);
@@ -93,6 +99,7 @@ class Septikon {
     switch(tile.tileType) {
         case 'surface': 
             caller.isGunner = true;
+            this.finishTurn();
             break;
             
         case 'battle':
@@ -106,7 +113,9 @@ class Septikon {
                 if(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount) == true){
                     this.localTeam.removeRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount);
                     //console.log("New count of " + props.resourceCostType + " is " + this.localTeam.getRecCount(this.localTeam.recEnum[props.resourceCostType.toUpperCase()]));
-                    this[props.callback](props.args, caller);
+                    if(this.localTeam.offerGunners()) {
+                        this.pendingAction = {props, caller};
+                    }
                }
             }
             
@@ -116,6 +125,8 @@ class Septikon {
             // Highlight all "gunner" clones
             // Allow selection of only as many as team can afford
             
+            
+            
             // This will call the method defined in JSON. In this case firing a weapon.
             // Iterate the selected gunners and call the method.
             
@@ -124,6 +135,7 @@ class Septikon {
         case 'armory':
             //SET TEAM WEAPONS!
             // This requires a Team property for storing a weapons (arms?) array.
+            this.finishTurn();
             break;
             
         case 'production':
@@ -139,19 +151,21 @@ class Septikon {
                 // Get yield type
                 
                 // Execute transaction
+                this.finishTurn();
             }
             break;
             
         case 'lock':
             // NOTHING HERE (maybe an update feature??)
-            return;
+            this.finishTurn();
+            break;
             
         default:
             break;
     }; 
             
     // COMMIT ACTION
-    this.finishTurn();
+    
   }
   
     fire(weaponType, caller) {

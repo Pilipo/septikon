@@ -20,12 +20,16 @@ class Setup extends Phaser.State {
   
   placeClone(tile) {
     if(tile.tileOccupied == true){
-        console.log("I need to remove a clone!");
         this.game.septikon.localTeam.killClone({x:tile.tileX, y:tile.tileY});
         return;
     }
     if(this.game.septikon.localTeam.personnel.length < this.initialCloneCount) {
-        this.game.septikon.localTeam.addClone(tile.tileX, tile.tileY);
+        
+        if(this.game.septikon.tileArray[tile.tileX][tile.tileY].tileType == "surface") {
+            this.game.septikon.localTeam.addClone(tile.tileX, tile.tileY, {isGunner:true});
+        } else {
+            this.game.septikon.localTeam.addClone(tile.tileX, tile.tileY);
+        }
         if (this.game.septikon.localTeam.personnel.length == this.initialCloneCount) {
             this.game.modal.showModal("askStart");                
         }

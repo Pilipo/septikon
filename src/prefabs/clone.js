@@ -45,10 +45,12 @@ class Clone extends Phaser.Sprite {
   }
 
   highlightOn() {
+    this.tint = 0xFF5500;
     this.game.septikon.tileArray[this.currentTileCoordinates.x][this.currentTileCoordinates.y].alpha = 1;
   }
   
   highlightOff() {
+    this.tint = 0xffffff;
     this.game.septikon.tileArray[this.currentTileCoordinates.x][this.currentTileCoordinates.y].alpha = 0;
   }
   
