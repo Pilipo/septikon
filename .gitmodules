@@ -1,0 +1,3 @@
+[submodule "vendor/phaser_modals"]
+	path = vendor/phaser_modals
+	url = https://github.com/netgfx/phaser_modals.git
