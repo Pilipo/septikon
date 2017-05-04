@@ -1,0 +1,1 @@
+../vendor/phaser_modals/src/modal.d.ts
