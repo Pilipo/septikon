@@ -32,10 +32,7 @@ class Resources {
   }
   
   remove(type, count) {
-    console.log("removing resource");
-    console.log("old count " + this.resources[type]);
     this.resources[type] -= count;
-    console.log("new count " + this.resources[type]);
   }
   
 }

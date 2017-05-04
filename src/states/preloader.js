@@ -42,11 +42,11 @@ class Preloader extends Phaser.State {
 
     //audio files 
     
-    this.game.load.image('crosshairs', 'assets/crosshair_red_small.png');
+    //this.game.load.image('crosshairs', 'assets/crosshair_red_small.png');
     this.game.load.image('text_go', 'assets/text_go.png');
     this.game.load.image('text_ready', 'assets/text_ready.png');
 
-    this.game.load.spritesheet('target', 'assets/target.png',128.66,128);
+    //this.game.load.spritesheet('target', 'assets/target.png',128.66,128);
 
     //this.game.load.audio('gunshot','assets/gunshot.wav');
     //this.game.load.audio('ding','assets/ding.wav');
