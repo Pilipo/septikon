@@ -1,7 +1,7 @@
 {
   "name": "phaser-test",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.2",
+  "description": "Port of the Septikon board game",
   "scripts": {
     "start":       "budo src/main.js:bundle.js  -- -d -e src/main.js -t [babelify --comments false --presets es2015]",
     "prebuild":    "mkdirp build",
@@ -14,8 +14,12 @@
     "copy:phaser": "ncp node_modules/phaser/build/phaser.min.js build/phaser.min.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Phillip Lehner & Luke Lancaster",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pilipo/septikon/issues"
+  },
+  "homepage": "https://github.com/pilipo/septikon#readme",
   "dependencies": {
     "phaser": "^2.6.2"
   },
