@@ -77,9 +77,8 @@ class Septikon {
     
     //console.log("You clicked " + obj.tileName + " of the " + obj.tileType + " type. Its address is the NorthWest corner of " + obj.tileX + " and " + obj.tileY + ". This is also known as " + obj.x + " and " + obj.y + ".");
     //console.log("It contains the properties: " + obj.properties);
-    //console.log(obj);
+    //console.log(obj.tileOccupied);
     //console.log("Is it damaged?: " + obj.tileDamaged);
-    //console.log(obj);
     //console.log("NORTH: " + this.checkWall(this.directionEnum.NORTH, {x:obj.tileX, y:obj.tileY}));
     //console.log("SOUTH: " + this.checkWall(this.directionEnum.SOUTH, {x:obj.tileX, y:obj.tileY}));
     //console.log("EAST: " + this.checkWall(this.directionEnum.EAST, {x:obj.tileX, y:obj.tileY}));
@@ -92,7 +91,7 @@ class Septikon {
   
   triggerTile(caller) {
   
-    var tile = this.tileArray[caller.currentTileCoordinates.x][caller.currentTileCoordinates.y]
+    var tile = this.tileArray[caller.currentTileCoordinates.x][caller.currentTileCoordinates.y];
     caller.isGunner = false;
     var props = tile.tileProperties;
     
@@ -109,6 +108,18 @@ class Septikon {
                 // Get the available resource count and prepare to offer "gunner" clones for selection.
                 //console.log("Is this resource available?");
                 //console.log(this);
+                
+                // Types of battle tiles with a FIRE action:
+                //  - Satellite: gunner:true, projectile: true
+                //  - Thermite: gunner:true, projectile: false
+                //  - Shield: gunner:true, projectile: true
+                //  - Biodrone: gunner:true, projectile: true
+                //  - Laser: gunner:true, projectile: false
+                //  - Rocket: gunner:true, projectile: true
+                console.log(tile.tileName)
+                if (this.localTeam.offerGunners() == false && (tile.tileName == "satellite" || tile.tileName == "thermite" || tile.tileName == "shield" || tile.tileName == "biodrone" || tile.tileName == "laser" || tile.tileName == "rocket" )) {
+                    this.finishTurn();
+                }
                 //console.log(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount));
                 if(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount) == true){
                     this.localTeam.removeRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount);
@@ -173,32 +184,38 @@ class Septikon {
     
     switch (weaponType) {
         case 'laser':
-            this.shootTile(caller.currentTileCoordinates);
-            break;
+            //for (var i in this.localTeam.selectedGunners) {
+            //    this.shootTile(this.localTeam.selectedGunners[i].currentTileCoordinates);
+            //}
+            //break;
             
         case 'satellite':
             // PLACE A SATELLITE
-            break;
+           // break;
             
         case 'thermite':
-            this.shootTile(caller.currentTileCoordinates, true);
-            break;
+            //this.shootTile(caller.currentTileCoordinates, true);
+            //break;
             
         case 'shield':
-            break;
+            //break;
             
         case 'biodrone':
-            break;
+            //break;
             
         case 'rocket': 
-            break;
+            //break;
             
         default:
+            for (var i in this.localTeam.selectedGunners) {
+                this.shootTile(this.localTeam.selectedGunners[i].currentTileCoordinates);
+            }
             break;
     };
     
-    this.game.septikon.turnState = this.game.septikon.turnStateEnum.END;
-    //this.finishTurn();
+    this.localTeam.clearGunners();
+    //this.game.septikon.turnState = this.game.septikon.turnStateEnum.START;
+    this.finishTurn();
   }
   
   repair(count) {
@@ -354,6 +371,7 @@ class Septikon {
   startGame() {
     this.background = this.game.add.sprite(0,0,'background');
     this.createTileArray(31, 21);
+    this.localTeam.refresh();
   }
     
   createTileArray(columns, rows, showTiles = false) {
