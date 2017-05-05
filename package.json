@@ -3,15 +3,17 @@
   "version": "0.0.2",
   "description": "Port of the Septikon board game",
   "scripts": {
-    "start":       "budo src/main.js:bundle.js  -- -d -e src/main.js -t [babelify --comments false --presets es2015]",
-    "prebuild":    "mkdirp build",
-    "build":       "npm run build:js && npm run build:css && npm run build:html && npm run copy:all",
-    "build:js":    "browserify -d -e src/main.js -t [babelify --comments false --presets es2015] | uglifyjs -cm > build/bundle.min.js",
-    "build:css":   "cleancss css/main.css -o build/main.min.css",
-    "build:html":  "htmlprocessor index.html -o build/index.html",
-    "copy:all":    "npm run copy:assets && npm run copy:phaser",
+    "start": "budo src/main.js:bundle.js  -- -d -e src/main.js -t [babelify --comments false --presets es2015]",
+    "prebuild": "mkdirp build",
+    "build": "npm run build:js && npm run build:css && npm run build:html && npm run copy:all",
+    "build:js": "browserify -d -e src/main.js -t [babelify --comments false --presets es2015] | uglifyjs -cm > build/bundle.min.js",
+    "build:css": "cleancss css/main.css -o build/main.min.css",
+    "build:html": "htmlprocessor index.html -o build/index.html",
+    "copy:all": "npm run copy:assets && npm run copy:phaser && npm run copy:socket-client && npm run copy:modal",
     "copy:assets": "ncp assets build/assets/",
-    "copy:phaser": "ncp node_modules/phaser/build/phaser.min.js build/phaser.min.js"
+    "copy:phaser": "ncp node_modules/phaser/build/phaser.min.js build/phaser.min.js",
+    "copy:socket-client": "ncp node_modules/socket.io-client/dist/socket.io.min.js build/socket.io.min.js",
+    "copy:modal": "ncp src/modal.js build/modal.js"
   },
   "keywords": [],
   "author": "Phillip Lehner & Luke Lancaster",
@@ -22,7 +24,7 @@
   "homepage": "https://github.com/pilipo/septikon#readme",
   "dependencies": {
     "phaser": "^2.6.2",
-    "socket.io": "latest"
+    "socket.io": "^1.7.3"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
