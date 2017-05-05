@@ -1,3 +1,5 @@
+var io = require('socket.io-client');
+
 import Boot from './states/boot';
 import Game from './states/game';
 import Setup from './states/setup';
