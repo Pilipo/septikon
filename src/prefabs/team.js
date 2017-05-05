@@ -15,6 +15,12 @@ class Team {
     this.selectedGunners = [];
   }
   
+  refresh() {
+    for (var i in this.personnel) {
+        this.game.septikon.tileArray[this.personnel[i].currentTileCoordinates.x][this.personnel[i].currentTileCoordinates.y].tileOccupied = true;
+    }
+  }
+  
   //Resource Interface
   getRecCount(type) {
     return this.rec.getCount(type);
@@ -41,6 +47,9 @@ class Team {
   addClone(x, y, props) {
     var point = this.game.septikon.tileToPixels(x,y);
     var clone = new Clone(this.game,point.x,point.y);
+    clone.currentTileCoordinates.x = x;
+    clone.currentTileCoordinates.y = y;
+    
     for (var i in props) {
         clone[i] = props[i];
     }
@@ -104,6 +113,13 @@ class Team {
         clone.highlightOn();
         this.selectedGunners.push(clone);
     }
+  }
+  
+  clearGunners() {
+    for (var i in this.selectedGunners) {
+        this.selectedGunners[i].highlightOff();
+    }
+    this.selectedGunners = [];
   }
   
   selectCloneForMove(coords) {    
