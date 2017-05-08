@@ -1,15 +1,18 @@
 {
-  "name": "phaser-test",
+  "name": "Septikon",
   "version": "0.0.2",
   "description": "Port of the Septikon board game",
+  "main": "index.js",
   "scripts": {
-    "start": "budo src/main.js:bundle.js  -- -d -e src/main.js -t [babelify --comments false --presets es2015]",
+    "start": "npm run build && node build/index.js",
+	"start-dev": "browserify -d -e src/main.js -t [babelify --comments false --presets es2015] > src/bundle.js && node index.js",
+    "dev": "budo src/main.js:bundle.js  -- -d -e src/main.js -t [babelify --comments false --presets es2015]",
     "prebuild": "mkdirp build",
-    "build": "npm run build:js && npm run build:css && npm run build:html && npm run copy:all",
-    "build:js": "browserify -d -e src/main.js -t [babelify --comments false --presets es2015] | uglifyjs -cm > build/bundle.min.js",
-    "build:css": "cleancss css/main.css -o build/main.min.css",
-    "build:html": "htmlprocessor index.html -o build/index.html",
-    "copy:all": "npm run copy:assets && npm run copy:phaser && npm run copy:socket-client && npm run copy:modal",
+    "build": "npm run build:js && npm run build:css && npm run copy:all",
+    "build:js": "browserify -d -e src/main.js -t [babelify --comments false --presets es2015] | uglifyjs -cm > js/bundle.min.js",
+    "build:css": "cleancss css/main.css -o css/main.min.css",
+    "build:html":  "htmlprocessor index.html -o build/index.html",
+	"copy:all": "npm run copy:assets && npm run copy:phaser",
     "copy:assets": "ncp assets build/assets/",
     "copy:phaser": "ncp node_modules/phaser/build/phaser.min.js build/phaser.min.js",
     "copy:socket-client": "ncp node_modules/socket.io-client/dist/socket.io.min.js build/socket.io.min.js",
@@ -23,8 +26,9 @@
   },
   "homepage": "https://github.com/pilipo/septikon#readme",
   "dependencies": {
+    "express": "^4.15.2",
     "phaser": "^2.6.2",
-    "socket.io": "^1.7.3"
+    "socket.io": "^1.7.4"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
