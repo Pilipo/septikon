@@ -8,3 +8,4 @@ Port of the above game
 * init the git submodule
 * npm update and install
 * npm start
+* heroku??

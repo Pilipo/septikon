@@ -16,6 +16,7 @@ class Setup extends Phaser.State {
             this.game.septikon.tileArray[col][row].events.onInputDown.add(this.placeClone, this);
         }
     }
+	game.client.askNewPlayer();
   }
   
   placeClone(tile) {
