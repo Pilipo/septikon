@@ -25,6 +25,7 @@ class Dice extends Phaser.Sprite {
 
 
   clicked () {
+    this.game.client.sendInput({action: 'roll'});
     if(this.game.septikon.turnState == this.game.septikon.turnStateEnum.START ) {
         this.game.global.lastDiceRoll = Math.floor(Math.random() * 6) + 1;
         this.game.septikon.turnState = this.game.septikon.turnStateEnum.SELECT_CLONE;
