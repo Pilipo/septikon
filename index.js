@@ -3,6 +3,8 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
+var sept = require('./src/server/septikon').Septikon;
+sept = new sept();
 
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
@@ -13,15 +15,26 @@ app.get('/',function(req,res){
     res.sendFile(__dirname+'/index.html');
 });
 
-server.listen(process.env.PORT || 8081,function(){
+server.listen(process.env.PORT || 3000, function(){
     console.log('Listening on '+server.address().port);
 });
 
 io.on('connection',function(socket){
 
-    console.log('connection');
+    //onsole.log('connection');
 
     socket.on('test',function(){
         console.log('test received');
     });
+    
+    socket.on('newPlayer', function() {
+        var player = sept.addNewPlayer();
+        //console.log('new player joining');
+        socket.emit('log', {msg:"new player has joined", details: player});
+    });
+    
+    socket.on('input', function(data) {
+        console.log(data);
+    });
+    
 });
