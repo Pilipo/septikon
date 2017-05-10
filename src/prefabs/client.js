@@ -16,6 +16,7 @@ class Client {
 	}
     
     sendInput(payload) {
+        console.log(payload);
         this.socket.emit('input', payload);
     }
 }

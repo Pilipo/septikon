@@ -1,5 +1,5 @@
 import Master from '../prefabs/master';
-import Team from '../prefabs/team';
+//import Team from '../prefabs/team';
 
 class Septikon {
 
@@ -55,38 +55,8 @@ class Septikon {
   }
   
   tileClicked(obj) {
-    if(this.turnState == this.turnStateEnum.SELECT_GUNNER) {
-        this.localTeam.selectGunner({x:obj.tileX, y:obj.tileY});        
-    }
-
-    if(this.turnState == this.turnStateEnum.MOVE_CLONE) {
-        
-        if(this.localTeam.moveSelectedClone({x:obj.tileX, y:obj.tileY})) {
-            this.turnState = this.turnStateEnum.SELECT_GUNNER;
-            this.hideTiles();
-        }
-    }
-
-    if(this.turnState == this.turnStateEnum.SELECT_CLONE) {
-        if(this.localTeam.selectCloneForMove({x:obj.tileX, y:obj.tileY})){
-            this.turnState = this.turnStateEnum.MOVE_CLONE;
-        }
-    }
-    
-
-    
-    //console.log("You clicked " + obj.tileName + " of the " + obj.tileType + " type. Its address is the NorthWest corner of " + obj.tileX + " and " + obj.tileY + ". This is also known as " + obj.x + " and " + obj.y + ".");
-    //console.log("It contains the properties: " + obj.properties);
-    //console.log(obj.tileOccupied);
-    //console.log("Is it damaged?: " + obj.tileDamaged);
-    //console.log("NORTH: " + this.checkWall(this.directionEnum.NORTH, {x:obj.tileX, y:obj.tileY}));
-    //console.log("SOUTH: " + this.checkWall(this.directionEnum.SOUTH, {x:obj.tileX, y:obj.tileY}));
-    //console.log("EAST: " + this.checkWall(this.directionEnum.EAST, {x:obj.tileX, y:obj.tileY}));
-    //console.log("WEST: " + this.checkWall(this.directionEnum.WEST, {x:obj.tileX, y:obj.tileY}));
-    
-    if((typeof obj.legalFor !== 'undefined')){
-        obj.legalFor.move({x:obj.tileX, y:obj.tileY});
-    }
+    this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
+    return;
   }
   
   triggerTile(caller) {
@@ -361,10 +331,10 @@ class Septikon {
     this.background = this.game.add.sprite(0,0,'background');
     this.createTileArray(31, 21);
     
-    this.localTeam = new Team(this.game);
+    //this.localTeam = new Team(this.game);
     //this.remoteTeam = new Team(this.game);
     
-    this.gm = new Master();
+    //this.gm = new Master();
 
   }
   
@@ -416,7 +386,6 @@ class Septikon {
                 currentTile.alpha = 0;
             currentTile.inputEnabled = true;
             currentTile.events.onInputDown.add(this.tileClicked, this);
-            //currentTile.name = (column+1) + " " + (row+1);
             
             if (typeof this.tileArray[column] == 'undefined') 
                 this.tileArray[column] = [];

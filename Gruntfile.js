@@ -9,7 +9,7 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
     watch: {
         src: {
-            files: ['src/**/*.js'],
+            files: ['src/prefabs/*.js', 'src/states/*.js', 'src/*.js'],
             tasks: ['browserify']
         }
     },
