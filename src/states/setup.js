@@ -8,33 +8,9 @@ class Setup extends Phaser.State {
     this.game.modal = new gameModal(this.game);
     this.createModals();
     
-    this.initialCloneCount = 5;
     this.game.septikon.setup();
     
-    for(var col in this.game.septikon.tileArray) {
-        for(var row in this.game.septikon.tileArray[col]) {
-            this.game.septikon.tileArray[col][row].events.onInputDown.add(this.placeClone, this);
-        }
-    }
 	this.game.client.askNewPlayer();
-  }
-  
-  placeClone(tile) {
-    if(tile.tileOccupied == true){
-        this.game.septikon.localTeam.killClone({x:tile.tileX, y:tile.tileY});
-        return;
-    }
-    if(this.game.septikon.localTeam.personnel.length < this.initialCloneCount) {
-        
-        if(this.game.septikon.tileArray[tile.tileX][tile.tileY].tileType == "surface") {
-            this.game.septikon.localTeam.addClone(tile.tileX, tile.tileY, {isGunner:true});
-        } else {
-            this.game.septikon.localTeam.addClone(tile.tileX, tile.tileY);
-        }
-        if (this.game.septikon.localTeam.personnel.length == this.initialCloneCount) {
-            this.game.modal.showModal("askStart");                
-        }
-    }  
   }
   
   createModals() {
