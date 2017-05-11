@@ -30,6 +30,10 @@ class Septikon {
 
   }
   
+  diceRolled(details) {
+    this.game.global.lastDiceRoll = details.value;
+  }
+  
   pixelsToTile(x, y) {
     var xTile = 0;
     var yTile = 0;
@@ -212,6 +216,7 @@ class Septikon {
     this.turnState = this.game.septikon.turnStateEnum.START;
     //console.log("Alas. Your turn is over. ");
   }
+  
 
   getLegalMoves(moves, currentCoord, previousCoord) {
 	moves--;
@@ -328,20 +333,13 @@ class Septikon {
   }
   
   setup() {
-    this.background = this.game.add.sprite(0,0,'background');
-    this.createTileArray(31, 21);
-    
-    //this.localTeam = new Team(this.game);
-    //this.remoteTeam = new Team(this.game);
-    
-    //this.gm = new Master();
-
+    //Should ask for player name and assign a color. 
+    //Give waiting indicator
+    //Offer some way to pick a game? IDK..
   }
   
   startGame() {
-    this.background = this.game.add.sprite(0,0,'background');
-    this.createTileArray(31, 21);
-    this.localTeam.refresh();
+    this.game.state.start('game');
   }
     
   createTileArray(columns, rows, showTiles = false) {

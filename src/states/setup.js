@@ -1,3 +1,5 @@
+import Dice from '../prefabs/dice';
+
 class Setup extends Phaser.State {
 
   constructor() {
@@ -5,12 +7,16 @@ class Setup extends Phaser.State {
  }
   
   create() {
+    this.game.stage.disableVisibilityChange = true;
     this.game.modal = new gameModal(this.game);
     this.createModals();
     
     this.game.septikon.setup();
     
 	this.game.client.askNewPlayer();
+    
+    this.dice = new Dice(this.game, 150, 150);
+    this.game.add.existing(this.dice);
   }
   
   createModals() {

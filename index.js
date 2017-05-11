@@ -4,7 +4,7 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 var sept = require('./src/server/septikon').Septikon;
-sept = new sept(io);
+var games = [];
 
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
@@ -20,29 +20,62 @@ server.listen(process.env.PORT || 3000, function(){
 });
 
 io.on('connection',function(socket){
-
-    //onsole.log('connection');
-
-    socket.on('test',function(){
-        console.log('test received');
-    });
-    
-    socket.on('newPlayer', function() {
-        var player = sept.addNewPlayer(socket.id);
+   
+    socket.on('newPlayer', function(data) {
+        var player = null;
+        var emptySlotFound = false;
+        for (var i in games) {        
+            if(games[i].existsPlayerUUID(data.uuid)) {
+                player = games[i].getPlayerByUUID(data.uuid);
+                player.disconnected = false;
+            } else {
+                if(games[i].playersArray.length <= 1) {
+                    games[i].addNewPlayer(socket.id, data.uuid);
+                    emptySlotFound = true;        
+                    //io.sockets.emit('log', {msg:"new player has joined game with id: " + games[i].uuid});
+                    if(games[i].playersArray.length == 2) {
+                        console.log('game full. starting up!');
+                        games[i].broadcast('action', {callback: 'startGame'});
+                    } else {
+                        console.log('ready player 1');
+                    }
+                }
+            }
+        
+        }
+        if(emptySlotFound === false) {
+            var game = new sept(io);
+            game.addNewPlayer(socket.id);
+            socket.game = game;
+            games.push(game);
+            //io.sockets.emit('log', {msg:"new player has joined game with id: " + game.uuid});
+        }
         //console.log('new player joining');
-        socket.emit('log', {msg:"new player has joined"});
     });
-    
+
     socket.on('input', function(data) {
+        data.socketID = socket.id;
         switch(data.event) {
             case 'tileClicked':
-                sept.clicked(data);
+                console.log(data);
+                socket.game.clicked(data);
+                break;
+                
+            case 'diceClicked':
+                socket.game.rollDice(data);
+                break;
+                
+            case 'get':
+                socket.game.get(data);
                 break;
             
             default:
                 break;
         }
-        console.log(data);
+        //console.log(data);
     });
     
+    socket.on('disconnect', function(){
+        
+    });
 });
