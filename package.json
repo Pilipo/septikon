@@ -14,7 +14,8 @@
   "dependencies": {
     "express": "^4.15.2",
     "phaser": "^2.6.2",
-    "socket.io": "^1.7.4"
+    "socket.io": "^1.7.4",
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",

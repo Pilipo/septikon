@@ -23,22 +23,9 @@ class Dice extends Phaser.Sprite {
 
   }
 
-
   clicked () {
-    this.game.client.sendInput({action: 'roll'});
-    if(this.game.septikon.turnState == this.game.septikon.turnStateEnum.START ) {
-        this.game.global.lastDiceRoll = Math.floor(Math.random() * 6) + 1;
-        this.game.septikon.turnState = this.game.septikon.turnStateEnum.SELECT_CLONE;
-        this.game.septikon.localTeam.offerLegalClones();
-    } else if(this.game.septikon.turnState == this.game.septikon.turnStateEnum.SELECT_GUNNER) {
-        if(this.game.septikon.pendingAction) {
-            console.log("Gunners Confirmed!");
-            var action = this.game.septikon.pendingAction;
-            this.game.septikon[action.props.callback](action.props.args, action.caller);
-        }
-    } else {
-        console.log("Dice already rolled for this turn (turn state: " + this.game.septikon.turnState + "). The value is: " + this.game.global.lastDiceRoll);
-    }
+    this.game.client.sendInput({event: 'diceClicked'});
+    return;
   }
 
 }
