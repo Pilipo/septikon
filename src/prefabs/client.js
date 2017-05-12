@@ -16,7 +16,7 @@ class Client {
             if (typeof(this.septikon[data.callback]) === "function") {
                 this.septikon[data.callback](data.details);
             } else {
-                console.log("ERROR: no method found called " + data.callback);
+                console.log("ERROR: no method found called septikon." + data.callback);
             }
         });
 	}
