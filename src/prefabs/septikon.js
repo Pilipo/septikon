@@ -34,6 +34,10 @@ class Septikon {
     this.game.global.lastDiceRoll = details.value;
   }
   
+  addClone(details) {
+    console.log(details);
+  }
+  
   pixelsToTile(x, y) {
     var xTile = 0;
     var yTile = 0;

@@ -29,7 +29,7 @@ class Septikon {
         });        
 	}
 
-	addNewPlayer(socketID, uuid) {
+	addNewPlayer(socketID, uuid, socket) {
         this.lastPlayerID++;
         this.currentPlayerID = this.lastPlayerID;
         var player = new Player(socketID, this.lastPlayerID, uuid);
@@ -41,6 +41,15 @@ class Septikon {
         for (var i in this.playersArray) {
             if(this.playersArray[i].uuid == uuid)
                 return this.playersArray[i];
+        }
+        return false;
+    }
+    
+    getPlayerBySocketID(id) {
+        for (var i in this.playersArray) {
+            if(this.playersArray[i].socketID == id) {
+                return this.playersArray[i];
+            }
         }
         return false;
     }
@@ -64,7 +73,8 @@ class Septikon {
                 //check if tile is type: surface, battle, armory, lock, or production
                 //check if tile belongs to player's team
                 //add clone to player's personnel
-                this.placeClone(this.currentPlayerID, data.x, data.y);
+                var player = this.getPlayerBySocketID(data.socketID);
+                this.placeClone(player, data.x, data.y);
 
                 break;
                 
@@ -80,18 +90,11 @@ class Septikon {
            
     }
     
-    placeClone(playerID, x, y) {
+    placeClone(player, x, y) {
         
-        for (var i in this.playersArray) {
-            if (this.playersArray[i].id === playerID) {
-                var currentPlayer = this.playersArray[i];
-                break;
-            }
-        }
-        
-        if(typeof(currentPlayer) != 'undefined') {
-            if(currentPlayer.addPersonnel('clone', x, x)) {
-                this.emit('action', {callback:"addClone", details: {x:x, y:x}}, currentPlayer.socketID);
+        if(typeof(player) != 'undefined') {
+            if(player.addPersonnel('clone', x, x)) {
+                this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
             }
         } else {
             console.log('ERROR: player not found!');        
@@ -99,7 +102,7 @@ class Septikon {
     }
     
     rollDice(data) {
-        if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.SETUP) {
+        if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME) {
             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
             this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue}}, data.socketID);
             this.emit('log', {msg:"Player rolled " + this.currentDiceValue});
@@ -115,11 +118,18 @@ class Septikon {
     
     emit(msg, data, socketID) {
         if(msg == "response") {
+            if(typeof(socketID) == "undefined") {
+                console.error("No SocketID found!");
+                return;
+            }
             this.io.sockets.connected[socketID].emit(msg, data);
         }
     
         if(msg == "action") {
-            console.log(this.io.sockets);
+            if(typeof(socketID) == "undefined") {
+                console.error("No SocketID found!");
+                return;
+            }
             this.io.sockets.connected[socketID].emit(msg, data);
         }
         

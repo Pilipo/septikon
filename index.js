@@ -27,10 +27,12 @@ io.on('connection',function(socket){
         for (var i in games) {        
             if(games[i].existsPlayerUUID(data.uuid)) {
                 player = games[i].getPlayerByUUID(data.uuid);
+                
                 player.disconnected = false;
             } else {
                 if(games[i].playersArray.length <= 1) {
                     games[i].addNewPlayer(socket.id, data.uuid);
+                    socket.game = games[i];
                     emptySlotFound = true;        
                     //io.sockets.emit('log', {msg:"new player has joined game with id: " + games[i].uuid});
                     if(games[i].playersArray.length == 2) {
@@ -57,7 +59,6 @@ io.on('connection',function(socket){
         data.socketID = socket.id;
         switch(data.event) {
             case 'tileClicked':
-                console.log(data);
                 socket.game.clicked(data);
                 break;
                 
