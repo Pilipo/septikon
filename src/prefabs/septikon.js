@@ -1,4 +1,4 @@
-import Master from '../prefabs/master';
+import Clone from '../prefabs/clone';
 //import Team from '../prefabs/team';
 
 class Septikon {
@@ -6,6 +6,10 @@ class Septikon {
   //initialization code in the constructor
   constructor(game) { 
     this.game = game;
+    
+    this.player = {
+        id: 0
+    };
     
     this.shownTiles = [];
     this.tileArray = [];
@@ -35,7 +39,15 @@ class Septikon {
   }
   
   addClone(details) {
-    console.log(details);
+    var point = this.tileToPixels(details.x, details.y);
+    var clone = new Clone(this.game, point.x, point.y);
+    this.game.boardGroup.add(clone);
+  }
+  
+  updatePlayer(details) {
+    for (var i in details) {
+        this.player[i] = details[i];
+    }
   }
   
   pixelsToTile(x, y) {
@@ -63,6 +75,7 @@ class Septikon {
   }
   
   tileClicked(obj) {
+    console.log(obj.x + "::" + obj.y);
     this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
     return;
   }
@@ -346,28 +359,23 @@ class Septikon {
     this.game.state.start('game');
   }
     
-  createTileArray(columns, rows, showTiles = false) {
+  createTileArray(columns, rows, point) {
     this.tileDetail = this.game.cache.getJSON('tileDetail');
 
-    this.tileWidth = 0;
-    this.tileHeight = 0;
-        
-    this.backgroundWidth = this.game.canvas.width;
-    this.backgroundHeight = this.game.canvas.height;
     this.tileStartCoordinates = {x:0, y:0};
 
-    this.marginTop = 40;
-    this.marginBottom = 38;
-    this.marginLeft = 41;
-    this.marginRight = 38;
     
-    this.padding = 4.85;
-    
-    this.tileWidth = 25;//(this.backgroundWidth - ((this.marginLeft + this.marginRight) + (this.padding * (columns - 1)))) / columns;
-    this.tileHeight = 25;//(this.backgroundHeight - ((this.marginTop + this.marginBottom) + (this.padding * (rows - 1)))) / rows;
+    this.marginBottom = this.marginTop = this.game.boardGroup.height/17.475;
+    this.marginLeft = this.game.boardGroup.width/24;
+    this.marginRight =  this.game.boardGroup.width/26.3158;
+    this.tileWidth = this.tileHeight = this.game.boardGroup.width/39;
+    this.padding = (this.game.boardGroup.width - (this.marginLeft + this.marginRight) - (this.tileWidth * 31))/30;
         
-    this.tileStartCoordinates.x = 0 + this.marginLeft;
-    this.tileStartCoordinates.y = 0 + this.marginTop;
+    //this.tileWidth = 25;//(this.backgroundWidth - ((this.marginLeft + this.marginRight) + (this.padding * (columns - 1)))) / columns;
+    //this.tileHeight = 25;//(this.backgroundHeight - ((this.marginTop + this.marginBottom) + (this.padding * (rows - 1)))) / rows;
+        
+    this.tileStartCoordinates.x = point.x + this.marginLeft;
+    this.tileStartCoordinates.y = point.y + this.marginTop;
     
     var graphics = this.game.add.graphics(0, 0);
     //graphics.lineStyle(4, 0xffd900, 1);
@@ -382,10 +390,8 @@ class Septikon {
             graphics.generateTexture();
             
             var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
-            if (showTiles)
-                currentTile.alpha = 0.5;
-            else
-                currentTile.alpha = 0;
+            this.game.boardGroup.add(currentTile);
+            currentTile.alpha = 0.25;
             currentTile.inputEnabled = true;
             currentTile.events.onInputDown.add(this.tileClicked, this);
             

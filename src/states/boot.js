@@ -26,8 +26,6 @@ class Boot extends Phaser.State {
 
     this.initGlobalVariables();
     
-    //this.game.scale.startFullScreen();
-    //this.game.septikon = new Septikon(this.game);
     this.game.state.start('preloader');
   }
 
