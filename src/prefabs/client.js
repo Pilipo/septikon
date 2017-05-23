@@ -23,7 +23,7 @@ class Client {
 	}
 
 	askNewPlayer() {
-        console.log(localStorage.getItem('septUUID'));
+        //console.log(localStorage.getItem('septUUID'));
 		this.socket.emit('newPlayer', {uuid:localStorage.getItem('septUUID')});
 	}
     
