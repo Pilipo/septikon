@@ -9,7 +9,7 @@ class Clone extends Phaser.Sprite {
     //setup physics properties
     this.anchor.setTo(0.5, 0.65);
     this.game.physics.arcade.enableBody(this);
-    this.body.collideWorldBounds = true;
+    //this.body.collideWorldBounds = true;
 
     //set size
     this.width = 27;

@@ -13,7 +13,7 @@ class Player {
         this.resourceArray = [];
         this.ordnanceArray = [];
         
-        this.startingCloneCount = 50;    
+        this.startingCloneCount = 5;    
     }
         
     addPersonnel(type, x, y) {
