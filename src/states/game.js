@@ -13,24 +13,29 @@ class Game extends Phaser.State {
     this.game.boardGroup = this.game.add.group();
     
     this.background = this.game.add.sprite(0,0,'background');
+    this.background.anchor.setTo(0.5,0.5);
+    this.game.boardGroup.centerX = this.game.world.centerX;
+    this.game.boardGroup.centerY = this.game.world.centerY;
+
     var scale = window.innerWidth/this.background.height;
 
-    //this.background.scale.setTo(scale, scale);
-    //this.background.anchor.setTo(0.5,0.5);
     this.game.boardGroup.add(this.background);
 
-    this.game.septikon.createTileArray(31, 21, {x:0, y:0});
+    this.game.septikon.createTileArray(31, 21, {x:0-this.background.width/2, y:0-this.background.height/2});
     this.game.boardGroup.scale.setTo(scale);
-    
+    this.game.boardGroup.x = this.game.world.centerX;
+
     if(this.game.septikon.player.id == 1) {
-        this.game.boardGroup.angle = 90; 
-        this.game.boardGroup.x = this.game.boardGroup.height;
-        this.game.boardGroup.y = window.innerHeight - this.game.boardGroup.width;
-    } else {
         this.game.boardGroup.angle = -90; 
-        this.game.boardGroup.y = this.background.width + window.innerHeight - this.background.width;
+        //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
+        //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
+        this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
+    } else {
+        this.game.boardGroup.angle = 90; 
+        //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
+        //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
+        this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
     }
-    
   }
   
   update() {
@@ -81,6 +86,7 @@ class Game extends Phaser.State {
     this.game.debug.text('this.background.y: ' + this.background.y, x, y += yi);
     this.game.debug.text('this.background.width: ' + this.background.width, x, y += yi);
     this.game.debug.text('this.background.height: ' + this.background.height, x, y += yi);
+    this.game.debug.text('this.background.scale: ' + this.game.boardGroup.scale.x, x, y += yi);
 
     }
     

@@ -94,7 +94,7 @@ class Septikon {
     placeClone(player, x, y) {
         
         if(typeof(player) != 'undefined') {
-            if(player.addPersonnel('clone', x, x)) {
+            if(player.addPersonnel('clone', x, y)) {
                 this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
             }
         } else {

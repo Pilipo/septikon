@@ -69,13 +69,10 @@ class Septikon {
   
   tileToPixels(x, y) {
     var tileObj = this.tileArray[x][y];
-    var tileX = tileObj.x + (tileObj.width/2);
-    var tileY = tileObj.y + (tileObj.height/2);
-    return {x:tileX, y:tileY};
+    return {x:tileObj.x + tileObj.width/2, y:tileObj.y + tileObj.height/2};
   }
   
   tileClicked(obj) {
-    console.log(obj.x + "::" + obj.y);
     this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
     return;
   }
