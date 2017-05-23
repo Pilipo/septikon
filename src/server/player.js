@@ -21,6 +21,7 @@ class Player {
             this.personnelArray.push(new Personnel('clone', x, y));
             return true;
         }
+        return false;
     }
     
     getPersonnel(type) {

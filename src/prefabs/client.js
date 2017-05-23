@@ -11,6 +11,11 @@ class Client {
             console.log(data);
         });
 
+        this.socket.on('request', function(data){
+            console.log('REQUEST: (fire modal here...)');
+            console.log(data);
+        });
+
         this.socket.on('action', function(data){
             console.log('ACTION: ');
             console.log(data);

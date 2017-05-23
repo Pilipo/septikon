@@ -96,7 +96,12 @@ class Septikon {
         if(typeof(player) != 'undefined') {
             if(player.addPersonnel('clone', x, y)) {
                 this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
+                if(player.getPersonnel('clone').length == player.startingCloneCount) {
+                    console.log("sending modal request");
+                    this.emit('request', {callback:"modal", details: {type:"acceptClonePlacement"}}, player.socketID);
+                }
             }
+
         } else {
             console.log('ERROR: player not found!');        
         }
@@ -118,7 +123,7 @@ class Septikon {
     }
     
     emit(msg, data, socketID) {
-        if(msg == "response") {
+        if(msg == "response" || msg == "request") {
             if(typeof(socketID) == "undefined") {
                 console.error("No SocketID found!");
                 return;
