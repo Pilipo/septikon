@@ -5,6 +5,7 @@ class Client {
         
 		this.socket = io.connect();
         this.septikon = this.socket.septikon = septikon;
+        
         this.socket.on('log', function(data){
             console.log('LOG: ');
             console.log(data);

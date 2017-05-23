@@ -4,36 +4,19 @@ class Clone extends Phaser.Sprite {
 
   //initialization code in the constructor
   constructor(game, x, y, frame, team) {
-    
-    // SWITCH TO DIFFERENT PERSONNEL TYPES
-    // This will be a flexible personnel factory
-  
     super(game, x, y, 'clone', frame);
         
-    this.team = team;
-
     //setup physics properties
     this.anchor.setTo(0.5, 0.65);
     this.game.physics.arcade.enableBody(this);
     this.body.collideWorldBounds = true;
-
-    //set click event
-    //this.inputEnabled = true;
-    //this.events.onInputDown.add(this.clicked, this);
-
-    //setup audio
-    this.ding = this.game.add.audio('ding');
 
     //set size
     this.width = 27;
     this.scale.y = Math.abs(this.scale.x);
     
     //set rotation (this should be based on the base this clone occupies)
-    this.angle = 90;
-
-    // add animations from spritesheets
-    this.animations.add('idling',null,5,true);
-    this.animations.play('idling');
+    this.angle = this.game.boardGroup.angle * -1;
 
     this.currentTileCoordinates = this.game.septikon.pixelsToTile(this.x, this.y);
     this.game.septikon.tileArray[this.currentTileCoordinates.x][this.currentTileCoordinates.y].tileOccupied = true;

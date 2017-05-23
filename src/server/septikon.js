@@ -29,11 +29,12 @@ class Septikon {
         });        
 	}
 
-	addNewPlayer(socketID, uuid, socket) {
+	addNewPlayer(socketID, uuid) {
         this.lastPlayerID++;
         this.currentPlayerID = this.lastPlayerID;
         var player = new Player(socketID, this.lastPlayerID, uuid);
         this.playersArray.push(player);
+        this.emit('action', {callback: 'updatePlayer', details: {id: this.lastPlayerID}}, socketID);
         return player;
 	}
     
