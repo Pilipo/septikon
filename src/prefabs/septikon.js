@@ -321,25 +321,21 @@ class Septikon {
 				return true;
 			}
             return false;
-			break;
 		case this.directionEnum.SOUTH: // DOWN
 			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.SOUTH) == 0) {
 				return true;
 			}
             return false;
-			break;
 		case this.directionEnum.EAST: // RIGHT
 			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.EAST) == 0) {
 				return true;
 			}
             return false;
-			break;
 		case this.directionEnum.WEST: // LEFT
 			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.WEST) == 0) {
 				return true;
 			}
             return false;
-			break;
 		default:
 			return false;
 	}
