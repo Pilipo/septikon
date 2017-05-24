@@ -12,7 +12,13 @@ class Client {
         });
 
         this.socket.on('request', function(data){
-            console.log('REQUEST: (fire modal here...)');
+            console.log('REQUEST: ');
+            switch(data.details.type) {
+                case "askStart":
+                    this.septikon.showModal('askStart');
+                    break;
+
+            }
             console.log(data);
         });
 
