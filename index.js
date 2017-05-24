@@ -68,6 +68,10 @@ io.on('connection',function(socket){
             case 'get':
                 socket.game.get(data);
                 break;
+
+            case 'setPlayerState':
+                socket.game.setPlayerState(data);
+                break;
             
             default:
                 break;

@@ -67,7 +67,7 @@ class Game extends Phaser.State {
             contentScale: 0.6,
             callback: function () {
                 this.game.modal.hideModal("askStart");
-                console.log("Send ready-to-start to the server.");
+                this.game.client.sendInput({event:'setPlayerState', value:'start'});
             }
         }, {
             type: "image",
@@ -76,7 +76,8 @@ class Game extends Phaser.State {
             offsetX: 80,
             contentScale: 0.6,
             callback: function () {
-                console.log("clear the clones here and on server");
+                this.game.modal.hideModal("askStart");
+                this.game.client.sendInput({event:'setPlayerState', value:'reset'});
             }
         }, ]
     });

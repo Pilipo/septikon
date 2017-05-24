@@ -23,6 +23,13 @@ class Player {
         }
         return false;
     }
+
+    removePersonnel(personnel, purgeAll) {
+        if (purgeAll === true) {
+            this.personnelArray = [];
+            return;
+        }
+    }
     
     getPersonnel(type) {
         var returnArray = [];
