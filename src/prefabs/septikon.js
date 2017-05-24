@@ -1,5 +1,4 @@
 import Clone from '../prefabs/clone';
-//import Team from '../prefabs/team';
 
 class Septikon {
 
@@ -48,6 +47,15 @@ class Septikon {
     var clone = new Clone(this.game, point.x, point.y);
     this.game.boardGroup.add(clone);
   }
+
+  removeAllPersonnel(){
+    for (var i = 0; i < this.game.boardGroup.children.length; i++) {
+        if(this.game.boardGroup.children[i].constructor == Clone){
+            this.game.boardGroup.children[i].destroy();
+            i--;
+        }
+    }
+  }
   
   updatePlayer(details) {
     for (var i in details) {
@@ -55,6 +63,84 @@ class Septikon {
     }
   }
   
+  createTileArray(columns, rows, point) {
+    this.tileDetail = this.game.cache.getJSON('tileDetail');
+
+    this.tileStartCoordinates = {x:0, y:0};
+
+    
+    this.marginBottom = this.marginTop = this.game.boardGroup.height/17.475;
+    this.marginLeft = this.game.boardGroup.width/24;
+    this.marginRight =  this.game.boardGroup.width/26.3158;
+    this.tileWidth = this.tileHeight = this.game.boardGroup.width/39;
+    this.padding = (this.game.boardGroup.width - (this.marginLeft + this.marginRight) - (this.tileWidth * 31))/30;
+        
+    //this.tileWidth = 25;//(this.backgroundWidth - ((this.marginLeft + this.marginRight) + (this.padding * (columns - 1)))) / columns;
+    //this.tileHeight = 25;//(this.backgroundHeight - ((this.marginTop + this.marginBottom) + (this.padding * (rows - 1)))) / rows;
+        
+    this.tileStartCoordinates.x = point.x + this.marginLeft;
+    this.tileStartCoordinates.y = point.y + this.marginTop;
+    
+    var graphics = this.game.add.graphics(0, 0);
+    //graphics.lineStyle(4, 0xffd900, 1);
+    graphics.beginFill(0xffd900, 1);
+    graphics.drawRect(100, 100, this.tileWidth, this.tileHeight);
+    
+    for (var column = 0; column < columns; column++) {
+        for (var row = 0; row < rows; row++) {
+            
+            var x = this.tileStartCoordinates.x + (this.tileWidth * column) + (this.padding * column - 1);
+            var y = this.tileStartCoordinates.y + (this.tileHeight * row) + (this.padding * row - 1);
+            graphics.generateTexture();
+            
+            var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
+            this.game.boardGroup.add(currentTile);
+            currentTile.alpha = 0; // 0.25;
+            currentTile.inputEnabled = true;
+            currentTile.events.onInputDown.add(this.tileClicked, this);
+            
+            if (typeof this.tileArray[column] == 'undefined') 
+                this.tileArray[column] = [];
+        
+            this.tileArray[column][row] = currentTile;
+        }
+    }
+    
+    graphics.destroy();
+    
+    for (var key in this.tileDetail) {
+        if (!this.tileDetail.hasOwnProperty(key)) continue;
+        
+        var obj = this.tileDetail[key];
+        for (var prop in obj) {
+            // skip loop if the property is from prototype
+            if(!obj.hasOwnProperty(prop)) continue;
+            
+            var locationCount = obj[prop].locations.length;
+            for( var i = 0; i < locationCount; i++) {
+                
+                var coords = obj[prop].locations[i].split(",");
+                var x = coords[0];
+                var y = coords[1];
+                
+                this.tileArray[x][y].tileDamaged = false;
+                this.tileArray[x][y].tileOccupied = false;
+                this.tileArray[x][y].tileX = x;
+                this.tileArray[x][y].tileY = y;
+                this.tileArray[x][y].tileType = obj[prop].type;
+
+                if (typeof this.tileArray[x][y] != 'undefined')
+                    this.tileArray[x][y].tileName = obj[prop].name;
+                else
+                    console.log(x + ":" + y + " not found!");
+                 
+                if (typeof obj[prop].properties != 'undefined') {
+                    this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
+                }
+            }
+        }
+    }}
+
   pixelsToTile(x, y) {
     var xTile = 0;
     var yTile = 0;
@@ -357,85 +443,6 @@ class Septikon {
     this.game.state.start('game');
   }
     
-  createTileArray(columns, rows, point) {
-    this.tileDetail = this.game.cache.getJSON('tileDetail');
-
-    this.tileStartCoordinates = {x:0, y:0};
-
-    
-    this.marginBottom = this.marginTop = this.game.boardGroup.height/17.475;
-    this.marginLeft = this.game.boardGroup.width/24;
-    this.marginRight =  this.game.boardGroup.width/26.3158;
-    this.tileWidth = this.tileHeight = this.game.boardGroup.width/39;
-    this.padding = (this.game.boardGroup.width - (this.marginLeft + this.marginRight) - (this.tileWidth * 31))/30;
-        
-    //this.tileWidth = 25;//(this.backgroundWidth - ((this.marginLeft + this.marginRight) + (this.padding * (columns - 1)))) / columns;
-    //this.tileHeight = 25;//(this.backgroundHeight - ((this.marginTop + this.marginBottom) + (this.padding * (rows - 1)))) / rows;
-        
-    this.tileStartCoordinates.x = point.x + this.marginLeft;
-    this.tileStartCoordinates.y = point.y + this.marginTop;
-    
-    var graphics = this.game.add.graphics(0, 0);
-    //graphics.lineStyle(4, 0xffd900, 1);
-    graphics.beginFill(0xffd900, 1);
-    graphics.drawRect(100, 100, this.tileWidth, this.tileHeight);
-    
-    for (var column = 0; column < columns; column++) {
-        for (var row = 0; row < rows; row++) {
-            
-            var x = this.tileStartCoordinates.x + (this.tileWidth * column) + (this.padding * column - 1);
-            var y = this.tileStartCoordinates.y + (this.tileHeight * row) + (this.padding * row - 1);
-            graphics.generateTexture();
-            
-            var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
-            this.game.boardGroup.add(currentTile);
-            currentTile.alpha = 0; // 0.25;
-            currentTile.inputEnabled = true;
-            currentTile.events.onInputDown.add(this.tileClicked, this);
-            
-            if (typeof this.tileArray[column] == 'undefined') 
-                this.tileArray[column] = [];
-        
-            this.tileArray[column][row] = currentTile;
-        }
-    }
-    
-    graphics.destroy();
-    
-    for (var key in this.tileDetail) {
-        if (!this.tileDetail.hasOwnProperty(key)) continue;
-        
-        var obj = this.tileDetail[key];
-        for (var prop in obj) {
-            // skip loop if the property is from prototype
-            if(!obj.hasOwnProperty(prop)) continue;
-            
-            var locationCount = obj[prop].locations.length;
-            for( var i = 0; i < locationCount; i++) {
-                
-                var coords = obj[prop].locations[i].split(",");
-                var x = coords[0];
-                var y = coords[1];
-                
-                this.tileArray[x][y].tileDamaged = false;
-                this.tileArray[x][y].tileOccupied = false;
-                this.tileArray[x][y].tileX = x;
-                this.tileArray[x][y].tileY = y;
-                this.tileArray[x][y].tileType = obj[prop].type;
-
-                if (typeof this.tileArray[x][y] != 'undefined')
-                    this.tileArray[x][y].tileName = obj[prop].name;
-                else
-                    console.log(x + ":" + y + " not found!");
-                 
-                if (typeof obj[prop].properties != 'undefined') {
-                    this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
-                }
-            }
-        }
-        
-    }
-  }
 }
 
 export default Septikon;

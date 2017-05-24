@@ -23,8 +23,8 @@ class Client {
         });
 
         this.socket.on('action', function(data){
-            console.log('ACTION: ');
-            console.log(data);
+            //console.log('ACTION: ');
+            //console.log(data);
             if (typeof(this.septikon[data.callback]) === "function") {
                 this.septikon[data.callback](data.details);
             } else {

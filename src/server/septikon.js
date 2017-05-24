@@ -43,6 +43,22 @@ class Septikon {
         this.emit('action', {callback: 'updatePlayer', details: {id: this.lastPlayerID}}, socketID);
         return player;
 	}
+
+    setPlayerState(state) {
+        switch (state.value) {
+            case 'reset': 
+                var player = this.getPlayerBySocketID(state.socketID);
+                player.removePersonnel(null, true);
+                this.emit('action', {callback:"removeAllPersonnel", details: {}}, player.socketID);
+                break;
+            case 'start': 
+                console.log("player ready to start! \nTODO:\n - Check on opponent. \n - Send message to user HUD.");
+                break;
+            default:
+                console.log(state.value);
+                console.error(state.value + " is not a valid player state!");
+        }
+    }
     
     getPlayerByUUID(uuid) {
         for (var i in this.playersArray) {
