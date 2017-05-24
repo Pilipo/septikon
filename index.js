@@ -36,8 +36,7 @@ io.on('connection',function(socket){
                     emptySlotFound = true;        
                     //io.sockets.emit('log', {msg:"new player has joined game with id: " + games[i].uuid});
                     if(games[i].playersArray.length == 2) {
-                        console.log('game full. starting up!');
-                        games[i].broadcast('action', {callback: 'startGame'});
+                        console.log('game full. Ready to start!');
                     } else {
                         console.log('ready player 1');
                     }

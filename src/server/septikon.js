@@ -26,7 +26,13 @@ class Septikon {
             MOVE: 1, 
             ACTION: 2,
             END: 3
-        });        
+        });  
+
+        this.tileColumns = 31;
+        this.tileRows = 21;
+
+        this.tileArray = [];
+        this.createTileArray();      
 	}
 
 	addNewPlayer(socketID, uuid) {
@@ -94,17 +100,76 @@ class Septikon {
     placeClone(player, x, y) {
         
         if(typeof(player) != 'undefined') {
-            if(player.addPersonnel('clone', x, y)) {
-                this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
-                if(player.getPersonnel('clone').length == player.startingCloneCount) {
-                    console.log("sending modal request");
-                    this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
+            var selectedTile = this.getTile(x, y);
+            if(player.id != selectedTile.owner) {
+                return;
+            }
+            if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production" || selectedTile.type == "surface") {
+                if(player.addPersonnel('clone', x, y)) {
+                    this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
+                    if(player.getPersonnel('clone').length == player.startingCloneCount) {
+                        console.log("sending modal request");
+                        this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
+                    }
                 }
             }
 
         } else {
             console.log('ERROR: player not found!');        
         }
+    }
+
+    createTileArray() {
+        var tileJSON = require('../../assets/tileDetail.json');
+
+        for(var c = 0; c < this.tileColumns; c++) {
+            this.tileArray[c] = [];
+            for(var r = 0; r < this.tileRows; r++) {
+                this.tileArray[c][r] = {};
+            }
+        }
+
+        for (var key in tileJSON) {
+            if (!tileJSON.hasOwnProperty(key)) continue;
+            
+            var obj = tileJSON[key];
+            for (var prop in obj) {
+                // skip loop if the property is from prototype
+                if(!obj.hasOwnProperty(prop)) continue;
+                
+                var locationCount = obj[prop].locations.length;
+                for (var i = 0; i < locationCount; i++) {
+                    
+                    var coords = obj[prop].locations[i].split(",");
+                    var x = coords[0];
+                    var y = coords[1];
+                    
+                    this.tileArray[x][y].damaged = false;
+                    this.tileArray[x][y].occupied = false;
+                    this.tileArray[x][y].type = obj[prop].type;
+
+                    if (x < 9) {
+                        this.tileArray[x][y].owner = 1;
+                    } else if (x > 21) {
+                        this.tileArray[x][y].owner = 2;
+                    } 
+
+                    if (typeof this.tileArray[x][y] != 'undefined')
+                        this.tileArray[x][y].name = obj[prop].name;
+                    else
+                        console.log(x + ":" + y + " not found!");
+                    
+                    if (typeof obj[prop].properties != 'undefined') {
+                        this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
+                    }
+                }
+            }
+            
+        }
+    }
+
+    getTile(x, y) {
+        return this.tileArray[x][y];
     }
     
     rollDice(data) {
