@@ -7,7 +7,12 @@ class Septikon {
     this.game = game;
     
     this.player = {
-        id: 0
+        id: 0,
+        personnelArray: []
+    };
+
+    this.opponent = {
+        personnelArray: []
     };
     
     this.shownTiles = [];
@@ -33,9 +38,9 @@ class Septikon {
 
   }
 
-    showModal(type) {
-        this.game.modal.showModal(type);
-    }
+  showModal(type) {
+    this.game.modal.showModal(type);
+  }
 
   
   diceRolled(details) {
@@ -44,7 +49,12 @@ class Septikon {
   
   addClone(details) {
     var point = this.tileToPixels(details.x, details.y);
-    var clone = new Clone(this.game, point.x, point.y);
+    var clone = new Clone(this.game, point.x, point.y, null, details.uuid);
+    if(details.playerID == this.player.id) {
+        this.player.personnelArray.push(clone);
+    } else {
+        this.opponent.personnelArray.push(clone);
+    }
     this.game.boardGroup.add(clone);
   }
 

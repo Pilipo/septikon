@@ -3,7 +3,7 @@
 class Clone extends Phaser.Sprite {
 
   //initialization code in the constructor
-  constructor(game, x, y, frame, team) {
+  constructor(game, x, y, frame, uuid) {
     super(game, x, y, 'clone', frame);
         
     //setup physics properties
@@ -11,6 +11,7 @@ class Clone extends Phaser.Sprite {
     this.game.physics.arcade.enableBody(this);
     //this.body.collideWorldBounds = true;
 
+    this.uuid = uuid;
     //set size
     this.width = 27;
     this.scale.y = Math.abs(this.scale.x);
