@@ -11,7 +11,9 @@ class Game extends Phaser.State {
     this.game.stage.disableVisibilityChange = true;
     
     this.game.boardGroup = this.game.add.group();
-    
+    this.game.modal = new gameModal(this.game);
+    this.createModals();
+
     this.background = this.game.add.sprite(0,0,'background');
     this.background.anchor.setTo(0.5,0.5);
     this.game.boardGroup.centerX = this.game.world.centerX;
@@ -64,7 +66,8 @@ class Game extends Phaser.State {
             offsetX: -80,
             contentScale: 0.6,
             callback: function () {
-                this.game.state.start('game');
+                this.game.modal.hideModal("askStart");
+                console.log("Send ready-to-start to the server.");
             }
         }, {
             type: "image",
@@ -73,7 +76,7 @@ class Game extends Phaser.State {
             offsetX: 80,
             contentScale: 0.6,
             callback: function () {
-                this.game.modal.hideModal("askStart");
+                console.log("clear the clones here and on server");
             }
         }, ]
     });
@@ -92,7 +95,7 @@ class Game extends Phaser.State {
     var x = 32;
     var y = 0;
     var yi = 32;
-    
+    /*
     this.game.debug.text('Viewport', x, y += yi);
 
     this.game.debug.text('Viewport Width: ' + this.game.scale.viewportWidth, x, y += yi);
@@ -129,7 +132,7 @@ class Game extends Phaser.State {
     this.game.debug.text('this.background.width: ' + this.background.width, x, y += yi);
     this.game.debug.text('this.background.height: ' + this.background.height, x, y += yi);
     this.game.debug.text('this.background.scale: ' + this.game.boardGroup.scale.x, x, y += yi);
-
+    */
     }
     
   toggleFullscreen() {

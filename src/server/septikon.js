@@ -98,7 +98,7 @@ class Septikon {
                 this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
                 if(player.getPersonnel('clone').length == player.startingCloneCount) {
                     console.log("sending modal request");
-                    this.emit('request', {callback:"modal", details: {type:"acceptClonePlacement"}}, player.socketID);
+                    this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
             }
 

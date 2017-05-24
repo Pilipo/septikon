@@ -33,6 +33,11 @@ class Septikon {
     this.turnState = 0;
 
   }
+
+    showModal(type) {
+        this.game.modal.showModal(type);
+    }
+
   
   diceRolled(details) {
     this.game.global.lastDiceRoll = details.value;
@@ -384,7 +389,7 @@ class Septikon {
             
             var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
             this.game.boardGroup.add(currentTile);
-            currentTile.alpha = 0.25;
+            currentTile.alpha = 0; // 0.25;
             currentTile.inputEnabled = true;
             currentTile.events.onInputDown.add(this.tileClicked, this);
             
