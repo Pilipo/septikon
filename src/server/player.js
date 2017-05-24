@@ -12,13 +12,13 @@ class Player {
         this.personnelArray = [];
         this.resourceArray = [];
         this.ordnanceArray = [];
-        
+        this.readyToStart = false;
         this.startingCloneCount = 5;    
     }
         
-    addPersonnel(type, x, y) {
+    addPersonnel(type, x, y, uuid) {
         if(type == "clone" && this.getPersonnel(type).length < this.startingCloneCount) {
-            this.personnelArray.push(new Personnel('clone', x, y));
+            this.personnelArray.push(new Personnel('clone', x, y, uuid));
             return true;
         }
         return false;

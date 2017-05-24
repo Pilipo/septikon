@@ -1,6 +1,6 @@
 class Personnel {
 
-    constructor(type, x, y) {
+    constructor(type, x, y, uuid) {
         this.typeEnum = Object.freeze({
             clone: 0,
             biodrone: 1
@@ -8,6 +8,7 @@ class Personnel {
         
         this.x = x;
         this.y = y;
+        this.uuid = uuid;
         
         switch (type) {
             case 'biodrone':

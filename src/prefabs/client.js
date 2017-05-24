@@ -11,6 +11,16 @@ class Client {
             console.log(data);
         });
 
+        this.socket.on('update', function(data){
+            if(data.type == "personnel") {
+                for (var i in data.details) {
+                    this.septikon.addClone(data.details[i]);
+                }
+            }
+            console.log('UPDATE:');
+            console.log(data);
+        });
+
         this.socket.on('request', function(data){
             console.log('REQUEST: ');
             switch(data.details.type) {
@@ -19,12 +29,9 @@ class Client {
                     break;
 
             }
-            console.log(data);
         });
 
         this.socket.on('action', function(data){
-            //console.log('ACTION: ');
-            //console.log(data);
             if (typeof(this.septikon[data.callback]) === "function") {
                 this.septikon[data.callback](data.details);
             } else {
@@ -34,7 +41,6 @@ class Client {
 	}
 
 	askNewPlayer() {
-        //console.log(localStorage.getItem('septUUID'));
 		this.socket.emit('newPlayer', {uuid:localStorage.getItem('septUUID')});
 	}
     

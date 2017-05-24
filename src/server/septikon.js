@@ -52,11 +52,40 @@ class Septikon {
                 this.emit('action', {callback:"removeAllPersonnel", details: {}}, player.socketID);
                 break;
             case 'start': 
-                console.log("player ready to start! \nTODO:\n - Check on opponent. \n - Send message to user HUD.");
+                var player = this.getPlayerBySocketID(state.socketID);
+                player.readyToStart = true;
+                var opponent = this.getPlayerOpponent(player);
+                if(!opponent || !opponent.readyToStart) {
+                    console.log("player ready to start, but waiting on opponent! \nTODO: \n - Send message to both users' HUDs.");
+                    return;
+                } else {
+                    console.log("players have both confirmed! Rattle dem bones...\nCurrently, only player 2 is getting the clone update. FIX PLEASE!");
+                    var oppClones = opponent.getPersonnel('clone');
+                    var payload = [];
+                    for (var i in oppClones) {
+                        payload.push({
+                            x:oppClones[i].x,
+                            y:oppClones[i].y,
+                            uuid:oppClones[i].uuid,                            
+                        });
+                    }
+                    this.emit('update', {type:"personnel", details:payload}, player.socketID);
+                }
                 break;
             default:
                 console.log(state.value);
                 console.error(state.value + " is not a valid player state!");
+        }
+    }
+
+    getPlayerOpponent(player) {
+        if (this.playersArray.length == 1) {
+            return false;
+        }
+        if (this.playersArray[0] === player) {
+            return this.playersArray[1];
+        } else {
+            return this.playersArray[0];
         }
     }
     
@@ -120,9 +149,11 @@ class Septikon {
             if(player.id != selectedTile.owner) {
                 return;
             }
+
             if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production" || selectedTile.type == "surface") {
-                if(player.addPersonnel('clone', x, y)) {
-                    this.emit('action', {callback:"addClone", details: {x:x, y:y}}, player.socketID);
+                var uuid = require('uuid/v4')();
+                if(player.addPersonnel('clone', x, y, uuid)) {
+                    this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:uuid}}, player.socketID);
                     if(player.getPersonnel('clone').length == player.startingCloneCount) {
                         console.log("sending modal request");
                         this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
@@ -204,7 +235,7 @@ class Septikon {
     }
     
     emit(msg, data, socketID) {
-        if(msg == "response" || msg == "request") {
+        if(msg == "response" || msg == "request" || msg == "update") {
             if(typeof(socketID) == "undefined") {
                 console.error("No SocketID found!");
                 return;
