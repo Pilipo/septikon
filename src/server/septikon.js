@@ -63,6 +63,7 @@ class Septikon {
                     var oppClones = opponent.getPersonnel('clone');
                     var currentPlayerClones = player.getPersonnel('clone');
 
+                    // Notify current player of opponent positions
                     var playerPayload = [];
                     for (var i in oppClones) {
                         playerPayload.push({
@@ -73,6 +74,7 @@ class Septikon {
                     }
                     this.emit('update', {type:"personnel", details:playerPayload}, player.socketID);
 
+                    // Notify opponent of current player's positions
                     var oppPayload = [];
                     for (var i in currentPlayerClones) {
                         oppPayload.push({
@@ -82,6 +84,7 @@ class Septikon {
                         });
                     }
                     this.emit('update', {type:"personnel", details:oppPayload}, opponent.socketID);
+                    this.broadcast('update', {type:"resources", action:'init'});
                 }
                 break;
             default:
