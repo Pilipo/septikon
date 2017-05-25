@@ -59,17 +59,29 @@ class Septikon {
                     console.log("player ready to start, but waiting on opponent! \nTODO: \n - Send message to both users' HUDs.");
                     return;
                 } else {
-                    console.log("players have both confirmed! Rattle dem bones...\nCurrently, only player 2 is getting the clone update. FIX PLEASE!");
+                    console.log("players have both confirmed! Rattle dem bones...");
                     var oppClones = opponent.getPersonnel('clone');
-                    var payload = [];
+                    var currentPlayerClones = player.getPersonnel('clone');
+
+                    var playerPayload = [];
                     for (var i in oppClones) {
-                        payload.push({
+                        playerPayload.push({
                             x:oppClones[i].x,
                             y:oppClones[i].y,
                             uuid:oppClones[i].uuid,                            
                         });
                     }
-                    this.emit('update', {type:"personnel", details:payload}, player.socketID);
+                    this.emit('update', {type:"personnel", details:playerPayload}, player.socketID);
+
+                    var oppPayload = [];
+                    for (var i in currentPlayerClones) {
+                        oppPayload.push({
+                            x:currentPlayerClones[i].x,
+                            y:currentPlayerClones[i].y,
+                            uuid:currentPlayerClones[i].uuid,
+                        });
+                    }
+                    this.emit('update', {type:"personnel", details:oppPayload}, opponent.socketID);
                 }
                 break;
             default:
