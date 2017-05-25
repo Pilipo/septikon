@@ -17,6 +17,13 @@ class Client {
                     this.septikon.addClone(data.details[i]);
                 }
             }
+            if(data.type == "resources") {
+                if (data.action == "init") {
+                    this.septikon.initResources();
+                } else {
+                    console.error(data.action + " not a legal action for Resource update.");
+                }
+            }
             console.log('UPDATE:');
             console.log(data);
         });

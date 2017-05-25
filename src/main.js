@@ -17,7 +17,8 @@ if(typeof(Storage) !== "undefined") {
     console.error("Local Storage is required!");
 }
 
-const game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, 'phaser-test-game');
+// const game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, 'phaser-test-game');
+const game = new Phaser.Game("100", "100", Phaser.AUTO);
 game.septikon = new Septikon(game);
 game.client = new Client(game.septikon);
 

@@ -30,11 +30,12 @@ class Preloader extends Phaser.State {
     //GAME RESOURCES
     //game board background
     this.game.load.image('background','assets/medium_board.png');
-    this.game.load.image('dice','assets/text_go.png');
+    this.game.load.spritesheet('dice','assets/dice.png', 128, 194, 10);
     
     // modal images
     this.game.load.image('text_yes','assets/text_yes.png');
     this.game.load.image('text_no','assets/text_no.png');
+    this.game.load.image('text_go','assets/text_go.png');
 
     //player tokens spritesheets
     this.game.load.spritesheet('clone', 'assets/clone.png',110,168);

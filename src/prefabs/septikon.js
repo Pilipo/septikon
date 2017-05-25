@@ -72,6 +72,10 @@ class Septikon {
         this.player[i] = details[i];
     }
   }
+
+  initResources() {
+      
+  }
   
   createTileArray(columns, rows, point) {
     this.tileDetail = this.game.cache.getJSON('tileDetail');

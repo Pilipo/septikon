@@ -13,15 +13,14 @@ class Boot extends Phaser.State {
   create() {
     this.game.input.maxPointers = 1;
     this.game.scale.pageAlignHorizontally = true;
+      this.game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
     //setup device scaling
     if (!this.game.device.desktop) {
-      //this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
       this.game.scale.parentIsWindow = true;
       this.game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
       this.game.scale.minWidth =  480;
       this.game.scale.minHeight = 260;
       this.game.scale.forceOrientation(true);
-      //this.game.scale.setSize();
     }
 
     this.initGlobalVariables();
