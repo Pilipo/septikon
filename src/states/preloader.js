@@ -22,6 +22,9 @@ class Preloader extends Phaser.State {
     //menu background
     //text images
     //music files ?
+//  Load filter scripts
+    this.game.load.script('gray', 'https://cdn.rawgit.com/photonstorm/phaser/master/v2/filters/Gray.js');
+
     
     //load game data
     this.game.load.json('tileDetail', 'assets/tileDetail.json');

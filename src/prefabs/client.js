@@ -24,8 +24,12 @@ class Client {
                     console.error(data.action + " not a legal action for Resource update.");
                 }
             }
+            if (data.type == "dice") {
+                console.log("update dice?");
+                this.septikon.game.dice.setValue(data.value);
+            }
             console.log('UPDATE:');
-            console.log(data);
+            console.log(data.type);
         });
 
         this.socket.on('request', function(data){

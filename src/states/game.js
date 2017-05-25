@@ -1,3 +1,4 @@
+import Dice from '../prefabs/dice';
 
 class Game extends Phaser.State {
 
@@ -11,6 +12,8 @@ class Game extends Phaser.State {
     this.game.stage.disableVisibilityChange = true;
     
     this.game.boardGroup = this.game.add.group();
+    this.game.hudGroup = this.game.add.group();
+
     this.game.modal = new gameModal(this.game);
     this.createModals();
 
@@ -19,15 +22,16 @@ class Game extends Phaser.State {
     this.game.boardGroup.centerX = this.game.world.centerX;
     this.game.boardGroup.centerY = this.game.world.centerY;
 
-    
+    this.game.dice = new Dice(this.game, 50, 40);
+    this.game.dice.scale.setTo(0.25);
 
+    this.game.add.existing(this.game.dice);
+    
+    this.game.hudGroup.add(this.game.dice);
     this.game.boardGroup.add(this.background);
 
     this.game.septikon.createTileArray(31, 21, {x:0-this.background.width/2, y:0-this.background.height/2});
 
-    this.dice = this.game.add.sprite(100,100,'dice');
-    this.dice.scale.setTo(0.25);
-    this.dice.frame = (Math.floor(Math.random() * 6) + 1)-1;
 
     this.refreshBoard();
 
