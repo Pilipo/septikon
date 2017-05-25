@@ -8,26 +8,41 @@ class Dice extends Phaser.Sprite {
     //setup physics properties
     this.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enableBody(this);
-    this.body.collideWorldBounds = true;
 
     //set click event
-    this.inputEnabled = true;
+    this.inputEnabled = false;
     this.events.onInputDown.add(this.clicked, this);
 
     //set size
     this.width = 50;
     this.scale.y = Math.abs(this.scale.x);
+    this.filters = [this.game.add.filter('Gray')];
+    this.alpha = 0.5;
     
-    this.animations.add('idling',null,5,true);
-    this.animations.play('idling');
-
+    this.value = 10;
+    this.frame = this.value-1;
   }
 
   clicked () {
     this.game.client.sendInput({event: 'diceClicked'});
-    return;
   }
 
+  enable() {
+      this.alpha = 1;
+      this.filters = null;
+      this.inputEnabled = true;
+  }
+
+  disable() {
+      this.alpha = 0.5;
+      this.filters = [this.game.add.filter('Gray')];
+      this.inputEnabled = false;
+  }
+
+  setValue(value) {
+    this.value = value;
+    this.frame = value - 1;
+  }
 }
 
 export default Dice;

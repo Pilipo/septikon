@@ -9,9 +9,8 @@ class Septikon {
         this.gameState = 0;
         this.turnState = 0;
         this.uuid = require('uuid/v4')();
-        
-        this.currentPlayerID = this.lastPlayerID;
-        
+
+        this.activePlayer = null;
         this.currentDiceValue = 0;
         
         this.gameStateEnum = Object.freeze({
@@ -37,7 +36,6 @@ class Septikon {
 
 	addNewPlayer(socketID, uuid) {
         this.lastPlayerID++;
-        this.currentPlayerID = this.lastPlayerID;
         var player = new Player(socketID, this.lastPlayerID, uuid);
         this.playersArray.push(player);
         this.emit('action', {callback: 'updatePlayer', details: {id: this.lastPlayerID}}, socketID);
@@ -56,10 +54,8 @@ class Septikon {
                 player.readyToStart = true;
                 var opponent = this.getPlayerOpponent(player);
                 if(!opponent || !opponent.readyToStart) {
-                    console.log("player ready to start, but waiting on opponent! \nTODO: \n - Send message to both users' HUDs.");
                     return;
                 } else {
-                    console.log("players have both confirmed! Rattle dem bones...");
                     var oppClones = opponent.getPersonnel('clone');
                     var currentPlayerClones = player.getPersonnel('clone');
 
@@ -85,6 +81,11 @@ class Septikon {
                     }
                     this.emit('update', {type:"personnel", details:oppPayload}, opponent.socketID);
                     this.broadcast('update', {type:"resources", action:'init'});
+
+                    this.activePlayer = this.getRandomPlayer();
+                    this.emit('action', {callback:"offerDice", details: {}}, this.activePlayer.socketID);
+                    this.gameState++;
+
                 }
                 break;
             default:
@@ -102,6 +103,10 @@ class Septikon {
         } else {
             return this.playersArray[0];
         }
+    }
+
+    getRandomPlayer(){
+        return this.playersArray[Math.floor(Math.random()*2)];
     }
     
     getPlayerByUUID(uuid) {
@@ -170,14 +175,13 @@ class Septikon {
                 if(player.addPersonnel('clone', x, y, uuid)) {
                     this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:uuid}}, player.socketID);
                     if(player.getPersonnel('clone').length == player.startingCloneCount) {
-                        console.log("sending modal request");
                         this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                     }
                 }
             }
 
         } else {
-            console.log('ERROR: player not found!');        
+            console.error('ERROR: player not found!');        
         }
     }
 
@@ -235,10 +239,11 @@ class Septikon {
     }
     
     rollDice(data) {
-        if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME) {
+        if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME && this.activePlayer.socketID == data.socketID) {
             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
             this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue}}, data.socketID);
-            this.emit('log', {msg:"Player rolled " + this.currentDiceValue});
+            this.emit('update', {type:"dice", details: {value:this.currentDiceValue}}, this.getPlayerOpponent(this.activePlayer).socketID);
+            console.log("TODO: \n - Calculate legal personnel selections\n - Calculate legal ordnance selections\n - emit action to offer clones\n - Calculate legal personnel selections")
             this.turnState++;
         }
     }

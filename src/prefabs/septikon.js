@@ -44,7 +44,11 @@ class Septikon {
 
   
   diceRolled(details) {
-    this.game.global.lastDiceRoll = details.value;
+    this.game.dice.setValue(details.value);
+  }
+
+  offerDice() {
+      this.game.dice.enable();
   }
   
   addClone(details) {

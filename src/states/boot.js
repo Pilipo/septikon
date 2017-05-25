@@ -12,6 +12,7 @@ class Boot extends Phaser.State {
 
   create() {
     this.game.input.maxPointers = 1;
+    this.game.time.advancedTiming = true;
     this.game.scale.pageAlignHorizontally = true;
       this.game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
     //setup device scaling
