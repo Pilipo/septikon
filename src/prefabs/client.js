@@ -25,8 +25,7 @@ class Client {
                 }
             }
             if (data.type == "dice") {
-                console.log("update dice?");
-                this.septikon.game.dice.setValue(data.value);
+                this.septikon.game.dice.setValue(data.details.value);
             }
             console.log('UPDATE:');
             console.log(data.type);
