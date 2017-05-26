@@ -41,8 +41,8 @@ class Game extends Phaser.State {
       this.game.modal.createModal(
         {
         type: "askStart",
-        includeBackground: true,
-        modalCloseOnInput: true,
+        includeBackground: false,
+        modalCloseOnInput: false,
         itemsArr: [{
             type: "graphics",
             graphicColor: "0xffffff",
