@@ -14,6 +14,9 @@ class Player {
         this.ordnanceArray = [];
         this.readyToStart = false;
         this.startingCloneCount = 5;
+
+        this.initResources();
+        console.log('complete')
     }
         
     addPersonnel(type, x, y, uuid) {
@@ -38,6 +41,30 @@ class Player {
                 returnArray.push(this.personnelArray[i]);
         }
         return returnArray;
+    }
+
+    initResources() {
+        var recArray = [
+            'energy1', 
+            'energy2',
+            'oxygen',
+            'metal',
+            'biodrone',
+            'rocket',
+            'uranium',
+            'biomass'
+            ];
+        var rec = null;
+        for (var i in recArray) {
+            rec = new Resource(recArray[i]);
+            this.resourceArray[recArray[i]] = [];
+            for (var count = 0; count < 5; count++) {
+                this.resourceArray[recArray[i]].push(rec);
+            }
+            for (var count = 0; count < 5; count++) {
+                this.resourceArray[recArray[i]].push(null);
+            }
+        }
     }
 }
 

@@ -8,6 +8,7 @@ class Game extends Phaser.State {
   
   create() {
   
+    console.log(this);
     //this.game.input.onDown.add(this.toggleFullscreen, this);
     this.game.stage.disableVisibilityChange = true;
     

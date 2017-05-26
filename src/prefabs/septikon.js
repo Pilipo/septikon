@@ -78,7 +78,26 @@ class Septikon {
   }
 
   initResources() {
-      
+    console.log('lets init recs');
+
+    var currentRec = null;
+    var graphics = this.game.add.graphics(0, 0);
+    //graphics.lineStyle(4, 0xffd900, 1);
+    graphics.beginFill(0xffd900, 1);
+    graphics.drawRoundedRect(100, 100, this.tileWidth-2, this.tileHeight-2, 12);
+
+    for (var c in this.tileArray) {
+        for (var r in this.tileArray[c]) {
+            if(this.tileArray[c][r].tileOwner == this.player.id && this.tileArray[c][r].tileType == "warehouse") {
+                if (r < 5 || r > 15) {
+                    currentRec = this.game.add.sprite(this.tileArray[c][r].x+(this.tileArray[c][r].width/2), this.tileArray[c][r].y+(this.tileArray[c][r].width/2), graphics.generateTexture());
+                    currentRec.angle = Math.floor(Math.random()*40)-20;
+                    currentRec.anchor.setTo(0.5);
+                    this.game.boardGroup.add(currentRec);
+                }
+            }
+        }
+    }      
   }
   
   createTileArray(columns, rows, point) {
@@ -151,6 +170,11 @@ class Septikon {
                     this.tileArray[x][y].tileName = obj[prop].name;
                 else
                     console.log(x + ":" + y + " not found!");
+
+                if(x < 9)
+                    this.tileArray[x][y].tileOwner = 1;
+                else if (x>20)
+                    this.tileArray[x][y].tileOwner = 2;
                  
                 if (typeof obj[prop].properties != 'undefined') {
                     this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
