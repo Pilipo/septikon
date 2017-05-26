@@ -4,6 +4,8 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 var sept = require('./src/server/septikon').Septikon;
+var Player = require('./src/server/player').Player;
+
 var games = [];
 
 app.use('/css',express.static(__dirname + '/css'));
@@ -20,38 +22,34 @@ server.listen(process.env.PORT || 3000, function(){
 });
 
 io.on('connection',function(socket){
-   
-    socket.on('newPlayer', function(data) {
-        var player = null;
-        var emptySlotFound = false;
-        for (var i in games) {        
-            if(games[i].existsPlayerUUID(data.uuid)) {
+    var player = null;
+
+    socket.on('newPlayer', function(data){
+        var emplySlotFound = false;
+
+        if (games.length) {
+            for (var i in games) {
                 player = games[i].getPlayerByUUID(data.uuid);
-                
-                player.disconnected = false;
-            } else {
-                if(games[i].playersArray.length <= 1) {
-                    games[i].addNewPlayer(socket.id, data.uuid);
+                if (player !== null) {
+                    player.disconnected = false;
                     socket.game = games[i];
-                    emptySlotFound = true;        
-                    //io.sockets.emit('log', {msg:"new player has joined game with id: " + games[i].uuid});
-                    if(games[i].playersArray.length == 2) {
-                        console.log('game full. Ready to start!');
-                    } else {
-                        console.log('ready player 1');
-                    }
+                    return;
+                } else if (games[i].getPlayerCount() == 1) {
+                    player = new Player(socket.id, 2, data.uuid);
+                    games[i].addPlayer(player);
+                    socket.game = games[i];
+                    emptySlotFound = true;
+                    return;
                 }
             }
-        
-        }
-        if(emptySlotFound === false) {
+        } 
+        if (games.length == 0 || emplySlotFound === false) {
+            player = new Player(socket.id, 1, data.uuid);
             var game = new sept(io);
-            game.addNewPlayer(socket.id);
+            game.addPlayer(player);
             socket.game = game;
             games.push(game);
-            //io.sockets.emit('log', {msg:"new player has joined game with id: " + game.uuid});
         }
-        //console.log('new player joining');
     });
 
     socket.on('input', function(data) {
@@ -76,10 +74,21 @@ io.on('connection',function(socket){
             default:
                 break;
         }
-        //console.log(data);
     });
     
-    socket.on('disconnect', function(){
-        
+    socket.on('disconnect', function(data){
+        if (player === null) {
+            return;
+        }
+        player.disconnected = true;
+        setTimeout(function(){
+            if (player.disconnected) {
+                //player.delete();
+                console.log('player is gone. Delete him and abandon his game. Apologize to opponent (if any). Offer opponent a new match?');
+            } else {
+                console.log('player saved by the bell. Send a package that repopulates the board. This could be tricky... ;)');
+            }
+        }, 10000);
+
     });
 });

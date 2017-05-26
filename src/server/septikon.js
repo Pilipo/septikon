@@ -42,6 +42,11 @@ class Septikon {
         return player;
 	}
 
+    addPlayer(player) {
+        this.playersArray.push(player);
+        this.emit('action', {callback: 'updatePlayer', details: {id: player.id}}, player.socketID);
+    }
+
     setPlayerState(state) {
         switch (state.value) {
             case 'reset': 
@@ -114,7 +119,7 @@ class Septikon {
             if(this.playersArray[i].uuid == uuid)
                 return this.playersArray[i];
         }
-        return false;
+        return null;
     }
     
     getPlayerBySocketID(id) {
@@ -124,6 +129,10 @@ class Septikon {
             }
         }
         return false;
+    }
+
+    getPlayerCount() {
+        return this.playersArray.length;
     }
     
     existsPlayerUUID(uuid) {
