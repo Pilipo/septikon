@@ -1,4 +1,9 @@
-class Resources {
+class Resource {
+
+    constructor(type) {
+        this.type = type;
+        
+    }
 }
 
-module.exports.Resources = Resources;
+module.exports.Resource = Resource;
