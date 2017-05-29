@@ -37,8 +37,17 @@ class Player {
     getPersonnel(type) {
         var returnArray = [];
         for(var i in this.personnelArray) {
-            if(this.personnelArray[i].type == 0)
+            if(type === null || this.personnelArray[i].type == 0)
                 returnArray.push(this.personnelArray[i]);
+        }
+        return returnArray;
+    }
+
+    getOrdnance(type) {
+        var returnArray = [];
+        for(var i in this.ordnanceArray) {
+            if(type === null || this.ordnanceArray[i].type == 0)
+                returnArray.push(this.ordnanceArray[i]);
         }
         return returnArray;
     }

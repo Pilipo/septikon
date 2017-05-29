@@ -27,6 +27,13 @@ class Septikon {
             END: 3
         });  
 
+        this.directionEnum = Object.freeze({
+            NORTH:1,
+            EAST:2,
+            SOUTH:4,
+            WEST:8
+        });
+
         this.tileColumns = 31;
         this.tileRows = 21;
 
@@ -175,13 +182,14 @@ class Septikon {
         
         if(typeof(player) != 'undefined') {
             var selectedTile = this.getTile(x, y);
-            if(player.id != selectedTile.owner) {
+            if(player.id != selectedTile.owner || selectedTile.occupied === true) {
                 return;
             }
 
             if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production" || selectedTile.type == "surface") {
                 var uuid = require('uuid/v4')();
                 if(player.addPersonnel('clone', x, y, uuid)) {
+                    selectedTile.occupied = true;
                     this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:uuid}}, player.socketID);
                     if(player.getPersonnel('clone').length == player.startingCloneCount) {
                         this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
@@ -246,11 +254,102 @@ class Septikon {
     getTile(x, y) {
         return this.tileArray[x][y];
     }
+
+    getLegalPieces() {
+        var personnelArray = this.activePlayer.getPersonnel();
+        var ordnanceArray = this.activePlayer.getOrdnance();
+        var returnArray = [];
+        var movesArray = [];
+
+        for (var i in personnelArray) {
+            movesArray = this.getLegalMoves(personnelArray[i], this.currentDiceValue, {x:personnelArray[i].x, y:personnelArray[i].y});
+            if (movesArray.length > 0) {
+                returnArray.push({type:"personnel",origin:{x:personnelArray[i].x,y:personnelArray[i].y}, uuid:personnelArray[i].uuid, moves:movesArray});
+            }
+        }
+
+        for (var i in ordnanceArray) {
+            movesArray = this.getLegalMoves(personnelArray[i], this.currentDiceValue, {x:personnelArray[i].x, y:personnelArray[i].y});
+            if (movesArray.length > 0) {
+                returnArray.push({type:"ordnance", uuid:ordnanceArray[i].uuid, moves:movesArray});
+            }
+        }
+        return returnArray;
+    }
+
+    getCoordFromDirection(originCoord,direction) {
+        var dir={NORTH:{x:0,y:-1},EAST:{x:1,y:0},SOUTH:{x:0,y:1},WEST:{x:-1,y:0}};
+        
+        var obj = {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
+        if(obj.x < 0 || obj.x > 30|| obj.y < 0 || obj.y > 20) 
+            return false;
+        else
+            return {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};            
+    }
+
+    getLegalMoves(gamePieceType, moves, currentCoord, previousCoord){
+        moves--;
+        var legalMoves = [];
+        for (var direction in this.directionEnum) {
+            var moveCheck = this.getCoordFromDirection(currentCoord, direction);
+            if(moveCheck === false)
+                continue;
+            
+            var tileToCheck = this.tileArray[moveCheck.x][moveCheck.y];
+
+            if(this.checkWall(this.directionEnum[direction], currentCoord) === true && tileToCheck.damaged === false && tileToCheck.type != "space" && ((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(moveCheck) !== JSON.stringify(previousCoord)) ))) {
+                // Check if tile is occupied
+                if(moves==0){
+                    if(tileToCheck.occupied === false) {
+                        legalMoves.push(moveCheck);
+                    }
+                }
+                else {
+                    var returnArray = (this.getLegalMoves(gamePieceType, moves, moveCheck, currentCoord));
+                    for(var index in returnArray) {
+                        if(JSON.stringify(returnArray[index]) !== JSON.stringify(currentCoord))
+                            legalMoves.push(returnArray[index]);
+                    }
+                }
+            }
+        }
+        return legalMoves;
+    }
+
+    checkWall(direction, currentCoordinate) {
+        this.wallGrid = require('../../assets/wallGrid.json');
+
+        switch (direction){
+            case this.directionEnum.NORTH: // UP
+                if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.NORTH) == 0) {
+                    return true;
+                }
+                return false;
+            case this.directionEnum.SOUTH: // DOWN
+                if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.SOUTH) == 0) {
+                    return true;
+                }
+                return false;
+            case this.directionEnum.EAST: // RIGHT
+                if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.EAST) == 0) {
+                    return true;
+                }
+                return false;
+            case this.directionEnum.WEST: // LEFT
+                if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.WEST) == 0) {
+                    return true;
+                }
+                return false;
+            default:
+                return false;
+        }
+
+    }
     
     rollDice(data) {
         if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME && this.activePlayer.socketID == data.socketID) {
             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
-            this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue}}, data.socketID);
+            this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue, gamePieces:this.getLegalPieces()}}, data.socketID);
             this.emit('update', {type:"dice", details: {value:this.currentDiceValue}}, this.getPlayerOpponent(this.activePlayer).socketID);
             console.log("TODO: \n - Calculate legal personnel selections\n - Calculate legal ordnance selections\n - emit action to offer clones\n - Calculate legal personnel selections")
             this.turnState++;
