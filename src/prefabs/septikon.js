@@ -45,6 +45,15 @@ class Septikon {
   
   diceRolled(details) {
     this.game.dice.setValue(details.value);
+    console.log(details); 
+    for (var i in details.gamePieces) {
+        for (var m in details.gamePieces[i].moves) {
+            var x = details.gamePieces[i].moves[m].x;
+            var y = details.gamePieces[i].moves[m].y;
+            this.showTiles([details.gamePieces[i].origin]);
+
+        }
+    }
   }
 
   offerDice() {
@@ -408,11 +417,15 @@ class Septikon {
 		
   }
   
-  showTiles(tilesArray) {
-    for (var i in tilesArray) {
-        this.shownTiles.push(tilesArray[i]);
-        tilesArray[i].alpha = 0.5;
+  showTiles(coordsArray) {
+    for (var i in coordsArray) {
+        this.tileArray[coordsArray[i].x][coordsArray[i].y].alpha = 0.5;
     }
+
+    // for (var i in tilesArray) {
+    //     this.shownTiles.push(tilesArray[i]);
+    //     tilesArray[i].alpha = 0.5;
+    // }
   }
   
   hideTiles(tileArray) {
