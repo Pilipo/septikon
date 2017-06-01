@@ -21,10 +21,11 @@ class Septikon {
         });
         
         this.turnStateEnum = Object.freeze({
-            ROLL: 0,
-            MOVE: 1, 
-            ACTION: 2,
-            END: 3
+            ROLL: 0,    // Literally the act of rolling the die
+            MOVE: 1,    // Selecting the clone and (optionally) the biodrone(s) and their target spaces
+            ACTION: 2,  // Trigger tile  
+            TARGETS: 3, // Assign target(s) (ie. - gunner, tile, espionaged clone) 
+            END: 4      // assess victory conditions
         });  
 
         this.directionEnum = Object.freeze({
@@ -117,6 +118,12 @@ class Septikon {
         }
     }
 
+    changeActivePlayer() {
+        this.emit('action', {callback:"takeDice", details: {}}, this.activePlayer.socketID);
+        this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+        this.emit('action', {callback:"offerDice", details: {}}, this.activePlayer.socketID);
+    }
+
     getRandomPlayer(){
         return this.playersArray[Math.floor(Math.random()*2)];
     }
@@ -157,25 +164,162 @@ class Septikon {
         switch (this.gameState) {
         
             case this.gameStateEnum.SETUP:
-
-                //check if tile is type: surface, battle, armory, lock, or production
-                //check if tile belongs to player's team
-                //add clone to player's personnel
                 var player = this.getPlayerBySocketID(data.socketID);
                 this.placeClone(player, data.x, data.y);
-
                 break;
                 
             case this.gameStateEnum.GAME:
-            
-                //check turnState
-                
+
+                switch (this.turnState) {
+                    case this.turnStateEnum.MOVE:
+                        var legalPieces = this.getLegalPieces();
+                        for (var i in legalPieces) {
+                            if (legalPieces[i].uuid == data.uuid) {
+                                for (var m in legalPieces[i].moves) {
+                                    if (legalPieces[i].moves[m].x == data.x && legalPieces[i].moves[m].y == data.y) {
+                                        this.activePlayer.getPersonnelByUUID(data.uuid).move(data.x, data.y);
+                                        this.emit('action', {callback: 'movePersonnel', details: {uuid:data.uuid, x:data.x, y:data.y}}, data.socketID);
+                                    }
+                                }
+                            }
+                        }
+                        // If player tries to move clones before biodrones, prompt to verify that they intend to skip the biodrones
+                        this.turnState++;
+                        break;
+                    case this.turnStateEnum.ACTION:
+                        this.turnState++;
+                        break;
+                    case this.turnStateEnum.TARGETS:
+                        this.turnState++;
+                        break;
+                    case this.turnStateEnum.END:
+                        this.turnState = this.turnStateEnum.ROLL;
+                        this.changeActivePlayer();
+                        break;
+                }
+                this.activateTile(data);
                 break;
                 
             default:
                 break;
         }
            
+    }
+
+    activateTile(data) {
+        var tile = this.getTile(data.x, data.y);
+        var remainingCount = null;
+        
+        switch (tile.type) {
+            case "surface": 
+
+                break;
+            case "production":
+
+                // Three special cases: 
+                //  - Sensor Cabin does not cost or yield anything. We can handle this immediately)
+                //  - Production Repair costs, but triggers a repair just like the Repair battle tile (We need to check if we can afford)
+                //  - Nuclear Armory produces a nuke which relies on ordnance which has not been built yet
+
+                if(tile.name == "sensorCabin") {
+                    // This is a sensor cabin so just trigger the action and move on.
+                    console.log("sensor cabins are free!");
+                    return;
+                }
+
+                if (tile.name == "prodRepair") {
+                    // Trigger the repair  
+                    console.log("trigger the repair");
+                    return;                  
+                }
+
+                if (tile.name == "nuclearArmory") {
+                    // Trigger the repair  
+                    console.log("Build a nuke!");
+                    return;                  
+                }
+
+                for (var i in tile.properties.resourceCostType) {
+                    if (this.activePlayer.checkResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i]) === false) {
+                        // Can't afford it
+                        console.log("Can't afford it!");
+                        return false;
+                    }
+                }
+
+                for (var i in tile.properties.resourceYieldType) {
+                    if (this.activePlayer.checkResource(tile.properties.resourceYieldType[i], tile.properties.resourceYieldCount[i], true) === false) {
+                        // No room to store it
+                        console.log("can't accept the yield cuz we got no room!");
+                        return false;
+                    }
+                }
+
+                for (var i in tile.properties.resourceCostType) {
+                    remainingCount = this.activePlayer.spendResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i]);
+                    console.log("You have spent " + remainingCount + " " + tile.properties.resourceCostType[i] + ". This leaves you with " + this.activePlayer.getResourceCount(tile.properties.resourceCostType[i]));
+                }
+
+                for (var i in tile.properties.resourceYieldType) {
+                    remainingCount = this.activePlayer.acceptResource(tile.properties.resourceYieldType[i], tile.properties.resourceYieldCount[i]);
+                    if (remainingCount) 
+                        console.log("You have added " + remainingCount + " " + tile.properties.resourceYieldType[i] + ". This leaves you with " + this.activePlayer.getResourceCount(tile.properties.resourceYieldType[i]));
+                }
+
+                break;
+            
+            case "armory":
+                // This may become a trigger with every move. I need to arm and disarm accurately   
+                this.activePlayer.armPersonnel(tile.name);
+                break;
+
+            case "battle":
+                switch (tile.name) {
+                    case "shield":
+                    case "biodrone":
+                    case "laser":
+                    case "satellite":
+                    case "rocket":
+                        if(this.activePlayer.checkResource(tile.properties.resourceCostType[0], tile.properties.resourceCostCount[0])) {
+                            var gunnerArray = this.activePlayer.getGunners();
+                            console.log("I need a gunner selection from the user...");                            
+                        } else {
+                            console.log("cant afford it");
+                        }
+
+                        break;
+
+                    case "repair":
+                    case "repairTwo":
+                        for (var i in tile.properties.resourceCostType) {
+                            if(this.activePlayer.checkResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i])) {
+                                console.log("you can repair " + tile.properties.resourceCostCount[i] + " tile. Now I need an array of damaged tile(s)!");
+                            } else {
+                                console.log("you can't afford this.")
+                                return;
+                            }
+                        }
+
+                        break;
+
+                    case "espionage":
+                        break
+
+                    case "counterEspionage":
+                        break
+
+                    case "takeover":
+                        break
+                }
+                break;
+
+            default:
+                break;
+        };
+    }
+
+    getDamagedTiles() {
+
     }
     
     placeClone(player, x, y) {
@@ -186,9 +330,14 @@ class Septikon {
                 return;
             }
 
-            if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production" || selectedTile.type == "surface") {
+            if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
                 var uuid = require('uuid/v4')();
-                if(player.addPersonnel('clone', x, y, uuid)) {
+                var clone = player.addPersonnel('clone', x, y, uuid);
+                if(selectedTile.type == "surface") {
+                    clone.isGunner = true;
+                }
+
+                if(clone != false) {
                     selectedTile.occupied = true;
                     this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:uuid}}, player.socketID);
                     if(player.getPersonnel('clone').length == player.startingCloneCount) {
@@ -243,7 +392,7 @@ class Septikon {
                         console.log(x + ":" + y + " not found!");
                     
                     if (typeof obj[prop].properties != 'undefined') {
-                        this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
+                        this.tileArray[x][y]['properties'] = obj[prop].properties;
                     }
                 }
             }

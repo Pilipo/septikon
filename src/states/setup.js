@@ -47,7 +47,7 @@ keyPress(char) {
         {
         type: "username",
         includeBackground: true,
-        modalCloseOnInput: false,
+        modalCloseOnInput: true,
         itemsArr: [{
             type: "graphics",
             graphicColor: "0xffffff",

@@ -9,6 +9,8 @@ class Personnel {
         this.x = x;
         this.y = y;
         this.uuid = uuid;
+        this.underEspionage = false;
+        this.isGunner = false;
         
         switch (type) {
             case 'biodrone':

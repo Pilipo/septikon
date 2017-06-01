@@ -17,25 +17,9 @@ class Septikon {
     
     this.shownTiles = [];
     this.tileArray = [];
-    this.bgRatio = 0;
-    this.worldRatio = 0;
-    this.turnStateEnum = Object.freeze({
-        START: 0,
-        SELECT_CLONE: 1, 
-        MOVE_CLONE: 2,
-        SELECT_GUNNER: 3,
-        SELECT_ACTION_ORDER: 4, 
-        ACTION: 5,
-        END: 6
-    });
-    this.directionEnum = Object.freeze({
-        NORTH:1,
-        EAST:2,
-        SOUTH:4,
-        WEST:8
-    });
-    this.turnState = 0;
 
+    this.legalMoves = null;
+    this.selectedUUIDToMove = null;
   }
 
   showModal(type) {
@@ -45,19 +29,22 @@ class Septikon {
   
   diceRolled(details) {
     this.game.dice.setValue(details.value);
-    console.log(details); 
+    this.legalMoves = details.gamePieces;
     for (var i in details.gamePieces) {
         for (var m in details.gamePieces[i].moves) {
             var x = details.gamePieces[i].moves[m].x;
             var y = details.gamePieces[i].moves[m].y;
-            this.showTiles([details.gamePieces[i].origin]);
-
+            this.showTiles([details.gamePieces[i].origin], 0xF63636);
         }
     }
   }
 
   offerDice() {
       this.game.dice.enable();
+  }
+
+  takeDice() {
+      this.game.dice.disable();
   }
   
   addClone(details) {
@@ -69,6 +56,20 @@ class Septikon {
         this.opponent.personnelArray.push(clone);
     }
     this.game.boardGroup.add(clone);
+  }
+
+  movePersonnel(data) {
+    var tween = null;
+    var distance = null;
+    var point = this.tileToPixels(data.x, data.y);
+    for (var i in this.player.personnelArray) {
+        if (this.player.personnelArray[i].uuid == data.uuid) {
+            distance = Math.abs(this.player.personnelArray[i].y - point.y + this.player.personnelArray[i].x - point.x).toFixed(1);
+            tween = this.game.add.tween(this.player.personnelArray[i]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
+            // Trigger tile. Not quite sure how to do this yet.
+            //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
+        }
+    }
   }
 
   removeAllPersonnel(){
@@ -87,13 +88,11 @@ class Septikon {
   }
 
   initResources() {
-    console.log('lets init recs');
-
     var currentRec = null;
     var graphics = this.game.add.graphics(0, 0);
     //graphics.lineStyle(4, 0xffd900, 1);
-    graphics.beginFill(0xffd900, 1);
-    graphics.drawRoundedRect(100, 100, this.tileWidth-2, this.tileHeight-2, 12);
+    graphics.beginFill(0xffffff, 1);
+    graphics.drawRoundedRect(100, 100, this.tileWidth-4, this.tileHeight-4, 14);
 
     for (var c in this.tileArray) {
         for (var r in this.tileArray[c]) {
@@ -102,11 +101,37 @@ class Septikon {
                     currentRec = this.game.add.sprite(this.tileArray[c][r].x+(this.tileArray[c][r].width/2), this.tileArray[c][r].y+(this.tileArray[c][r].width/2), graphics.generateTexture());
                     currentRec.angle = Math.floor(Math.random()*40)-20;
                     currentRec.anchor.setTo(0.5);
+                    switch (this.tileArray[c][r].tileName) {
+                        case "energy":
+                         currentRec.tint = 0xfce315;
+                         break;
+                        case "oxygen":
+                         currentRec.tint = 0x00b1f0;
+                         break;
+                        case "rocket":
+                         currentRec.tint = 0xe82a2c;
+                         break;
+                        case "metal":
+                         currentRec.tint = 0xfffffe;
+                         break;
+                        case "biomass":
+                         currentRec.tint = 0x8ac342;
+                         break;
+                        case "biodrone":
+                         currentRec.tint = 0x9f3a9b;
+                         break;
+                        case "uranium":
+                         currentRec.tint = 0xf36520;
+                         break;                                         
+                        default:
+                         break;
+                    }
                     this.game.boardGroup.add(currentRec);
                 }
             }
         }
-    }      
+    }
+    graphics.destroy();
   }
   
   createTileArray(columns, rows, point) {
@@ -129,7 +154,7 @@ class Septikon {
     
     var graphics = this.game.add.graphics(0, 0);
     //graphics.lineStyle(4, 0xffd900, 1);
-    graphics.beginFill(0xffd900, 1);
+    graphics.beginFill(0xffffff, 1);
     graphics.drawRect(100, 100, this.tileWidth, this.tileHeight);
     
     for (var column = 0; column < columns; column++) {
@@ -137,7 +162,7 @@ class Septikon {
             
             var x = this.tileStartCoordinates.x + (this.tileWidth * column) + (this.padding * column - 1);
             var y = this.tileStartCoordinates.y + (this.tileHeight * row) + (this.padding * row - 1);
-            graphics.generateTexture();
+            //graphics.generateTexture();
             
             var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
             this.game.boardGroup.add(currentTile);
@@ -215,7 +240,28 @@ class Septikon {
   }
   
   tileClicked(obj) {
-    this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
+      if (this.legalMoves === null) {
+            this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
+      } else {
+        this.hideTiles();
+        for (var i in this.legalMoves) {
+            if (this.legalMoves[i].origin.x == obj.tileX && this.legalMoves[i].origin.y == obj.tileY) {
+                this.selectedUUIDToMove = this.legalMoves[i].uuid;
+                this.showTiles(this.legalMoves[i].moves, 0x5391FD);
+                this.showTiles([this.legalMoves[i].origin], 0xF63636);
+            } else {
+                for (var m in this.legalMoves[i].moves) {
+                    if (this.legalMoves[i].moves[m].x == obj.tileX && this.legalMoves[i].moves[m].y == obj.tileY) {
+                        this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY), uuid:this.legalMoves[i].uuid});
+                        this.selectedUUIDToMove = this.legalMoves = null;
+                        return;
+                    } else {
+                        this.showTiles([this.legalMoves[i].origin], 0xF63636);
+                    }
+                }
+            }
+        }
+      }
     return;
   }
   
@@ -416,22 +462,23 @@ class Septikon {
         return {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
 		
   }
-  
-  showTiles(coordsArray) {
+
+  showTiles(coordsArray, color) {
     for (var i in coordsArray) {
         this.tileArray[coordsArray[i].x][coordsArray[i].y].alpha = 0.5;
+        if(color) {
+            this.tileArray[coordsArray[i].x][coordsArray[i].y].tint = color;
+        } else {
+            this.tileArray[coordsArray[i].x][coordsArray[i].y].tint = 0xffd900;
+        }
+        this.shownTiles.push({x:coordsArray[i].x,y:coordsArray[i].y});
     }
-
-    // for (var i in tilesArray) {
-    //     this.shownTiles.push(tilesArray[i]);
-    //     tilesArray[i].alpha = 0.5;
-    // }
   }
   
   hideTiles(tileArray) {
     if(!tileArray) {
         for (var i in this.shownTiles) {
-            this.shownTiles[i].alpha = 0;
+            this.tileArray[this.shownTiles[i].x][this.shownTiles[i].y].alpha = 0;
         }
         this.shownTiles = [];
     }
