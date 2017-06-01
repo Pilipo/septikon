@@ -177,16 +177,28 @@ class Septikon {
                             if (legalPieces[i].uuid == data.uuid) {
                                 for (var m in legalPieces[i].moves) {
                                     if (legalPieces[i].moves[m].x == data.x && legalPieces[i].moves[m].y == data.y) {
+                                        this.tileArray[this.activePlayer.getPersonnelByUUID(data.uuid).x][this.activePlayer.getPersonnelByUUID(data.uuid).y].occupied = false;
                                         this.activePlayer.getPersonnelByUUID(data.uuid).move(data.x, data.y);
+                                        this.tileArray[data.x][data.y].occupied = true;
                                         this.emit('action', {callback: 'movePersonnel', details: {uuid:data.uuid, x:data.x, y:data.y}}, data.socketID);
+                                        this.emit('update', {type:"personnel", details: {uuid:data.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);  
+                                        this.turnState++;
+                                        // FOR TESTING
+                                        this.turnState = this.turnStateEnum.ROLL;
+                                        this.changeActivePlayer();
+                                        return;
                                     }
                                 }
                             }
                         }
                         // If player tries to move clones before biodrones, prompt to verify that they intend to skip the biodrones
-                        this.turnState++;
+                        
+
+                        
+
                         break;
                     case this.turnStateEnum.ACTION:
+                        console.log("action!");
                         this.turnState++;
                         break;
                     case this.turnStateEnum.TARGETS:

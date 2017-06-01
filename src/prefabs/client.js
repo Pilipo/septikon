@@ -13,9 +13,7 @@ class Client {
 
         this.socket.on('update', function(data){
             if(data.type == "personnel") {
-                for (var i in data.details) {
-                    this.septikon.addClone(data.details[i]);
-                }
+                this.septikon.updatePersonnel(data);
             }
             if(data.type == "resources") {
                 if (data.action == "init") {

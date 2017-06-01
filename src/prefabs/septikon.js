@@ -19,13 +19,12 @@ class Septikon {
     this.tileArray = [];
 
     this.legalMoves = null;
-    this.selectedUUIDToMove = null;
+    this.selectedToMove = null;
   }
 
   showModal(type) {
     this.game.modal.showModal(type);
   }
-
   
   diceRolled(details) {
     this.game.dice.setValue(details.value);
@@ -70,6 +69,36 @@ class Septikon {
             //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
         }
     }
+    for (var i in this.opponent.personnelArray) {
+        if (this.opponent.personnelArray[i].uuid == data.uuid) {
+            distance = Math.abs(this.opponent.personnelArray[i].y - point.y + this.opponent.personnelArray[i].x - point.x).toFixed(1);
+            tween = this.game.add.tween(this.opponent.personnelArray[i]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
+            // Trigger tile. Not quite sure how to do this yet.
+            //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
+        }
+    }
+  }
+
+  updatePersonnel(data) {
+      var currentPersonnel = null;
+      if (Array.isArray(data.details) === false) {
+          data.details = [data.details];
+      }
+
+      if (this.opponent.personnelArray.length == 0 && data.details.length == 5) {
+        for (var i in data.details) {
+            this.addClone(data.details[i]);
+        }      
+      } else {
+        for (var p in this.opponent.personnelArray) {
+            currentPersonnel = this.opponent.personnelArray[p];
+            for (var i in data.details) {
+                if (currentPersonnel.uuid == data.details[i].uuid) {
+                    this.movePersonnel(data.details[i]);
+                }
+            }
+        }
+      }
   }
 
   removeAllPersonnel(){
@@ -215,7 +244,8 @@ class Septikon {
                 }
             }
         }
-    }}
+    }
+  }
 
   pixelsToTile(x, y) {
     var xTile = 0;
@@ -243,183 +273,33 @@ class Septikon {
       if (this.legalMoves === null) {
             this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
       } else {
-        this.hideTiles();
-        for (var i in this.legalMoves) {
-            if (this.legalMoves[i].origin.x == obj.tileX && this.legalMoves[i].origin.y == obj.tileY) {
-                this.selectedUUIDToMove = this.legalMoves[i].uuid;
-                this.showTiles(this.legalMoves[i].moves, 0x5391FD);
-                this.showTiles([this.legalMoves[i].origin], 0xF63636);
-            } else {
-                for (var m in this.legalMoves[i].moves) {
-                    if (this.legalMoves[i].moves[m].x == obj.tileX && this.legalMoves[i].moves[m].y == obj.tileY) {
-                        this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY), uuid:this.legalMoves[i].uuid});
-                        this.selectedUUIDToMove = this.legalMoves = null;
-                        return;
-                    } else {
-                        this.showTiles([this.legalMoves[i].origin], 0xF63636);
-                    }
-                }
-            }
-        }
+          var cloneClicked = false;
+          this.hideTiles();
+          for (var i in this.legalMoves) {
+              this.showTiles([this.legalMoves[i].origin], 0xF63636);
+              if (this.legalMoves[i].origin.x == obj.tileX && this.legalMoves[i].origin.y == obj.tileY) {
+                  cloneClicked = true;
+                  this.selectedToMove = this.legalMoves[i];
+              }
+          }  
+
+          if (this.selectedToMove) {
+              for (var sm in this.selectedToMove.moves) {
+                  this.showTiles(this.selectedToMove.moves, 0x5391FD);
+                  if (this.selectedToMove.moves[sm].x == obj.tileX && this.selectedToMove.moves[sm].y == obj.tileY) {
+                      this.hideTiles();
+                      this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY), uuid:this.selectedToMove.uuid});
+                      this.selectedToMove =  null;
+                      return;
+                  }
+              }
+          }
+
+            
       }
     return;
   }
   
-  triggerTile(caller) {
-  
-    var tile = this.tileArray[caller.currentTileCoordinates.x][caller.currentTileCoordinates.y];
-    caller.isGunner = false;
-    var props = tile.tileProperties;
-    
-    switch(tile.tileType) {
-        case 'surface': 
-            caller.isGunner = true;
-            this.finishTurn();
-            break;
-            
-        case 'battle':
-            if (typeof props.resourceCostCount != 'undefined') {
-                // CAN THIS TEAM AFFORD THE COST?
-                // EXCHANGE RESOURCES // PAY UP!!
-                // Get the available resource count and prepare to offer "gunner" clones for selection.
-                //console.log("Is this resource available?");
-                //console.log(this);
-                
-                // Types of battle tiles with a FIRE action:
-                //  - Satellite: gunner:true, projectile: true
-                //  - Thermite: gunner:true, projectile: false
-                //  - Shield: gunner:true, projectile: true
-                //  - Biodrone: gunner:true, projectile: true
-                //  - Laser: gunner:true, projectile: false
-                //  - Rocket: gunner:true, projectile: true
-                console.log(tile.tileName)
-                if (this.localTeam.offerGunners() == false && (tile.tileName == "satellite" || tile.tileName == "thermite" || tile.tileName == "shield" || tile.tileName == "biodrone" || tile.tileName == "laser" || tile.tileName == "rocket" )) {
-                    this.finishTurn();
-                }
-                //console.log(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount));
-                if(this.localTeam.checkRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount) == true){
-                    this.localTeam.removeRec(this.localTeam.recEnum[props.resourceCostType.toUpperCase()], props.resourceCostCount);
-                    //console.log("New count of " + props.resourceCostType + " is " + this.localTeam.getRecCount(this.localTeam.recEnum[props.resourceCostType.toUpperCase()]));
-                    if(this.localTeam.offerGunners()) {
-                        this.pendingAction = {props, caller};
-                    }
-               }
-            }
-            
-            // OFFER GUNNERS AND AWAIT SELECTION (remember the cost per gunner)
-            // This will require an array of clones associated with the team. 
-            // Iterate the array looking for 'isGunner == true'
-            // Highlight all "gunner" clones
-            // Allow selection of only as many as team can afford
-            
-            
-            
-            // This will call the method defined in JSON. In this case firing a weapon.
-            // Iterate the selected gunners and call the method.
-            
-            break;
-            
-        case 'armory':
-            //SET TEAM WEAPONS!
-            // This requires a Team property for storing a weapons (arms?) array.
-            this.finishTurn();
-            break;
-            
-        case 'production':
-            // NOTE: These are required if resources allow
-            if (typeof props.resourceCostCount != 'undefined') {
-                // CAN THIS TEAM AFFORD THE COST?
-                // Requires Team object to check for resources
-                
-                // Get cost count
-                // Get cost type
-                
-                // Get yield count
-                // Get yield type
-                
-                // Execute transaction
-                this.finishTurn();
-            }
-            break;
-            
-        case 'lock':
-            // NOTHING HERE (maybe an update feature??)
-            this.finishTurn();
-            break;
-            
-        default:
-            break;
-    }; 
-            
-    // COMMIT ACTION
-    
-  }
-  
-    fire(weaponType, caller) {
-    console.log("Firing the " + weaponType);
-    
-    switch (weaponType) {
-        case 'laser':
-            //for (var i in this.localTeam.selectedGunners) {
-            //    this.shootTile(this.localTeam.selectedGunners[i].currentTileCoordinates);
-            //}
-            //break;
-            
-        case 'satellite':
-            // PLACE A SATELLITE
-           // break;
-            
-        case 'thermite':
-            //this.shootTile(caller.currentTileCoordinates, true);
-            //break;
-            
-        case 'shield':
-            //break;
-            
-        case 'biodrone':
-            //break;
-            
-        case 'rocket': 
-            //break;
-            
-        default:
-            for (var i in this.localTeam.selectedGunners) {
-                this.shootTile(this.localTeam.selectedGunners[i].currentTileCoordinates);
-            }
-            break;
-    };
-    
-    this.localTeam.clearGunners();
-    //this.game.septikon.turnState = this.game.septikon.turnStateEnum.START;
-    this.finishTurn();
-  }
-  
-  repair(count) {
-    console.log("repair " + count + " of the things!");
-  }
-  
-  espionage() {
-    console.log("Gimme yer clone!!");
-  }
-  
-  takeover() {
-    console.log("Gimme yer satellite!!");
-  }
-  
-  counter() {
-    console.log("Gimme back my clone!!");
-  }
-  
-  killBiodrone() {
-    console.log("Yer sould better belong to Jesus! Cuz yer ass belongs to me!");
-  }
-  
-  finishTurn() {
-    this.turnState = this.game.septikon.turnStateEnum.START;
-    //console.log("Alas. Your turn is over. ");
-  }
-  
-
   getLegalMoves(moves, currentCoord, previousCoord) {
 	moves--;
 	var legalMoves = [];
