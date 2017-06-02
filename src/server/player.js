@@ -14,6 +14,7 @@ class Player {
         this.ordnanceArray = [];
         this.readyToStart = false;
         this.startingCloneCount = 5;
+        this.armsArray = [];
 
         this.initResources();
         console.log('complete')
@@ -34,7 +35,7 @@ class Player {
             return;
         }
     }
-    
+
     getPersonnel(type) {
         var returnArray = [];
         for(var i in this.personnelArray) {
