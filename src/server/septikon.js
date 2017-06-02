@@ -3,7 +3,6 @@ var Player = require('./player').Player;
 class Septikon {
     
 	constructor(io) {
-        this.count = 0;
         this.io = io;
         this.lastPlayerID = 0;
         this.playersArray = [];
@@ -149,6 +148,15 @@ class Septikon {
     getPlayerCount() {
         return this.playersArray.length;
     }
+
+    checkArms(player) {
+        player.armsArray = [];
+        for (var i in player.personnelArray) {
+            if (this.tileArray[player.personnelArray[i].x][player.personnelArray[i].y].type == "armory") {
+                player.armsArray.push(this.tileArray[player.personnelArray[i].x][player.personnelArray[i].y].name);
+            }
+        }
+    }
     
     existsPlayerUUID(uuid) {
         for (var i in this.playersArray) {
@@ -171,12 +179,15 @@ class Septikon {
                 
             case this.gameStateEnum.GAME:
 
-
                 switch (this.turnState) {
                     case this.turnStateEnum.MOVE:
+
                         var legalPieces = [];
+
                         if (this.activePlayer.currentLegalPieces.length > 0) {
                             legalPieces = this.activePlayer.currentLegalPieces;
+                        } else {
+                            legalPieces = this.getLegalPieces();
                         }
 
                         for (var i in legalPieces) {
@@ -186,15 +197,15 @@ class Septikon {
                                         
                                         this.tileArray[this.activePlayer.getPersonnelByUUID(data.uuid).x][this.activePlayer.getPersonnelByUUID(data.uuid).y].occupied = false;
                                         this.activePlayer.getPersonnelByUUID(data.uuid).move(data.x, data.y);
+                                        this.checkArms(this.activePlayer);
                                         this.tileArray[data.x][data.y].occupied = true;
                                         this.emit('action', {callback: 'movePersonnel', details: {uuid:data.uuid, x:data.x, y:data.y}}, data.socketID);
                                         this.emit('update', {type:"personnel", details: {uuid:data.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);  
                                         legalPieces = this.activePlayer.currentLegalPieces = [];
-                                        // this.turnState++;
-
-                                        // FOR TESTING
-                                        this.turnState = this.turnStateEnum.ROLL;
+                                        this.turnState++;
+                                        this.activateTile(data);
                                         this.changeActivePlayer();
+                                        this.turnState = this.turnStateEnum.ROLL;
                                         return;
                                     }
                                 }
@@ -208,17 +219,14 @@ class Septikon {
                         break;
                     case this.turnStateEnum.ACTION:
                         console.log("action!");
-                        this.turnState++;
                         break;
                     case this.turnStateEnum.TARGETS:
-                        this.turnState++;
+                        console.log("targets!");
                         break;
                     case this.turnStateEnum.END:
                         this.turnState = this.turnStateEnum.ROLL;
-                        this.changeActivePlayer();
                         break;
                 }
-                this.activateTile(data);
                 break;
                 
             default:
@@ -291,7 +299,7 @@ class Septikon {
             
             case "armory":
                 // This may become a trigger with every move. I need to arm and disarm accurately   
-                this.activePlayer.armPersonnel(tile.name);
+                this.checkArms(this.activePlayer);
                 break;
 
             case "battle":
