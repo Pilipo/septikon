@@ -158,6 +158,16 @@ class Septikon {
         }
     }
     
+    checkGunners(player) {
+        for (var i in player.personnelArray) {
+            if (this.tileArray[player.personnelArray[i].x][player.personnelArray[i].y].type == "surface") {
+                player.personnelArray[i].isGunner = true;
+            } else {
+                player.personnelArray[i].isGunner = false;
+            }
+        }
+    }
+
     existsPlayerUUID(uuid) {
         for (var i in this.playersArray) {
             if(this.playersArray[i].uuid == uuid)
@@ -198,6 +208,7 @@ class Septikon {
                                         this.tileArray[this.activePlayer.getPersonnelByUUID(data.uuid).x][this.activePlayer.getPersonnelByUUID(data.uuid).y].occupied = false;
                                         this.activePlayer.getPersonnelByUUID(data.uuid).move(data.x, data.y);
                                         this.checkArms(this.activePlayer);
+                                        this.checkGunners(this.activePlayer);
                                         this.tileArray[data.x][data.y].occupied = true;
                                         this.emit('action', {callback: 'movePersonnel', details: {uuid:data.uuid, x:data.x, y:data.y}}, data.socketID);
                                         this.emit('update', {type:"personnel", details: {uuid:data.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);  
@@ -241,7 +252,6 @@ class Septikon {
         
         switch (tile.type) {
             case "surface": 
-
                 break;
             case "production":
 
