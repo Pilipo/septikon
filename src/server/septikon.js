@@ -3,6 +3,7 @@ var Player = require('./player').Player;
 class Septikon {
     
 	constructor(io) {
+        this.count = 0;
         this.io = io;
         this.lastPlayerID = 0;
         this.playersArray = [];
@@ -170,19 +171,27 @@ class Septikon {
                 
             case this.gameStateEnum.GAME:
 
+
                 switch (this.turnState) {
                     case this.turnStateEnum.MOVE:
-                        var legalPieces = this.getLegalPieces();
+                        var legalPieces = [];
+                        if (this.activePlayer.currentLegalPieces.length > 0) {
+                            legalPieces = this.activePlayer.currentLegalPieces;
+                        }
+
                         for (var i in legalPieces) {
                             if (legalPieces[i].uuid == data.uuid) {
                                 for (var m in legalPieces[i].moves) {
                                     if (legalPieces[i].moves[m].x == data.x && legalPieces[i].moves[m].y == data.y) {
+                                        
                                         this.tileArray[this.activePlayer.getPersonnelByUUID(data.uuid).x][this.activePlayer.getPersonnelByUUID(data.uuid).y].occupied = false;
                                         this.activePlayer.getPersonnelByUUID(data.uuid).move(data.x, data.y);
                                         this.tileArray[data.x][data.y].occupied = true;
                                         this.emit('action', {callback: 'movePersonnel', details: {uuid:data.uuid, x:data.x, y:data.y}}, data.socketID);
                                         this.emit('update', {type:"personnel", details: {uuid:data.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);  
-                                        this.turnState++;
+                                        legalPieces = this.activePlayer.currentLegalPieces = [];
+                                        // this.turnState++;
+
                                         // FOR TESTING
                                         this.turnState = this.turnStateEnum.ROLL;
                                         this.changeActivePlayer();
@@ -330,6 +339,26 @@ class Septikon {
         };
     }
 
+    getLocks(player) {
+        var returnArray = [];
+        for (var c in this.tileArray) {
+            for (var r in this.tileArray[c]) {
+                if (this.tileArray[c][r].name == "lock") {
+                    if (player) {
+                        if (player.id == 1 && c < 12) {
+                            returnArray.push(this.tileArray[c][r]);
+                        } else if (player.id == 2 && c > 18) {
+                            returnArray.push(this.tileArray[c][r]);
+                        }
+                    } else {
+                        returnArray.push(this.tileArray[c][r]);
+                    }
+                }
+            }
+        }
+        return returnArray;
+    }
+
     getDamagedTiles() {
 
     }
@@ -369,7 +398,10 @@ class Septikon {
         for(var c = 0; c < this.tileColumns; c++) {
             this.tileArray[c] = [];
             for(var r = 0; r < this.tileRows; r++) {
-                this.tileArray[c][r] = {};
+                this.tileArray[c][r] = {
+                    x:c,
+                    y:r
+                };
             }
         }
 
@@ -449,26 +481,65 @@ class Septikon {
     }
 
     getLegalMoves(gamePieceType, moves, currentCoord, previousCoord){
-        moves--;
+        if (moves < 1) {
+            console.error("Illegal move number! This could result in infinite loop.");
+            return false;
+        }
         var legalMoves = [];
-        for (var direction in this.directionEnum) {
-            var moveCheck = this.getCoordFromDirection(currentCoord, direction);
-            if(moveCheck === false)
-                continue;
-            
-            var tileToCheck = this.tileArray[moveCheck.x][moveCheck.y];
+        var returnArray = [];
+        var nextMoveToCheck = null;
+        var nextTileToCheck = null;
+        moves--;
+        // console.log(process.memoryUsage().heapUsed);
 
-            if(this.checkWall(this.directionEnum[direction], currentCoord) === true && tileToCheck.damaged === false && tileToCheck.type != "space" && ((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(moveCheck) !== JSON.stringify(previousCoord)) ))) {
+        if (typeof previousCoord === 'undefined') {
+            var locks = this.getLocks(this.activePlayer);
+            var isLock = false;
+
+            for (var i in locks) {
+                if (locks[i].x == currentCoord.x && locks[i].y == currentCoord.y) {
+                    isLock = true;
+                }
+            }
+
+            if (isLock === true) {
+                for (var i in locks) {
+                    if (currentCoord.x == locks[i].x && currentCoord.y == locks[i].y) { continue; } // don't include the lock you're sitting on
+                    if (this.tileArray[locks[i].x][locks[i].y].occupied === true) { continue; } // don't include lock that others are sitting on
+                    if (moves > 1) {
+                        returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, {x:locks[i].x, y:locks[i].y}, currentCoord));
+                    } else {
+                        returnArray.push(locks[i]);
+                    }
+                    for (var c in returnArray) {
+                        if(returnArray[c].x !== currentCoord.x || returnArray[c].y !== currentCoord.y)
+                            legalMoves.push(returnArray[c]);
+                    }
+                }
+            }
+        }
+        
+        for (var direction in this.directionEnum) {
+            nextMoveToCheck = this.getCoordFromDirection(currentCoord, direction);
+            if(nextMoveToCheck === false) { continue; }
+            
+            nextTileToCheck = this.tileArray[nextMoveToCheck.x][nextMoveToCheck.y];
+            
+            if (nextTileToCheck.damaged === true) { continue; }
+            if (nextTileToCheck.type === "space") { continue; }
+            if (this.checkWall(this.directionEnum[direction], currentCoord) === false) { continue; }
+
+            if((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(nextMoveToCheck) !== JSON.stringify(previousCoord)) )) {
                 // Check if tile is occupied
                 if(moves==0){
-                    if(tileToCheck.occupied === false) {
-                        legalMoves.push(moveCheck);
+                    if(nextTileToCheck.occupied === false) {
+                        legalMoves.push(nextMoveToCheck);
                     }
                 }
                 else {
-                    var returnArray = (this.getLegalMoves(gamePieceType, moves, moveCheck, currentCoord));
+                    returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, nextMoveToCheck, currentCoord));
                     for(var index in returnArray) {
-                        if(JSON.stringify(returnArray[index]) !== JSON.stringify(currentCoord))
+                        if(returnArray[index].x !== currentCoord.x || returnArray[index].y !== currentCoord.y)
                             legalMoves.push(returnArray[index]);
                     }
                 }
@@ -510,7 +581,8 @@ class Septikon {
     rollDice(data) {
         if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME && this.activePlayer.socketID == data.socketID) {
             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
-            this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue, gamePieces:this.getLegalPieces()}}, data.socketID);
+            this.activePlayer.currentLegalPieces = this.getLegalPieces();
+            this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}}, data.socketID);
             this.emit('update', {type:"dice", details: {value:this.currentDiceValue}}, this.getPlayerOpponent(this.activePlayer).socketID);
             console.log("TODO: \n - Calculate legal personnel selections\n - Calculate legal ordnance selections\n - emit action to offer clones\n - Calculate legal personnel selections")
             this.turnState++;
