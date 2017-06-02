@@ -382,6 +382,7 @@ class Septikon {
             if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
                 var uuid = require('uuid/v4')();
                 var clone = player.addPersonnel('clone', x, y, uuid);
+                this.checkArms(player);
                 if(selectedTile.type == "surface") {
                     clone.isGunner = true;
                 }
