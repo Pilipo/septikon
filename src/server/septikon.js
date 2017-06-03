@@ -353,9 +353,19 @@ class Septikon {
 
                     case "repair":
                     case "repairTwo":
-                        // look for damaged tiles
+                        var currentResourceCount = 0;
+                        var activeDamagedTiles = this.getDamagedTiles(this.activePlayer);
+                        if (activeDamagedTiles.length < 1) {
+                            return;
+                        }
                         // calculate cost of repair
-
+                        for (var i in tile.properties.resourceCostType) {
+                            currentResourceCount = this.activePlayer.getResourceCount(tile.properties.resourceCostType[i]);
+                            if (currentResourceCount < tile.properties.resourceCostCount) {
+                                return; // Not enough of a resource!
+                            } 
+                        }
+                        console.log("Tell player that they can afford to fix up the station!");
                         break;
                 }
                 break;
@@ -385,8 +395,28 @@ class Septikon {
         return returnArray;
     }
 
-    getDamagedTiles() {
-
+    getDamagedTiles(player) {
+        var returnArray = [];
+        for (var c in this.tileArray) {
+            for (var r in this.tileArray[c]) {
+                if (player) {
+                    if (player.id == 1) {
+                        if (c < 12 && this.tileArray[c][r].damaged === true) {
+                            returnArray.push(this.tileArray[c][r]);
+                        } 
+                    } else {
+                        if (c > 18 && this.tileArray[c][r].damaged === true) {
+                            returnArray.push(this.tileArray[c][r]);
+                        } 
+                    }
+                } else {
+                    if (this.tileArray[c][r].damaged === true) {
+                        returnArray.push(this.tileArray[c][r]);
+                    } 
+                }
+            }
+        }
+        return returnArray;
     }
     
     placeClone(player, x, y) {
