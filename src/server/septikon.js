@@ -216,7 +216,7 @@ class Septikon {
                                         this.turnState++;
                                         this.activateTile(data);
                                         this.changeActivePlayer();
-                                        this.turnState = this.turnStateEnum.ROLL;
+                                        this.turnState = this.turnStateEnum.ROLL; // <-- this is for testing
                                         return;
                                     }
                                 }
@@ -308,7 +308,6 @@ class Septikon {
                 break;
             
             case "armory":
-                // This may become a trigger with every move. I need to arm and disarm accurately   
                 this.checkArms(this.activePlayer);
                 break;
 
@@ -317,38 +316,47 @@ class Septikon {
                     case "shield":
                     case "biodrone":
                     case "laser":
+                    case "thermite":
                     case "satellite":
                     case "rocket":
-                        if(this.activePlayer.checkResource(tile.properties.resourceCostType[0], tile.properties.resourceCostCount[0])) {
-                            var gunnerArray = this.activePlayer.getGunners();
-                            console.log("I need a gunner selection from the user...");                            
-                        } else {
-                            console.log("cant afford it");
+                    case "espionage":
+                    case "takeover":
+                        this.turnState++; // Set state to target.
+                        var currentResourceCount = 0;
+                        var currentResourceAffordability = 0;
+                        var affordableRounds = null;
+                        var returnArray = [];
+                        var activeGunners = this.activePlayer.getGunners();
+
+                        if (activeGunners.length < 1) {
+                            return; // No gunners! Get out of here.
                         }
 
+                        for (var i in tile.properties.resourceCostType) {
+                            currentResourceCount = this.activePlayer.getResourceCount(tile.properties.resourceCostType[i]);
+                            currentResourceAffordability = currentResourceCount / tile.properties.resourceCostCount;
+                            if (currentResourceAffordability < 1) {
+                                return; // Not enough of a resource!
+                            } 
+                            if (affordableRounds === null || currentResourceAffordability < affordableRounds) {
+                                affordableRounds = currentResourceAffordability;
+                            }
+                        }
+                        console.log("tell player they can afford " + affordableRounds + " gunner(s)");
+                        // Ready to select gunners!
+                        break;
+
+
+                    case "counterEspionage":
+                        // look for clones that are opponent's spied
                         break;
 
                     case "repair":
                     case "repairTwo":
-                        for (var i in tile.properties.resourceCostType) {
-                            if(this.activePlayer.checkResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i])) {
-                                console.log("you can repair " + tile.properties.resourceCostCount[i] + " tile. Now I need an array of damaged tile(s)!");
-                            } else {
-                                console.log("you can't afford this.")
-                                return;
-                            }
-                        }
+                        // look for damaged tiles
+                        // calculate cost of repair
 
                         break;
-
-                    case "espionage":
-                        break
-
-                    case "counterEspionage":
-                        break
-
-                    case "takeover":
-                        break
                 }
                 break;
 
