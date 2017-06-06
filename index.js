@@ -62,6 +62,9 @@ io.on('connection',function(socket){
             case 'diceClicked':
                 socket.game.rollDice(data);
                 break;
+
+            case 'gunnersSelected':
+                socket.game.triggerGunners(data);
                 
             case 'get':
                 socket.game.get(data);

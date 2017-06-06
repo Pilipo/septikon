@@ -168,6 +168,10 @@ class Septikon {
         }
     }
 
+    triggerGunners(data) {
+        console.log(data);
+    }
+
     existsPlayerUUID(uuid) {
         for (var i in this.playersArray) {
             if(this.playersArray[i].uuid == uuid)
@@ -305,10 +309,13 @@ class Septikon {
                         console.log("You have added " + remainingCount + " " + tile.properties.resourceYieldType[i] + ". This leaves you with " + this.activePlayer.getResourceCount(tile.properties.resourceYieldType[i]));
                 }
 
+                // Update player to their new warehouse values
                 break;
             
             case "armory":
                 this.checkArms(this.activePlayer);
+                // Update player's personnel to be armed
+                // Maybe have three overlapping sprites. Drill, Cannon, Explosives?
                 break;
 
             case "battle":
@@ -343,6 +350,7 @@ class Septikon {
                             }
                         }
                         console.log("tell player they can afford " + affordableRounds + " gunner(s)");
+                        this.emit('action', {callback:"offerGunners", details:{gunners:activeGunners}}, this.activePlayer.socketID);
                         // Ready to select gunners!
                         break;
 

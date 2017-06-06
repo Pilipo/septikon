@@ -20,6 +20,10 @@ class Septikon {
 
     this.legalMoves = null;
     this.selectedToMove = null;
+    this.legalGunners = null;
+
+    this.choosingTargets = false;
+    this.selectedGunners = [];
   }
 
   showModal(type) {
@@ -44,6 +48,13 @@ class Septikon {
 
   takeDice() {
       this.game.dice.disable();
+  }
+
+  offerGunners(data) {
+      this.choosingTargets = true;
+      this.legalGunners = data.gunners;
+      this.game.go.enable();
+      console.log("animate some indication of viable gunners on the surface. Maybe a pointer bouncing over them?");
   }
   
   addClone(details) {
@@ -294,7 +305,13 @@ class Septikon {
                   }
               }
           }
-
+          if (this.choosingTargets === true) {
+              for (var i in this.legalGunners) {
+                  if (this.legalGunners[i].x == obj.tileX && this.legalGunners[i].y == obj.tileY) {
+                      this.selectedGunners.push(this.legalGunners[i]);
+                  }
+              }
+          }
             
       }
     return;

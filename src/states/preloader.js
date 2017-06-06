@@ -34,6 +34,7 @@ class Preloader extends Phaser.State {
     //game board background
     this.game.load.image('background','assets/medium_board.png');
     this.game.load.spritesheet('dice','assets/dice.png', 128, 194, 10);
+    this.game.load.image('hud-bg','assets/hud-bg.png');
     
     // modal images
     this.game.load.image('text_yes','assets/text_yes.png');
