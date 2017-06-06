@@ -17,7 +17,6 @@ class Player {
         this.armsArray = [];
 
         this.initResources();
-        console.log('complete')
     }
         
     addPersonnel(type, x, y, uuid) {
