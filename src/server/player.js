@@ -90,7 +90,8 @@ class Player {
             return;
         }
         var i = this.currentLegalPieces.length;
-        while (i--) {
+        while (
+            i--) {
             if (this.currentLegalPieces[i].type === personnel.type && purgeAllMatchingTypes === true) {
                 this.currentLegalPieces.splice(i,1);
             }
