@@ -7,10 +7,16 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    jshint: {
+        all: ['Gruntfile.js', 'src/**/*.js'],
+        options: {
+            'esversion': 6
+        }
+    },
     watch: {
         src: {
             files: ['src/prefabs/*.js', 'src/states/*.js', 'src/*.js'],
-            tasks: ['browserify']
+            tasks: ['jshint','browserify']
         }
     },
     browserify: {
@@ -36,6 +42,7 @@ module.exports = function(grunt) {
 
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-express');
 

@@ -80,10 +80,10 @@ class Septikon {
             //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
         }
     }
-    for (var i in this.opponent.personnelArray) {
-        if (this.opponent.personnelArray[i].uuid == data.uuid) {
-            distance = Math.abs(this.opponent.personnelArray[i].y - point.y + this.opponent.personnelArray[i].x - point.x).toFixed(1);
-            tween = this.game.add.tween(this.opponent.personnelArray[i]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
+    for (var j in this.opponent.personnelArray) {
+        if (this.opponent.personnelArray[j].uuid == data.uuid) {
+            distance = Math.abs(this.opponent.personnelArray[j].y - point.y + this.opponent.personnelArray[j].x - point.x).toFixed(1);
+            tween = this.game.add.tween(this.opponent.personnelArray[j]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
             // Trigger tile. Not quite sure how to do this yet.
             //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
         }
@@ -96,16 +96,16 @@ class Septikon {
           data.details = [data.details];
       }
 
-      if (this.opponent.personnelArray.length == 0 && data.details.length == 5) {
+      if (this.opponent.personnelArray.length === 0 && data.details.length === 5) {
         for (var i in data.details) {
             this.addClone(data.details[i]);
         }      
       } else {
         for (var p in this.opponent.personnelArray) {
             currentPersonnel = this.opponent.personnelArray[p];
-            for (var i in data.details) {
-                if (currentPersonnel.uuid == data.details[i].uuid) {
-                    this.movePersonnel(data.details[i]);
+            for (var d in data.details) {
+                if (currentPersonnel.uuid == data.details[d].uuid) {
+                    this.movePersonnel(data.details[d]);
                 }
             }
         }
@@ -179,6 +179,7 @@ class Septikon {
 
     this.tileStartCoordinates = {x:0, y:0};
 
+    var x, y;
     
     this.marginBottom = this.marginTop = this.game.boardGroup.height/17.475;
     this.marginLeft = this.game.boardGroup.width/24;
@@ -200,8 +201,8 @@ class Septikon {
     for (var column = 0; column < columns; column++) {
         for (var row = 0; row < rows; row++) {
             
-            var x = this.tileStartCoordinates.x + (this.tileWidth * column) + (this.padding * column - 1);
-            var y = this.tileStartCoordinates.y + (this.tileHeight * row) + (this.padding * row - 1);
+            x = this.tileStartCoordinates.x + (this.tileWidth * column) + (this.padding * column - 1);
+            y = this.tileStartCoordinates.y + (this.tileHeight * row) + (this.padding * row - 1);
             //graphics.generateTexture();
             
             var currentTile = this.game.add.sprite(x, y, graphics.generateTexture());
@@ -231,8 +232,8 @@ class Septikon {
             for( var i = 0; i < locationCount; i++) {
                 
                 var coords = obj[prop].locations[i].split(",");
-                var x = coords[0];
-                var y = coords[1];
+                x = coords[0];
+                y = coords[1];
                 
                 this.tileArray[x][y].tileDamaged = false;
                 this.tileArray[x][y].tileOccupied = false;
@@ -251,7 +252,7 @@ class Septikon {
                     this.tileArray[x][y].tileOwner = 2;
                  
                 if (typeof obj[prop].properties != 'undefined') {
-                    this.tileArray[x][y]['tileProperties'] = obj[prop].properties;
+                    this.tileArray[x][y].tileProperties = obj[prop].properties;
                 }
             }
         }
@@ -264,7 +265,7 @@ class Septikon {
     
     for (var col in this.tileArray) {
         for (var row in this.tileArray[col]) {
-            var obj = this.tileArray[col][row]
+            var obj = this.tileArray[col][row];
             if(x > obj.x && x < obj.x + obj.width)
                 xTile = parseInt(col);
                 
@@ -315,7 +316,7 @@ class Septikon {
     do {
         currentX++;
         currentTile = this.tileArray[currentX][currentY];
-    } while (currentTile.tileType == 'space' || currentTile.tileType == 'surface' || currentTile.tileDamaged == true);
+    } while (currentTile.tileType == 'space' || currentTile.tileType == 'surface' || currentTile.tileDamaged === true);
     
     currentTile.tint = 0X333333;
     currentTile.alpha = 0.8;

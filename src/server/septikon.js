@@ -393,7 +393,7 @@ class Septikon {
 
                     case "repair":
                     case "repairTwo":
-                        var currentResourceCount = 0;
+                        currentResourceCount = 0;
                         var activeDamagedTiles = this.getDamagedTiles(this.activePlayer);
                         if (activeDamagedTiles.length < 1) {
                             return;
@@ -472,6 +472,7 @@ class Septikon {
         }
 
         var selectedTile = this.getTile(x, y);
+        var clone, cloneUUID;
 
         if (player.id != selectedTile.owner || selectedTile.occupied === true) {
             return;
@@ -480,9 +481,9 @@ class Septikon {
         // if gamestate is SETUP
         if (this.gameState === this.gameStateEnum.SETUP) {
             if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
-                var cloneUUID = uuid();
+                cloneUUID = uuid();
                 //var uuid = require('uuid/v4')();
-                var clone = player.addPersonnel('clone', x, y, cloneUUID);
+                clone = player.addPersonnel('clone', x, y, cloneUUID);
                 if (clone !== false) {
                     this.checkArms(player);
                     selectedTile.occupied = true;
@@ -497,9 +498,9 @@ class Septikon {
         // if gamestate is GAME
         if (this.gameState === this.gameStateEnum.GAME) {
             if (selectedTile.type == "lock") {
-                var cloneUUID = uuid();
+                cloneUUID = uuid();
                 //var uuid = require('uuid/v4')();
-                var clone = player.addPersonnel('clone', x, y, cloneUUID);
+                clone = player.addPersonnel('clone', x, y, cloneUUID);
                 if (clone !== false) {
                     this.checkArms(player);
                     selectedTile.occupied = true;

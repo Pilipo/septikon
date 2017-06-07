@@ -7,7 +7,7 @@ import Gameover from './states/gameover';
 import Septikon from './prefabs/septikon';
 
 if(typeof(Storage) !== "undefined") {
-    if(localStorage.getItem('septUUID') != null) {
+    if(localStorage.getItem('septUUID') !== null) {
         const uuid = localStorage.getItem('septUUID');
     } else {
         const uuid = require('uuid/v4')();

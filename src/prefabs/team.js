@@ -80,7 +80,7 @@ class Team {
     for(var i in this.personnel) {
         var moves = this.personnel[i].getLegalMoves();
 
-        if(moves != false) {
+        if(moves !== false) {
             this.personnel[i].highlightOn();
         }
     }
