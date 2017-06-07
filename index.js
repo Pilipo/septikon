@@ -18,7 +18,7 @@ app.get('/',function(req,res){
 });
 
 server.listen(process.env.PORT || 3000, function(){
-    console.log('Listening on '+server.address().port);
+    console.log('Listening on ' + server.address().port);
 });
 
 io.on('connection',function(socket){
@@ -63,8 +63,8 @@ io.on('connection',function(socket){
                 socket.game.rollDice(data);
                 break;
 
-            case 'gunnersSelected':
-                socket.game.triggerGunners(data);
+            case 'go':
+                socket.game.go(data);
                 
             case 'get':
                 socket.game.get(data);

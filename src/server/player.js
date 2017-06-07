@@ -16,6 +16,8 @@ class Player {
         this.startingCloneCount = 5;
         this.armsArray = [];
 
+        this.queuedPersonnelToMove = [];
+
         this.initResources();
     }
         
@@ -52,6 +54,18 @@ class Player {
             }
         }
         return false;
+    }
+
+    togglePersonnelSelection(uuid) {
+        var personnel = this.getPersonnelByUUID(uuid);
+        for (var i; i < this.queuedPersonnelToMove.length; i++) {
+            if (JSON.stringify(personnel) === JSON.stringify(this.queuedPersonnelToMove[i])) {
+                this.queuedPersonnelToMove.splice(i, 1);
+                return;
+            }
+        }
+        this.queuedPersonnelToMove.push(personnel);
+        return;
     }
 
     getGunners() {

@@ -33,7 +33,7 @@ class Septikon {
   diceRolled(details) {
     this.game.dice.setValue(details.value);
     this.legalMoves = details.gamePieces;
-    for (var i in details.gamePieces) {
+    for (var i = 0; i < details.gamePieces.length; i++) {
         for (var m in details.gamePieces[i].moves) {
             var x = details.gamePieces[i].moves[m].x;
             var y = details.gamePieces[i].moves[m].y;
@@ -281,85 +281,11 @@ class Septikon {
   }
   
   tileClicked(obj) {
-      if (this.legalMoves === null) {
-            this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
-      } else {
-          var cloneClicked = false;
-          this.hideTiles();
-          for (var i in this.legalMoves) {
-              this.showTiles([this.legalMoves[i].origin], 0xF63636);
-              if (this.legalMoves[i].origin.x == obj.tileX && this.legalMoves[i].origin.y == obj.tileY) {
-                  cloneClicked = true;
-                  this.selectedToMove = this.legalMoves[i];
-              }
-          }  
-
-          if (this.selectedToMove) {
-              for (var sm in this.selectedToMove.moves) {
-                  this.showTiles(this.selectedToMove.moves, 0x5391FD);
-                  if (this.selectedToMove.moves[sm].x == obj.tileX && this.selectedToMove.moves[sm].y == obj.tileY) {
-                      this.hideTiles();
-                      this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY), uuid:this.selectedToMove.uuid});
-                      this.selectedToMove =  null;
-                      return;
-                  }
-              }
-          }
-          if (this.choosingTargets === true) {
-              for (var i in this.legalGunners) {
-                  if (this.legalGunners[i].x == obj.tileX && this.legalGunners[i].y == obj.tileY) {
-                      this.selectedGunners.push(this.legalGunners[i]);
-                  }
-              }
-          }
-            
-      }
-    return;
+      this.hideTiles();
+      this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
+      return;
   }
   
-  getLegalMoves(moves, currentCoord, previousCoord) {
-	moves--;
-	var legalMoves = [];
-	for(var direction in this.directionEnum) {	
-		// NEED TO CHECK FOR LOCKS
-		var moveCheck = this.getCoordFromDirection(currentCoord,direction);
-        if (moveCheck == false)
-            continue;
-            
-        var tileToCheck = this.tileArray[moveCheck.x][moveCheck.y];
-
-        // tile is legal IF direction is ok AND tile is not damaged AND ( there is no previous coordinate OR this is not the previous coordinate )
-		if(this.checkWall(this.directionEnum[direction], currentCoord) === true && tileToCheck.tileDamaged === false && ((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(moveCheck) !== JSON.stringify(previousCoord)) ))) {
-			// Check if tile is occupied
-            if(moves==0){
-                if(tileToCheck.tileOccupied === false) {
-                    legalMoves.push(moveCheck);
-                }
-			}
-			else {
-				var returnArray = (this.getLegalMoves(moves, moveCheck, currentCoord));
-				for(var index in returnArray) {
-					if(JSON.stringify(returnArray[index]) !== JSON.stringify(currentCoord))
-						legalMoves.push(returnArray[index]);
-				}
-			}
-		}
-	}
-	return legalMoves;
-  }
-    
-  getCoordFromDirection(originCoord,direction) {
-
-	var dir={NORTH:{x:0,y:-1},EAST:{x:1,y:0},SOUTH:{x:0,y:1},WEST:{x:-1,y:0}};
-    
-    var obj = {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
-    if(obj.x < 0 || obj.y < 0) 
-        return false;
-	else
-        return {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};
-		
-  }
-
   showTiles(coordsArray, color) {
     for (var i in coordsArray) {
         this.tileArray[coordsArray[i].x][coordsArray[i].y].alpha = 0.5;
@@ -401,41 +327,6 @@ class Septikon {
     this.test.animations.add('boom');
     this.test.animations.play('boom', 20, false, true);
     
-  }
-  
-  checkWall(direction, currentCoordinate) {
-    this.wallGrid = this.game.cache.getJSON('wallGrid');
-	switch (direction){
-		case this.directionEnum.NORTH: // UP
-			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.NORTH) == 0) {
-				return true;
-			}
-            return false;
-		case this.directionEnum.SOUTH: // DOWN
-			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.SOUTH) == 0) {
-				return true;
-			}
-            return false;
-		case this.directionEnum.EAST: // RIGHT
-			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.EAST) == 0) {
-				return true;
-			}
-            return false;
-		case this.directionEnum.WEST: // LEFT
-			if (parseInt(this.wallGrid.grid[currentCoordinate.x][currentCoordinate.y]&this.directionEnum.WEST) == 0) {
-				return true;
-			}
-            return false;
-		default:
-			return false;
-	}
-    
-  }
-  
-  setup() {
-    //Should ask for player name and assign a color. 
-    //Give waiting indicator
-    //Offer some way to pick a game? IDK..
   }
   
   startGame() {
