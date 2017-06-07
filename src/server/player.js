@@ -40,7 +40,7 @@ class Player {
     getPersonnel(type) {
         var returnArray = [];
         for(var i in this.personnelArray) {
-            if(type === null || this.personnelArray[i].type == 0)
+            if(type === null || this.personnelArray[i].type === 0)
                 returnArray.push(this.personnelArray[i]);
         }
         return returnArray;
@@ -58,6 +58,9 @@ class Player {
 
     togglePersonnelSelection(uuid) {
         var personnel = this.getPersonnelByUUID(uuid);
+
+        // if personnel is a clone and another clone is already queued, swap them. THERE CAN BE ONLY ONE!
+
         for (var i; i < this.queuedPersonnelToMove.length; i++) {
             if (JSON.stringify(personnel) === JSON.stringify(this.queuedPersonnelToMove[i])) {
                 this.queuedPersonnelToMove.splice(i, 1);
@@ -82,7 +85,7 @@ class Player {
     getOrdnance(type) {
         var returnArray = [];
         for(var i in this.ordnanceArray) {
-            if(type === null || this.ordnanceArray[i].type == 0)
+            if(type === null || this.ordnanceArray[i].type === 0)
                 returnArray.push(this.ordnanceArray[i]);
         }
         return returnArray;
@@ -103,11 +106,12 @@ class Player {
         for (var i in recArray) {
             rec = new Resource(recArray[i]);
             this.resourceArray[recArray[i]] = [];
-            for (var count = 0; count < 5; count++) {
-                this.resourceArray[recArray[i]].push(rec);
-            }
-            for (var count = 0; count < 5; count++) {
-                this.resourceArray[recArray[i]].push(null);
+            for (var count = 0; count < 10; count++) {
+                if (count < 5) {
+                    this.resourceArray[recArray[i]].push(rec);
+                } else {
+                    this.resourceArray[recArray[i]].push(null);
+                }
             }
         }
     }
@@ -250,7 +254,7 @@ class Player {
                     console.error("no room for this resource!");
                     return false;
                 }
-                if (currentResourceSlot == 0 || this.resourceArray[type][currentResourceSlot - 1] !== null) {
+                if (currentResourceSlot === 0 || this.resourceArray[type][currentResourceSlot - 1] !== null) {
                     searching = false;
                     continue;
                 }
@@ -262,7 +266,7 @@ class Player {
                 resource = new Resource(type);
                 this.resourceArray[type][currentResourceSlot] = resource;
                 count--;
-                if(count == 0) {
+                if(count === 0) {
                     return originalCount;
                 }
                 currentResourceSlot++;

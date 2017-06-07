@@ -16,6 +16,7 @@ class Personnel {
             case 'biodrone':
                 break;
             case 'clone':
+                break;
             default:
                 this.type = this.typeEnum[type];
                 break;

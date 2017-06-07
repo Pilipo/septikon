@@ -33,18 +33,19 @@ class Game extends Phaser.State {
         if (this.game.septikon.choosingTargets === true) {
             this.game.client.sendInput({event: 'gunnersSelected', gunners: this.game.septikon.selectedGunners});
         }
-    }
+    };
+
     this.game.go.events.onInputDown.add(this.game.go.clicked, this);
 
     this.game.go.enable = function() {
         this.filters = null;
         this.inputEnabled = true;
-    }
+    };
 
     this.game.go.disable = function() {
         this.filters = [this.game.add.filter('Gray')];
         this.inputEnabled = false;
-    }
+    };
 
     this.game.dice = new Dice(this.game, 50, 40);
     this.game.dice.scale.setTo(0.25);

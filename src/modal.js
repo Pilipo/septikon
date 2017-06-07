@@ -31,6 +31,7 @@ gameModal = function (game) {
 			var fixedToCamera = options.fixedToCamera || false;
 
 			var modal;
+			var innerModal;
 			var modalGroup = game.add.group();
 			if (fixedToCamera === true) {
 				modalGroup.fixedToCamera = true;
@@ -48,7 +49,7 @@ gameModal = function (game) {
 
 				if (modalCloseOnInput === true) {
 
-					var innerModal = game.add.sprite(0, 0);
+					innerModal = game.add.sprite(0, 0);
 					innerModal.inputEnabled = true;
 					innerModal.width = game.width;
 					innerModal.height = game.height;
@@ -66,7 +67,7 @@ gameModal = function (game) {
 			}
 
 			if (modalBackgroundCallback) {
-				var innerModal = game.add.sprite(0, 0);
+				innerModal = game.add.sprite(0, 0);
 				innerModal.inputEnabled = true;
 				innerModal.width = game.width;
 				innerModal.height = game.height;
@@ -181,9 +182,9 @@ gameModal = function (game) {
 					modalLabel.y = (centerY - ((modalLabel.height) / 2)) + offsetY;
 				}
 
-				modalLabel["_offsetX"] = 0;
-				modalLabel["_offsetY"] = 0;
-				modalLabel["lockPosition"] = lockPosition;
+				modalLabel._offsetX = 0;
+				modalLabel._offsetY = 0;
+				modalLabel.lockPosition = lockPosition;
 				modalLabel._offsetX = offsetX;
 				modalLabel._offsetY = offsetY;
 

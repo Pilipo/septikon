@@ -19,7 +19,7 @@ class Setup extends Phaser.State {
     this.enter.onDown.add(this.keyPress, this);
     this.game.client.askNewPlayer();
 
-    this.game.septikon.setup();
+    //this.game.septikon.setup();
 }
 
 keyPress(char) {

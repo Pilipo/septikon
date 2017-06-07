@@ -14,7 +14,7 @@ class Resources {
     this.resources = {};
     for(var type in this.resourceEnum) {
         this.resources[this.resourceEnum[type]] = 5;
-    };
+    }
   }
   
   check(type, count) {
