@@ -16,7 +16,8 @@ class Player {
         this.startingCloneCount = 5;
         this.armsArray = [];
 
-        this.queuedPersonnelToMove = [];
+        this.selectedPersonnelToMove = null;
+        this.currentLegalPieces = [];
 
         this.initResources();
     }
@@ -56,19 +57,44 @@ class Player {
         return false;
     }
 
-    togglePersonnelSelection(uuid) {
-        var personnel = this.getPersonnelByUUID(uuid);
-
-        // if personnel is a clone and another clone is already queued, swap them. THERE CAN BE ONLY ONE!
-
-        for (var i; i < this.queuedPersonnelToMove.length; i++) {
-            if (JSON.stringify(personnel) === JSON.stringify(this.queuedPersonnelToMove[i])) {
-                this.queuedPersonnelToMove.splice(i, 1);
-                return;
+    getPersonnelByPoint(point) {
+        var personnels = this.getPersonnel();
+        for (var i = 0; i < personnels.length; i++) {
+            if (personnels[i].x == point.x && personnels[i].y == point.y) {
+                return personnels[i];
             }
         }
-        this.queuedPersonnelToMove.push(personnel);
-        return;
+        return false;
+    }
+
+    checkPersonnelMove(personnel, point) {
+        for (var i = 0; i < this.currentLegalPieces.length; i++) {
+            if (personnel.x == this.currentLegalPieces[i].origin.x && personnel.y == this.currentLegalPieces[i].origin.y) {
+                if (typeof point !== 'undefined') {
+                    for (var j = 0; j < this.currentLegalPieces[i].moves.length; j++) {
+                        if (this.currentLegalPieces[i].moves[j].x == point.x && this.currentLegalPieces[i].moves[j].y == point.y) {
+                            return true;
+                        }
+                    } 
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    purgeLegalPieces(personnel, purgeAllMatchingTypes) {
+        if (typeof personnel === 'undefined') {
+            this.currentLegalPieces = [];
+            return;
+        }
+        var i = this.currentLegalPieces.length;
+        while (i--) {
+            if (this.currentLegalPieces[i].type === personnel.type && purgeAllMatchingTypes === true) {
+                this.currentLegalPieces.splice(i,1);
+            }
+        }
     }
 
     getGunners() {

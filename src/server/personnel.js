@@ -2,8 +2,8 @@ class Personnel {
 
     constructor(type, x, y, uuid) {
         this.typeEnum = Object.freeze({
-            clone: 0,
-            biodrone: 1
+            CLONE: 0,
+            BIODRONE: 1
         });
         
         this.x = x;
@@ -11,6 +11,7 @@ class Personnel {
         this.uuid = uuid;
         this.underEspionage = false;
         this.isGunner = false;
+        this.type = this.typeEnum[type.toUpperCase()];
         
         switch (type) {
             case 'biodrone':

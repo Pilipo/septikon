@@ -76,13 +76,50 @@ class Septikon {
                     case this.turnStateEnum.MOVE:
 
                         // Player will click to designate the desired personnel to move, so queue up the selection(s) and wait for confirmation message.
-                        // Player can select one clone and any/all biodrone(s).
-                        // Note: This array of legal personnel was sent by rollDice()
+                        // Player can move one clone and any/all biodrone(s) per turn.
+                        // Note: The array of legal personnel (in this.activePlayer) was sent by rollDice().
+                        // THIS IS UNTESTED WITH BIODRONES.
 
-                        this.activePlayer.togglePersonnelSelection(data.uuid);
+                        // emit a hideTiles()
 
-                        console.log(this.activePlayer.queuedPersonnelToMove);
-                        console.log("Personnel selection queued!");
+                        var selectedPersonnel = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
+
+                        if (selectedPersonnel !== false) {
+                            // Clone was clicked, so:
+                            var isLegalPersonnel = this.activePlayer.checkPersonnelMove(selectedPersonnel);
+                            if (isLegalPersonnel === true) {
+                                //  - set selected in player
+                                this.activePlayer.selectedPersonnelToMove = selectedPersonnel;
+                                //  - Show Clones in client
+                                //      emit something here
+                                //  - Show this clone's moves in client
+                                //      emit something here
+                                //  - show this clone in different color in client
+                                //      emit something here
+                            }
+                            
+                        } else if (this.activePlayer.selectedPersonnelToMove !== null) {
+                            // check for legal tile
+                            var isLegalMove = this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove,{x:data.x, y:data.y});
+                            if (isLegalMove === false) {
+                                // emit something to show clones to client
+                            } else {
+                                // if is legal, clear selectedPer... and trigger move
+                                this.activePlayer.selectedPersonnelToMove.move({x:data.x, y:data.y});
+                                // emit move to client
+
+                                // clear moved personnel from the player array. If moved personnel was a clone, remove ALL clones from array.
+                                this.activePlayer.purgeLegalPieces(this.activePlayer.selectedPersonnelToMove, true); // true is passed for clones. null for biodrones.
+                            }
+                            this.activePlayer.selectedPersonnelToMove = null;
+
+                        }
+
+                        // If legal personnel are empty, advance turnstate.
+                        if (this.activePlayer.currentLegalPieces.length <= 0) {
+                            this.turnState++;
+                            // emit some indication to client
+                        }
                         break;
 
                     case this.turnStateEnum.ACTION:
@@ -579,7 +616,7 @@ class Septikon {
         for (var i in personnelArray) {
             movesArray = this.getLegalMoves(personnelArray[i], this.currentDiceValue, {x:personnelArray[i].x, y:personnelArray[i].y});
             if (movesArray.length > 0) {
-                returnArray.push({type:"personnel",origin:{x:personnelArray[i].x,y:personnelArray[i].y}, uuid:personnelArray[i].uuid, moves:movesArray});
+                returnArray.push({type:personnelArray[i].type,origin:{x:personnelArray[i].x,y:personnelArray[i].y}, uuid:personnelArray[i].uuid, moves:movesArray});
             }
         }
 
