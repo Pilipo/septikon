@@ -106,9 +106,9 @@ class Septikon {
                             } else {
                                 // if is legal, clear selectedPer... and trigger move
                                 this.activePlayer.selectedPersonnelToMove.move({x:data.x, y:data.y});
-                                // emit move to client
-
-                                // clear moved personnel from the player array. If moved personnel was a clone, remove ALL clones from array.
+                                // emit move to clients
+                                this.emit('action', {callback: 'movePersonnel', details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.activePlayer.socketID);
+                                this.emit('update', {type:"personnel", details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);                               // clear moved personnel from the player array. If moved personnel was a clone, remove ALL clones from array.
                                 this.activePlayer.purgeLegalPieces(this.activePlayer.selectedPersonnelToMove, true); // true is passed for clones. null for biodrones.
                             }
                             this.activePlayer.selectedPersonnelToMove = null;
