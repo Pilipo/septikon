@@ -17,6 +17,7 @@ class Player {
         this.armsArray = [];
 
         this.selectedPersonnelToMove = null;
+        this.selectedGunners = [];
         this.currentLegalPieces = [];
 
         this.initResources();
@@ -107,6 +108,24 @@ class Player {
             }
         }
         return returnArray;
+    }
+
+    getSelectedGunners() {
+        return this.selectedGunners;
+    }
+
+    toggleGunnerSelection(gunner) {
+        if (this.selectedGunners.length <= 0) {
+            this.selectedGunners.push(gunner);
+            return;
+        }
+        for (var i = 0; i < this.selectedGunners.length; i++) {
+            if (JSON.stringify(gunner) === JSON.stringify(this.selectedGunners[i])) {
+                this.selectedGunners.splice(i,1);
+                return;
+            }
+        }
+        this.selectedGunners.push(gunner);
     }
 
     getOrdnance(type) {

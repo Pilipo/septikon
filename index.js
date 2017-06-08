@@ -91,7 +91,7 @@ io.on('connection',function(socket){
             } else {
                 console.log('player saved by the bell. Send a package that repopulates the board. This could be tricky... ;)');
             }
-        }, 10000);
+        }, 1000000);
 
     });
 });

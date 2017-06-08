@@ -112,6 +112,19 @@ class Septikon {
       }
   }
 
+  removePersonnel(data) {
+      var personnelToDestroy;
+      for (var i = 0; i < this.player.personnelArray.length; i++) {
+          if (this.player.personnelArray[i].uuid == data.uuid) {
+              personnelToDestroy = this.player.personnelArray[i];
+              this.player.personnelArray.splice(i,1);
+              personnelToDestroy.destroy();
+              return true;
+          }
+      }
+      return false;
+  }
+
   removeAllPersonnel(){
     for (var i = 0; i < this.game.boardGroup.children.length; i++) {
         if(this.game.boardGroup.children[i].constructor == Clone){
@@ -308,25 +321,20 @@ class Septikon {
     }
   }
 
-  shootTile(cloneCoordinates) {
+  damageTile(data) {
   
-    var currentX = cloneCoordinates.x;
-    var currentY = cloneCoordinates.y;
-    var currentTile = this.tileArray[currentX][currentY];
-    do {
-        currentX++;
-        currentTile = this.tileArray[currentX][currentY];
-    } while (currentTile.tileType == 'space' || currentTile.tileType == 'surface' || currentTile.tileDamaged === true);
+    var currentTile = this.tileArray[data.x][data.y];
     
     currentTile.tint = 0X333333;
     currentTile.alpha = 0.8;
     currentTile.tileDamaged = true;
     
-    this.test = this.game.add.sprite(currentTile.x, currentTile.y +(currentTile.height/2), 'boom');
-    this.test.angle = 270;
-    this.test.anchor.set(0.5,0.7);
-    this.test.animations.add('boom');
-    this.test.animations.play('boom', 20, false, true);
+    var test = this.game.add.sprite(currentTile.x, currentTile.y +(currentTile.height/2), 'boom');
+    this.game.boardGroup.add(test);
+    test.angle = 270;
+    test.anchor.set(0.5,0.7);
+    test.animations.add('boom');
+    test.animations.play('boom', 20, false, true);
     
   }
   

@@ -31,7 +31,7 @@ class Game extends Phaser.State {
 
     this.game.go.clicked = function() {
         if (this.game.septikon.choosingTargets === true) {
-            this.game.client.sendInput({event: 'gunnersSelected', gunners: this.game.septikon.selectedGunners});
+            this.game.client.sendInput({event: 'go'});
         }
     };
 
