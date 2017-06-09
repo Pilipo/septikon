@@ -27,7 +27,8 @@ class Septikon {
             ACTION: 2,  // Trigger tile  
             TARGETS: 3, // Assign target(s) (ie. - gunner, tile, espionaged clone) 
             BIODRONE: 4,// Move biodrone(s)
-            END: 5      // assess victory conditions
+            ORDNANCE: 5,// move ordnance according to dice roll
+            END: 6      // assess ordnance damage and clone/biodrone kills. Assess victory conditions
         });  
 
         this.directionEnum = Object.freeze({
@@ -561,8 +562,9 @@ class Septikon {
                         ordnancePoint.x = this.currentDiceValue - 1;
                     }
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
-                    this.activePlayer.addOrdnance(weaponTile, ordnancePoint);
-                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile, point:ordnancePoint, playerID:this.activePlayer.id}}, this.activePlayer.socketID);
+                    ordUUID = uuid();
+                    this.activePlayer.addOrdnance(weaponTile, ordnancePoint, ordUUID);
+                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
                     break;
                 default:
                     console.error("There is a problem with that weaponTile argument");
