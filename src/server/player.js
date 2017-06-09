@@ -85,6 +85,12 @@ class Player {
         return false;
     }
 
+    addOrdnance(type, point, uuid) {
+        var ord = new Ordnance(type, point.x, point.y, uuid);
+        this.ordnanceArray.push(ord);
+        return ord;
+    }
+
     purgeLegalPieces(personnel, purgeAllMatchingTypes) {
         if (typeof personnel === 'undefined') {
             this.currentLegalPieces = [];

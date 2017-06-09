@@ -8,11 +8,13 @@ class Septikon {
     
     this.player = {
         id: 0,
-        personnelArray: []
+        personnelArray: [],
+        ordnanceArray: []
     };
 
     this.opponent = {
-        personnelArray: []
+        personnelArray: [],
+        ordnanceArray: []
     };
     
     this.shownTiles = [];
@@ -66,6 +68,22 @@ class Septikon {
         this.opponent.personnelArray.push(clone);
     }
     this.game.boardGroup.add(clone);
+  }
+
+  addOrdnance(details) {
+    var point = this.tileToPixels(details.point.x, details.point.y);
+    var ord = {
+        x:point.x,
+        y:point.y,
+        uuid:details.uuid,
+        type:details.type
+    };
+    if(details.playerID == this.player.id) {
+        this.player.ordnanceArray.push(ord);
+    } else {
+        this.opponent.ordnanceArray.push(ord);
+    }
+    // this.game.boardGroup.add(ord);
   }
 
   movePersonnel(data) {
