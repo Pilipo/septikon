@@ -114,7 +114,7 @@ class Septikon {
                                 this.emit('update', {type:"personnel", details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);                               // clear moved personnel from the player array. If moved personnel was a clone, remove ALL clones from array.
                                 this.activePlayer.purgeLegalPieces(this.activePlayer.selectedPersonnelToMove, true); // 2nd arg: true is passed for clones; null for biodrones.
 
-                                // TODO: THis is dirty code to test gunner selection
+                                // TODO: This is dirty code to test gunner selection
                                 if (this.getTile(data.x, data.y).name == "surface") {
                                     this.turnState = 0;
                                     this.activateTile({x:data.x, y:data.y});   
@@ -492,24 +492,26 @@ class Septikon {
         }
 
         for (var i = 0; i < gunnerArray.length; i++) {
+            var ordnancePoint = {x:gunnerArray[i].x, y:gunnerArray[i].y};
+            var impacted = false;
+            var ordUUID;
+
             switch (weaponTile) {
                 case "laser":
-                    var impacted = false;
-                    var laserPoint = {x:gunnerArray[i].x, y:gunnerArray[i].y};
                     var currentTile;
                     var currentOccupant;
                     while (impacted === false) {
                         if (this.activePlayer.id == 1) {
-                            laserPoint.x++;
+                            ordnancePoint.x++;
                         } else {
-                            laserPoint.x--;
+                            ordnancePoint.x--;
                         }
-                        currentTile = this.getTile(laserPoint.x, laserPoint.y);
+                        currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                         switch (currentTile.name) {
                             case "space":
                             case "surface":
                                 if (currentTile.occupied === true) {
-                                    currentOccupant = this.getTileOccupant(laserPoint);
+                                    currentOccupant = this.getTileOccupant(ordnancePoint);
                                     // TODO: destroy occupant. This will wait on sats and shields and rockets.
                                     currentTile.occupied = false;
                                     impacted = true;
@@ -519,9 +521,9 @@ class Septikon {
                             default:
                                 // You are in the opponent mine.
                                 if (currentTile.occupied === true) {
-                                    currentOccupant = this.getTileOccupant(laserPoint);
+                                    currentOccupant = this.getTileOccupant(ordnancePoint);
                                     this.activePlayer.removePersonnel(currentOccupant);
-                                    // TODO: emit death animation to clients.
+                                    // TODO: emit death animation to clients. (maybe just add that to the removePersonnel()?)
                                     this.emit('action', {callback:"removePersonnel", details:currentOccupant}, this.activePlayer.socketID);
                                     currentTile.occupied = false;
                                     impacted = true;
@@ -531,12 +533,36 @@ class Septikon {
                                     break;
                                 } else {
                                     currentTile.damaged = true;
-                                    this.emit('action', {callback:"damageTile" ,details:laserPoint}, this.activePlayer.socketID);
+                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
                                     impacted = true;
                                     break;
                                 }
                         }
                     }
+                    break;
+                case "shield":
+                case "biodrone":
+                case "satellite":
+                case "rocket":
+                    if (this.activePlayer.id == 1) {
+                        ordnancePoint.x += this.currentDiceValue;
+                    } else {
+                        ordnancePoint.x -= this.currentDiceValue;
+                    }
+                    currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
+                    ordUUID = uuid();
+                    this.activePlayer.addOrdnance(weaponTile, ordnancePoint, ordUUID);
+                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    break;
+                case "thermite":
+                    if (this.activePlayer.id == 1) {
+                        ordnancePoint.x = 31 - this.currentDiceValue;
+                    } else {
+                        ordnancePoint.x = this.currentDiceValue - 1;
+                    }
+                    currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
+                    this.activePlayer.addOrdnance(weaponTile, ordnancePoint);
+                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile, point:ordnancePoint, playerID:this.activePlayer.id}}, this.activePlayer.socketID);
                     break;
                 default:
                     console.error("There is a problem with that weaponTile argument");
@@ -544,11 +570,6 @@ class Septikon {
         }
         return; 
         // switch (weaponTile.name) {
-        //     case "shield":
-        //     case "biodrone":
-        //     case "thermite":
-        //     case "satellite":
-        //     case "rocket":
         //     case "espionage":
         //     case "takeover":
         //         break;
