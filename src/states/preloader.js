@@ -42,7 +42,8 @@ class Preloader extends Phaser.State {
     this.game.load.image('text_go','assets/text_go.png');
 
     //player tokens spritesheets
-    this.game.load.spritesheet('clone', 'assets/clone.png',110,168);
+    this.game.load.spritesheet('clone', 'assets/clone.png', 110, 168);
+    this.game.load.spritesheet('ordnance', 'assets/ordnance.png',264, 264, 7);
     this.game.load.atlas('boom', 'assets/boom.png', 'assets/boom.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
     //audio files 
