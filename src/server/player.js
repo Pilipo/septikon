@@ -22,6 +22,12 @@ class Player {
 
         this.initResources();
     }
+
+    clearQueues() {
+        this.selectedPersonnelToMove = null;
+        this.selectedGunners = [];
+        this.currentLegalPieces = [];
+    }
         
     addPersonnel(type, x, y, uuid) {
         if(type == "clone" && this.getPersonnel(type).length < 10) {
@@ -148,10 +154,28 @@ class Player {
         return returnArray;
     }
 
+    remove(target) {
+        console.log(target);
+    }
+
+    getOrdnanceByPoint(point) {
+        var ordnances = this.getOrdnance();
+        for (var i = 0; i < ordnances.length; i++) {
+            if (ordnances[i].x == point.x && ordnances[i].y == point.y) {
+                return ordnances[i];
+            }
+        }
+        return false;
+    }
+
     moveOrdnance(count) {
         for (var i = 0; i < this.ordnanceArray.length; i++) {
-            if (this.id == 1) {
-                this.ordnanceArray[i].x += count;
+            if (this.ordnanceArray[i].type == "biodrone" || this.ordnanceArray[i].type == "rocket" || this.ordnanceArray[i].type == "nuke") {
+                if (this.id == 1) {
+                    this.ordnanceArray[i].x += count;
+                } else {
+                    this.ordnanceArray[i].x -= count;
+                }
             }
         }
         return this.ordnanceArray;

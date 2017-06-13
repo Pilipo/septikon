@@ -158,9 +158,11 @@ class Septikon {
                         // Array of eligible gunners sent via activateTile();
                         // Emit array of eligible gunners and number of selectable gunners to Player.
 
+                        var actionTile;
+
                         if (this.queuedTile.name == "chemicalReactor" || this.queuedTile.name == "chemicalReactorTwo" || this.queuedTile.name == "airFilter") {
-                            tile = this.getTile(data.x, data.y);
-                            if (tile.name == "lock" && tile.damaged === false && tile.occupied === false) {
+                            actionTile = this.getTile(data.x, data.y);
+                            if (actionTile.name == "lock" && actionTile.damaged === false && actionTile.occupied === false) {
                                 this.placeClone(this.activePlayer, data.x, data.y);
                                 this.availableClonesToAdd--;
                                 if (this.availableClonesToAdd > 0) {
@@ -181,10 +183,11 @@ class Septikon {
                             // TODO: special case.
                         } else if (this.queuedTile.name == "repair" || this.queuedTile.name == "repairTwo" || this.queuedTile.name == "prodRepair") {
                             // TODO: Special cases. 
-                            if (this.getTile(data.x, data.y).damaged === false) {
+                            actionTile = this.getTile(data.x, data.y).damaged;
+                            if (actionTile.damaged === false) {
                                 return;
                             }
-                            this.getTile(data.x, data.y).damaged = false;
+                            actionTile.damaged = false;
                             this.tilesRepairedThisTurn++;
                             this.emit('action', {callback: 'repairTile', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
                             if (this.tilesRepairedThisTurn == 1) {  // TODO: check for repairTwo
@@ -243,7 +246,6 @@ class Septikon {
         switch (this.turnState) {
             case this.turnStateEnum.ACTION:
                 // Player has confirmed gunner selection.
-                // TODO: trigger tile (repair or whatever).
 
                 if (this.activePlayer.getSelectedGunners().length > 0) {
                     this.fireWeapon(this.queuedTile, this.activePlayer.getSelectedGunners());
@@ -252,17 +254,14 @@ class Septikon {
 
                 // TODO: If biodrones exist, send that array now and advance to BIODRONES and RETURN
 
-                // TODO: If player has ordnance, move ordnance/check damage and RETURN
+                // TODO: If player has ordnance, move ordnance/check damage 
                 if (this.activePlayer.ordnanceArray.length > 0) {
                     var updatedOrdnance = this.activePlayer.moveOrdnance(this.currentDiceValue);
+                    // TODO: Check / apply damage
                     this.emit('action', {callback:'moveOrdnance', details:updatedOrdnance}, this.activePlayer.socketID);
-                    return;
                 }
 
-                // TODO: TEST CODE
-                this.turnState = 0;
                 this.changeActivePlayer();
-                // TODO: END TEST CODE
                 
                 break;
             case this.turnStateEnum.TARGETS:
@@ -359,6 +358,7 @@ class Septikon {
     }
 
     changeActivePlayer() {
+        this.activePlayer.clearQueues();
         this.emit('action', {callback:"takeDice", details: {}}, this.activePlayer.socketID);
         this.activePlayer = this.getPlayerOpponent(this.activePlayer);
         this.emit('action', {callback:"offerDice", details: {}}, this.activePlayer.socketID);
@@ -562,6 +562,21 @@ class Septikon {
         }
     }
 
+    getTileOccupant(point) {
+        var ordnance, personnel;
+        for (var pi = 0; pi < this.playersArray.length; pi++) {
+            ordnance = this.playersArray[pi].getOrdnanceByPoint(point);
+            personnel = this.playersArray[pi].getPersonnelByPoint(point);
+            if (ordnance !== false) {
+                return ordnance;
+            } else if (personnel !== false) {
+                return personnel;
+            } else {
+                return false;
+            }
+        }
+    }
+
     fireWeapon(weaponTile, gunnerArray) {
         if (gunnerArray.length <= 0 ) {
             return false;
@@ -588,7 +603,7 @@ class Septikon {
                             case "surface":
                                 if (currentTile.occupied === true) {
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    // TODO: destroy occupant. This will wait on sats and shields and rockets.
+                                    this.activePlayer.remove(currentOccupant);
                                     currentTile.occupied = false;
                                     impacted = true;
                                     break;
@@ -620,15 +635,17 @@ class Septikon {
                 case "biodrone":
                 case "satellite":
                 case "rocket":
-                    if (this.activePlayer.id == 1) {
-                        ordnancePoint.x += this.currentDiceValue;
-                    } else {
-                        ordnancePoint.x -= this.currentDiceValue;
+                    if (weaponTile.name == "shield" || weaponTile.name == "satellite") {
+                        if (this.activePlayer.id == 1) {
+                            ordnancePoint.x += this.currentDiceValue;
+                        } else {
+                            ordnancePoint.x -= this.currentDiceValue;
+                        }
                     }
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                     ordUUID = uuid();
                     this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
-                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
                     break;
                 case "thermite":
                     if (this.activePlayer.id == 1) {
@@ -637,9 +654,13 @@ class Septikon {
                         ordnancePoint.x = this.currentDiceValue - 1;
                     }
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
-                    ordUUID = uuid();
-                    this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
-                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    if (currentTile.damaged === true) {
+                        break;
+                    } else {
+                        currentTile.damaged = true;
+                        this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
+                        break;
+                    }
                     break;
                 default:
                     console.error("There is a problem with that weaponTile argument");
@@ -811,7 +832,6 @@ class Septikon {
 
     getLegalPieces() {
         var personnelArray = this.activePlayer.getPersonnel();
-        var ordnanceArray = this.activePlayer.getOrdnance();
         var returnArray = [];
         var movesArray = [];
 
@@ -819,13 +839,6 @@ class Septikon {
             movesArray = this.getLegalMoves(personnelArray[i], this.currentDiceValue, {x:personnelArray[i].x, y:personnelArray[i].y});
             if (movesArray.length > 0) {
                 returnArray.push({type:personnelArray[i].type,origin:{x:personnelArray[i].x,y:personnelArray[i].y}, uuid:personnelArray[i].uuid, moves:movesArray});
-            }
-        }
-
-        for (var j in ordnanceArray) {
-            movesArray = this.getLegalMoves(personnelArray[j], this.currentDiceValue, {x:personnelArray[j].x, y:personnelArray[j].y});
-            if (movesArray.length > 0) {
-                returnArray.push({type:"ordnance", uuid:ordnanceArray[j].uuid, moves:movesArray});
             }
         }
         return returnArray;

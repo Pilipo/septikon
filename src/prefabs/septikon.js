@@ -98,8 +98,6 @@ class Septikon {
         if (this.opponent.personnelArray[j].uuid == data.uuid) {
             distance = Math.abs(this.opponent.personnelArray[j].y - point.y + this.opponent.personnelArray[j].x - point.x).toFixed(1);
             tween = this.game.add.tween(this.opponent.personnelArray[j]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
-            // Trigger tile. Not quite sure how to do this yet.
-            //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
         }
     }
   }
@@ -107,21 +105,20 @@ class Septikon {
   moveOrdnance(data) {
     var tween = null;
     var distance = null;
-    var point = this.tileToPixels(data.x, data.y);
-    for (var i in this.player.ordnanceArray) {
-        if (this.player.ordnanceArray[i].uuid == data.uuid) {
-            distance = Math.abs(this.player.ordnanceArray[i].y - point.y + this.player.ordnanceArray[i].x - point.x).toFixed(1);
-            tween = this.game.add.tween(this.player.ordnanceArray[i]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
-            // Trigger tile. Not quite sure how to do this yet.
-            //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
+    var point = null;
+    for (var dataIndex = 0; dataIndex < data.length; dataIndex++) {
+        point = this.tileToPixels(data[dataIndex].x, data[dataIndex].y);
+        for (var i in this.player.ordnanceArray) {
+            if (this.player.ordnanceArray[i].uuid == data[dataIndex].uuid) {
+                distance = Math.abs(this.player.ordnanceArray[i].y - point.y + this.player.ordnanceArray[i].x - point.x).toFixed(1);
+                tween = this.game.add.tween(this.player.ordnanceArray[i]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
+            }
         }
-    }
-    for (var j in this.opponent.ordnanceArray) {
-        if (this.opponent.ordnanceArray[j].uuid == data.uuid) {
-            distance = Math.abs(this.opponent.ordnanceArray[j].y - point.y + this.opponent.ordnanceArray[j].x - point.x).toFixed(1);
-            tween = this.game.add.tween(this.opponent.ordnanceArray[j]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
-            // Trigger tile. Not quite sure how to do this yet.
-            //tween.onComplete.add(this.game.client.sendInput({event: 'moveComplete', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});, this.game.septikon);
+        for (var j in this.opponent.ordnanceArray) {
+            if (this.opponent.ordnanceArray[j].uuid == data[dataIndex].uuid) {
+                distance = Math.abs(this.opponent.ordnanceArray[j].y - point.y + this.opponent.ordnanceArray[j].x - point.x).toFixed(1);
+                tween = this.game.add.tween(this.opponent.ordnanceArray[j]).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
+            }
         }
     }
   }
