@@ -65,6 +65,7 @@ io.on('connection',function(socket){
 
             case 'go':
                 socket.game.go(data);
+                break;
                 
             case 'get':
                 socket.game.get(data);
