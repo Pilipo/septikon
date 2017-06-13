@@ -46,6 +46,7 @@ class Septikon {
 
         this.queuedTile = null;
         this.tilesRepairedThisTurn = 0;
+        this.availableClonesToAdd = 0;
 	}
 
     clicked(data) {
@@ -124,7 +125,11 @@ class Septikon {
                                 var tile = this.getTile(data.x, data.y);
                                 if ( tile.type == "production"  || tile.type == "surface" || tile.type == "armory") {
                                     this.activePlayer.selectedPersonnelToMove = null;
-                                    if (tile.name == "prodRepair" || tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" || tile.name == "airFilter" ) {
+                                    if (tile.name == "prodRepair"){
+                                        this.queuedTile = tile;
+                                        return;
+                                    }
+                                    if (tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" || tile.name == "airFilter" ) {
                                         this.queuedTile = tile;
                                         return;
                                     }
@@ -154,8 +159,13 @@ class Septikon {
                         // Emit array of eligible gunners and number of selectable gunners to Player.
 
                         if (this.queuedTile.name == "chemicalReactor" || this.queuedTile.name == "chemicalReactorTwo" || this.queuedTile.name == "airFilter") {
-                            if (this.getTile(data.x, data.y).name == "lock") {
+                            tile = this.getTile(data.x, data.y);
+                            if (tile.name == "lock" && tile.damaged === false && tile.occupied === false) {
                                 this.placeClone(this.activePlayer, data.x, data.y);
+                                this.availableClonesToAdd--;
+                                if (this.availableClonesToAdd > 0) {
+                                    return;
+                                }
                                 if (this.activePlayer.getPersonnel('biodrones').length > 0) {
                                     // TODO: send biodrone selection
                                     return;
@@ -442,6 +452,12 @@ class Septikon {
                         console.log("can't accept the yield cuz we got no room!");
                         return false;
                     }
+                }
+
+                if (tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" ) {
+                    this.availableClonesToAdd = this.activePlayer.getResourceCount('oxygen') + tile.properties.resourceYieldCount[0] - this.activePlayer.getPersonnel('clone').length;
+                } else if ( tile.name == "airFilter") {
+                    this.availableClonesToAdd = this.activePlayer.getResourceCount('oxygen') + tile.properties.resourceYieldCount[0] - tile.properties.resourceCostCount[0] - this.activePlayer.getPersonnel('clone').length;
                 }
 
                 for (var k in tile.properties.resourceCostType) {
