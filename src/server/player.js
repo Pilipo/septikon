@@ -41,9 +41,10 @@ class Player {
 
     getPersonnel(type) {
         var returnArray = [];
-        for(var i in this.personnelArray) {
-            if(type === null || this.personnelArray[i].type === 0)
+        for (var i = 0; i < this.personnelArray.length; i++) {
+            if (typeof type === 'undefined' || this.personnelArray[i].type === this.personnelArray[i].typeEnum[type.toUpperCase()]) {
                 returnArray.push(this.personnelArray[i]);
+            }
         }
         return returnArray;
     }
@@ -120,6 +121,10 @@ class Player {
         return this.selectedGunners;
     }
 
+    clearSelectedGunners() {
+        this.selectedGunners = [];
+    }
+
     toggleGunnerSelection(gunner) {
         if (this.selectedGunners.length <= 0) {
             this.selectedGunners.push(gunner);
@@ -143,6 +148,15 @@ class Player {
         return returnArray;
     }
 
+    moveOrdnance(count) {
+        for (var i = 0; i < this.ordnanceArray.length; i++) {
+            if (this.id == 1) {
+                this.ordnanceArray[i].x += count;
+            }
+        }
+        return this.ordnanceArray;
+    }
+
     initResources() {
         var recArray = [
             'energy1', 
@@ -152,17 +166,20 @@ class Player {
             'biodrone',
             'rocket',
             'uranium',
-            'biomass'
+            'biomass',
+            'nuke'
             ];
         var rec = null;
         for (var i in recArray) {
             rec = new Resource(recArray[i]);
             this.resourceArray[recArray[i]] = [];
-            for (var count = 0; count < 10; count++) {
-                if (count < 5) {
-                    this.resourceArray[recArray[i]].push(rec);
-                } else {
-                    this.resourceArray[recArray[i]].push(null);
+            if (recArray[i] != "nuke") {
+                for (var count = 0; count < 10; count++) {
+                    if (count < 5) {
+                        this.resourceArray[recArray[i]].push(rec);
+                    } else {
+                        this.resourceArray[recArray[i]].push(null);
+                    }
                 }
             }
         }
@@ -174,6 +191,10 @@ class Player {
 
         if (type == "energy") {
             return this.getResourceCount('energy1') + this.getResourceCount('energy2');
+        }
+
+        if (type == "nuke") {
+            return this.resourceArray[type].length;
         }
 
         while (currentResourceSlot >= 0) {
@@ -196,9 +217,12 @@ class Player {
         var foundResources = 0;
         var resourceSlots = 0;
 
-        if(type == "nuke") {
-            console.log("special case: this produces ordnance. Check back later...");
-            return false;
+        if (type == "nuke") {
+            if (accept === true) {
+                return true;
+            } else {
+                return this.resourceArray[type].length;
+            }
         }
 
         if(type == "energy") {
@@ -283,6 +307,11 @@ class Player {
         var currentResourceSlot = 9;
         var searching = true;
         var originalCount = count;
+
+        if (type == "nuke") {
+            this.resourceArray[type].push(new Resource(type));
+            return this.resourceArray[type].length;
+        }
 
         if (type == "energy") {
             var success = false;
