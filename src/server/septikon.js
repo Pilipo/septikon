@@ -124,7 +124,8 @@ class Septikon {
                                 var tile = this.getTile(data.x, data.y);
                                 if ( tile.type == "production"  || tile.type == "surface" || tile.type == "armory") {
                                     this.activePlayer.selectedPersonnelToMove = null;
-                                    if (tile.name == "prodRepair") {
+                                    if (tile.name == "prodRepair" || tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" || tile.name == "airFilter" ) {
+                                        this.queuedTile = tile;
                                         return;
                                     }
                                     if (this.activePlayer.getPersonnel('biodrone').length > 0) {
@@ -152,7 +153,21 @@ class Septikon {
                         // Array of eligible gunners sent via activateTile();
                         // Emit array of eligible gunners and number of selectable gunners to Player.
 
-                        if (this.queuedTile.name == "counterEspionage" ) {
+                        if (this.queuedTile.name == "chemicalReactor" || this.queuedTile.name == "chemicalReactorTwo" || this.queuedTile.name == "airFilter") {
+                            if (this.getTile(data.x, data.y).name == "lock") {
+                                this.placeClone(this.activePlayer, data.x, data.y);
+                                if (this.activePlayer.getPersonnel('biodrones').length > 0) {
+                                    // TODO: send biodrone selection
+                                    return;
+                                }
+                                if (this.activePlayer.getOrdnance().length > 0) {
+                                    // TODO: Move ordnance and check for damage
+                                    return;
+                                }
+                                this.changeActivePlayer();
+                                return;
+                            }
+                        } else if (this.queuedTile.name == "counterEspionage" ) {
                             // TODO: special case.
                         } else if (this.queuedTile.name == "repair" || this.queuedTile.name == "repairTwo" || this.queuedTile.name == "prodRepair") {
                             // TODO: Special cases. 
@@ -440,11 +455,16 @@ class Septikon {
                         console.log("Player " + this.activePlayer.id + " added " + remainingCount + " " + tile.properties.resourceYieldType[l] + ". This leaves them with " + this.activePlayer.getResourceCount(tile.properties.resourceYieldType[l]));
                 }
 
+                if (tile.name == "oxygen") {
+                    // TODO: Check if oxygen is greater than the number of clones. If so, add a clone.
+                    if (this.activePlayer.getResourceCount('oxygen') > this.activePlayer.getPersonnel('clone')) {
+                        this.queuedTile = tile;
+                    }
+                }
+
                 if (tile.name == "prodRepair") {
                     // Trigger the repair 
                     this.queuedTile = tile;
-                    console.log ("Tile repair");
-                    console.log ("+++++++");
                     return;
                 }
                 console.log ("+++++++");
@@ -536,7 +556,7 @@ class Septikon {
             var impacted = false;
             var ordUUID;
 
-            switch (weaponTile) {
+            switch (weaponTile.name) {
                 case "laser":
                     var currentTile;
                     var currentOccupant;
@@ -591,8 +611,8 @@ class Septikon {
                     }
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                     ordUUID = uuid();
-                    this.activePlayer.addOrdnance(weaponTile, ordnancePoint, ordUUID);
-                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
+                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
                     break;
                 case "thermite":
                     if (this.activePlayer.id == 1) {
@@ -602,8 +622,8 @@ class Septikon {
                     }
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                     ordUUID = uuid();
-                    this.activePlayer.addOrdnance(weaponTile, ordnancePoint, ordUUID);
-                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
+                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
                     break;
                 default:
                     console.error("There is a problem with that weaponTile argument");
@@ -749,12 +769,6 @@ class Septikon {
                     this.tileArray[x][y].damaged = false;
                     this.tileArray[x][y].occupied = false;
                     this.tileArray[x][y].type = obj[prop].type;
-                    // TODO: TEST CODE
-                    if (this.tileArray[x][y].type == "armory") {
-                        this.tileArray[x][y].damaged = true;
-                    }
-                    // TODO: END TEST CODE
-
                     if (x < 9) {
                         this.tileArray[x][y].owner = 1;
                     } else if (x > 21) {
@@ -911,7 +925,7 @@ class Septikon {
     
     rollDice(data) {
         if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME && this.activePlayer.socketID == data.socketID) {
-            this.currentDiceValue = 1; //Math.floor(Math.random() * 6) + 1;
+            this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
             this.activePlayer.currentLegalPieces = this.getLegalPieces();
 
             // Player receives array of legal personnel (clones) and turn state advances to MOVE

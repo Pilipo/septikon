@@ -24,7 +24,7 @@ class Player {
     }
         
     addPersonnel(type, x, y, uuid) {
-        if(type == "clone" && this.getPersonnel(type).length < this.startingCloneCount) {
+        if(type == "clone" && this.getPersonnel(type).length < 10) {
             var personnel = new Personnel('clone', x, y, uuid);
             this.personnelArray.push(personnel);
             return personnel;
@@ -328,6 +328,7 @@ class Player {
             }
             return originalCount;
         }
+
         while (1) {
             if (searching === true) {
                 // peek at next resource

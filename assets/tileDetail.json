@@ -176,7 +176,7 @@
 			"name": "explosives",
 			"locations": ["2,10", "28,10"]
 		},
-		"lichen": {
+		"productionLichen": {
 			"id": "017",
 			"type": "production",
 			"name": "lichen",
