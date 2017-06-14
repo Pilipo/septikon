@@ -1,4 +1,3 @@
-//TODO: add package.json
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
@@ -88,11 +87,13 @@ io.on('connection',function(socket){
         setTimeout(function(){
             if (player.disconnected) {
                 //player.delete();
+                // TODO: remove player and destroy game.
                 console.log('player is gone. Delete him and abandon his game. Apologize to opponent (if any). Offer opponent a new match?');
             } else {
+                // TODO: repopulate player's client board with pieces
                 console.log('player saved by the bell. Send a package that repopulates the board. This could be tricky... ;)');
             }
-        }, 1000000);
+        }, 100000);
 
     });
 });

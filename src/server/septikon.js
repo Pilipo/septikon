@@ -27,8 +27,8 @@ class Septikon {
             ACTION: 2,  // Trigger tile  
             TARGETS: 3, // Assign target(s) (ie. - gunner, tile, espionaged clone) 
             BIODRONE: 4,// Move biodrone(s)
-            ORDNANCE: 5,// move ordnance according to dice roll
-            END: 6      // assess ordnance damage and clone/biodrone kills. Assess victory conditions
+            ORDNANCE: 5,// move ordnance according to dice roll (this may not require a state...)
+            END: 6      // assess ordnance damage and clone/biodrone kills. Assess victory conditions (this may not require a state...)
         });  
 
         this.directionEnum = Object.freeze({
@@ -52,7 +52,8 @@ class Septikon {
     clicked(data) {
         
         // Process the click from the client. 
-        // Basically, check game and turn state.
+        // Client should do NO rule processing. Pass the click from client to server; process the data; tell the client what to do.
+        // Basically, check game state and turn state.
         
         switch (this.gameState) {
         
@@ -76,7 +77,7 @@ class Septikon {
                 
             case this.gameStateEnum.GAME:
 
-            var selectedPersonnel = false;
+                var selectedPersonnel = false;
 
                 switch (this.turnState) {
                     case this.turnStateEnum.MOVE:
@@ -97,13 +98,18 @@ class Septikon {
                                 this.activePlayer.selectedPersonnelToMove = selectedPersonnel;
                                 //  - Show Clones in client
                                 //     TODO: emit something here
-                                this.emit('action', {callback: 'showTiles', details: {}}, this.activePlayer.socketID);
+                                var pointArray = [];
+                                for (var pi = 0; pi < this.activePlayer.currentLegalPieces.length; pi++) {
+                                    pointArray.push(this.activePlayer.currentLegalPieces[pi].origin);
+                                    pointArray.concat(this.activePlayer.currentLegalPieces[pi].moves);
+                                }
+                                this.emit('action', {callback: 'showTiles', details: {pointArray}}, this.activePlayer.socketID);
                                 //  - Show this clone's moves in client
                                 //     TODO: emit something here
-                                this.emit('action', {callback: 'showTiles', details: {}}, this.activePlayer.socketID);
+                                // this.emit('action', {callback: 'showTiles', details: {pointArray}}, this.activePlayer.socketID);
                                 //  - show this clone in different color in client
                                 //     TODO: emit something here
-                                this.emit('action', {callback: 'showTiles', details: {}}, this.activePlayer.socketID);
+                                // this.emit('action', {callback: 'showTiles', details: {pointArray}}, this.activePlayer.socketID);
                             }
                             
                         } else if (this.activePlayer.selectedPersonnelToMove !== null) {
