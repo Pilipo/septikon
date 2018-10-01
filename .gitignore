@@ -3,6 +3,7 @@
 build/
 node_modules/
 .env
-*/bundle.js
+**/bundle.js
 /Board Set On Table.xmind
 /*.xlsx
+*/package-lock.json

@@ -3,7 +3,9 @@
   "version": "0.0.2",
   "description": "Port of the Septikon board game",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "start": "node index.js"
+  },
   "keywords": [],
   "author": "Phillip Lehner & Luke Lancaster",
   "license": "MIT",
