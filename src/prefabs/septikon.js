@@ -336,7 +336,11 @@ class Septikon {
   }
   
   showTiles(coordsArray, color) {
+    if(typeof(coordsArray.pointArray) !== 'undefined') {
+        coordsArray = coordsArray.pointArray;
+    }
     for (var i in coordsArray) {
+        console.log(this.tileArray[coordsArray[i].x][coordsArray[i].y]);
         this.tileArray[coordsArray[i].x][coordsArray[i].y].alpha = 0.5;
         if(color) {
             this.tileArray[coordsArray[i].x][coordsArray[i].y].tint = color;

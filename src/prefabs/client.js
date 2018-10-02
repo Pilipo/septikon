@@ -40,9 +40,11 @@ class Client {
         });
 
         this.socket.on('action', function(data){
+            console.log("ACTION: ");
             if (typeof(this.septikon[data.callback]) === "function") {
-                this.septikon[data.callback](data.details);
                 console.log(data);
+                this.septikon[data.callback](data.details);
+                
             } else {
                 console.log("ERROR: no method found called septikon." + data.callback);
             }
