@@ -8,18 +8,21 @@ class Setup extends Phaser.State {
     this.game.name = "user";
 
     this.game.stage.disableVisibilityChange = true;
-    this.game.modal = new gameModal(this.game);
-    this.createModals();
-    this.game.modal.showModal('username');
+    
+    // this.game.modal = new gameModal(this.game);
+    // this.createModals();
+    // this.game.modal.showModal('username');
 
-    this.game.input.keyboard.addCallbacks(this, null, null, this.keyPress);
-    this.bksp = this.game.input.keyboard.addKey(Phaser.Keyboard.BACKSPACE);
-    this.bksp.onDown.add(this.keyPress, this);
-    this.enter = this.game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
-    this.enter.onDown.add(this.keyPress, this);
+    // this.game.input.keyboard.addCallbacks(this, null, null, this.keyPress);
+    // this.bksp = this.game.input.keyboard.addKey(Phaser.Keyboard.BACKSPACE);
+    // this.bksp.onDown.add(this.keyPress, this);
+    // this.enter = this.game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+    // this.enter.onDown.add(this.keyPress, this);
     this.game.client.askNewPlayer();
-
+    this.game.state.start('game');
+    return;
     //this.game.septikon.setup();
+    
 }
 
 keyPress(char) {

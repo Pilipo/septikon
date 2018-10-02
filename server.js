@@ -22,32 +22,45 @@ server.listen(process.env.PORT || 3000, function(){
 
 io.on('connection',function(socket){
     var player = null;
+    console.log("New Connection: " + socket.id);
 
     socket.on('newPlayer', function(data){
-        var emplySlotFound = false;
+        console.log("New Player. Here's the data: ");
+        console.log(data);
+        console.log("Games detail: ");
+        console.log(games);
+        var emptySlotFound = false;
 
-        if (games.length) {
-            for (var i in games) {
-                player = games[i].getPlayerByUUID(data.uuid);
-                if (player !== null) {
-                    player.disconnected = false;
-                    socket.game = games[i];
-                    return;
-                } else if (games[i].getPlayerCount() == 1) {
-                    player = new Player(socket.id, 2, data.uuid);
-                    games[i].addPlayer(player);
-                    socket.game = games[i];
-                    emptySlotFound = true;
-                    return;
-                }
-            }
-        } 
-        if (games.length == 0 || emplySlotFound === false) {
+        // if (games.length) {
+        //     for (var i in games) {
+        //         player = games[i].getPlayerByUUID(data.uuid);
+        //         if (player !== null) {
+        //             player.disconnected = false;
+        //             socket.game = games[i];
+        //             return;
+        //         } else if (games[i].getPlayerCount() == 1) {
+        //             player = new Player(socket.id, 2, data.uuid);
+        //             games[i].addPlayer(player);
+        //             socket.game = games[i];
+        //             emptySlotFound = true;
+        //             return;
+        //         }
+        //     }
+        // } 
+        if (games.length === 0) {
             player = new Player(socket.id, 1, data.uuid);
             var game = new sept(io);
             game.addPlayer(player);
             socket.game = game;
             games.push(game);
+        } else if (games[0].playersArray.length === 1) {
+            player = new Player(socket.id, 1, data.uuid);
+            game = games[0];
+            game.addPlayer(player);
+            socket.game = game;
+        } else {
+            console.log("no game slots available.");
+            //TODO: Deal with slots limit.
         }
     });
 
