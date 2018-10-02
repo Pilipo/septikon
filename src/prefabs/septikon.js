@@ -380,6 +380,11 @@ class Septikon {
   startGame() {
     this.game.state.start('game');
   }
+
+  
+  serverFull() {
+    this.game.state.start('serverFull');
+  }   
     
 }
 

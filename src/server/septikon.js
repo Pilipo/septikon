@@ -1,3 +1,5 @@
+//  This is the server-side rule engine. It processes the rules and states and then emits directions back to the client.
+
 var Player = require('./player').Player;
 var uuid = require('uuid/v4');
 
@@ -18,7 +20,8 @@ class Septikon {
             SETUP: 0,
             GAME: 1, 
             PAUSE: 2,
-            GAMEOVER: 3
+            GAMEOVER: 3,
+            SERVERFULL: 4
         });
         
         this.turnStateEnum = Object.freeze({
@@ -1003,6 +1006,9 @@ class Septikon {
         }
     }
     
+    serverFull(player) {
+        this.emit('action', {callback: 'serverFull', details: {id: player.id}}, player.socketID);
+    }
     
 }
 

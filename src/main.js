@@ -4,6 +4,7 @@ import Game from './states/game';
 import Setup from './states/setup';
 import Preloader from './states/preloader';
 import Gameover from './states/gameover';
+import ServerFull from './states/serverFull';
 import Septikon from './prefabs/septikon';
 
 if(typeof(Storage) !== "undefined") {
@@ -27,5 +28,6 @@ game.state.add('game', new Game());
 game.state.add('setup', new Setup());
 game.state.add('preloader', new Preloader());
 game.state.add('gameover', new Gameover());
+game.state.add('serverFull', new ServerFull());
 
 game.state.start('boot');
