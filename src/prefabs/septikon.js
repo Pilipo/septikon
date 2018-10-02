@@ -57,6 +57,7 @@ class Septikon {
       this.legalGunners = data.gunners;
       this.game.go.enable();
       console.log("animate some indication of viable gunners on the surface. Maybe a pointer bouncing over them?");
+      //TODO: Emit an indicator for selecting a gunner
   }
   
   addClone(details) {
