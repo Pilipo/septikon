@@ -36,13 +36,12 @@ class Septikon {
   diceRolled(details) {
     this.game.dice.setValue(details.value);
     this.legalMoves = details.gamePieces;
+    var pointArray = [];
+    // console.log(details.gamePieces[0].origin);
     for (var i = 0; i < details.gamePieces.length; i++) {
-        for (var m in details.gamePieces[i].moves) {
-            var x = details.gamePieces[i].moves[m].x;
-            var y = details.gamePieces[i].moves[m].y;
-            this.showTiles([details.gamePieces[i].origin], 0xF63636);
-        }
+        pointArray.push({ x: details.gamePieces[i].origin.x, y: details.gamePieces[i].origin.y });
     }
+    this.showTiles(pointArray, 0xF63636);
   }
 
   offerDice() {
@@ -336,11 +335,12 @@ class Septikon {
   }
   
   showTiles(coordsArray, color) {
+      console.log("SHOW TILES!!");
+      console.log(coordsArray);
     // if(typeof(coordsArray.pointArray) !== 'undefined') {
     //     coordsArray = coordsArray.pointArray;
     // }
     for (var i in coordsArray) {
-        console.log(this.tileArray[coordsArray[i].x][coordsArray[i].y]);
         this.tileArray[coordsArray[i].x][coordsArray[i].y].alpha = 0.5;
         if(color) {
             this.tileArray[coordsArray[i].x][coordsArray[i].y].tint = color;

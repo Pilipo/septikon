@@ -95,32 +95,28 @@ class Septikon {
                         if (selectedPersonnel !== false) {
                             // Clone was clicked, so:
                             var isLegalPersonnel = this.activePlayer.checkPersonnelMove(selectedPersonnel);
-                            // If personnel is a "biodrone" type AND clones remain in the Player.currentlegalpieces array, emit modal warning to player.
+                            // TODO: If personnel is a "biodrone" type AND clones remain in the Player.currentlegalpieces array, emit modal warning to player.
                             // Clone must move and tile must be triggered prior to biodrone movement.
                             if (isLegalPersonnel === true) {
                                 this.activePlayer.selectedPersonnelToMove = selectedPersonnel;
-                                //  - Show Clones in client
-                                //     TODO: emit something here
+                                //  - Show highlight selected personnel in client
+                                //  - Show legal moves of the selected personnel in a different color
+
                                 var pointArray = [];
-                                for (var pi = 0; pi < this.activePlayer.currentLegalPieces.length; pi++) {
-                                    pointArray.push(this.activePlayer.currentLegalPieces[pi].origin);
-                                    pointArray.concat(this.activePlayer.currentLegalPieces[pi].moves);
-                                }
-                                this.emit('action', {callback: 'showTiles', details: {pointArray}}, this.activePlayer.socketID);
-                                //  - Show this clone's moves in client
-                                //     TODO: emit something here
-                                // this.emit('action', {callback: 'showTiles', details: {pointArray}}, this.activePlayer.socketID);
-                                //  - show this clone in different color in client
-                                //     TODO: emit something here
-                                // this.emit('action', {callback: 'showTiles', details: {pointArray}}, this.activePlayer.socketID);
+                                pointArray = this.getLegalMoves(selectedPersonnel, this.currentDiceValue, {x:selectedPersonnel.x, y:selectedPersonnel.y});
+                                this.emit('action', {callback: 'showTiles', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
+                                // TODO: Show in different color...
+                                this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
                             }
                             
                         } else if (this.activePlayer.selectedPersonnelToMove !== null) {
                             var isLegalMove = this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove,{x:data.x, y:data.y});
                             if (isLegalMove === false) {
+                                // Toggle back to highlighting the personnel with legal moves
                                 // TODO: emit something to show clones to client
                                 this.emit('action', {callback: 'showTiles', details: {}}, this.activePlayer.socketID);
                             } else {
+                                // Move the personnel
                                 this.activePlayer.selectedPersonnelToMove.move(data.x, data.y);
                                 this.emit('action', {callback: 'movePersonnel', details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.activePlayer.socketID);
                                 this.emit('update', {type:"personnel", details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);                               // clear moved personnel from the player array. If moved personnel was a clone, remove ALL clones from array.
