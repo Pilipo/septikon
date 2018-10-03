@@ -128,7 +128,7 @@ class Septikon {
 
                                 // TODO: if tile is production, surface, or armory; check for biodrones and move ordnance, then (if none are found) change players.
                                 var tile = this.getTile(data.x, data.y);
-                                if ( tile.type == "production"  || tile.type == "surface" || tile.type == "armory") {
+                                if ( tile.type == "production"  || tile.type == "surface" || tile.type == "armory" || tile.type == "lock") {
                                     this.activePlayer.selectedPersonnelToMove = null;
                                     if (tile.name == "prodRepair"){
                                         this.queuedTile = tile;
@@ -622,6 +622,8 @@ class Septikon {
                                     // TODO: emit death animation to clients. (maybe just add that to the removePersonnel()?)
                                     this.emit('action', {callback:"removePersonnel", details:currentOccupant}, this.activePlayer.socketID);
                                     currentTile.occupied = false;
+                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
+                                    // TODO: update opponent's client
                                     impacted = true;
                                     break;
                                 }
@@ -630,6 +632,7 @@ class Septikon {
                                 } else {
                                     currentTile.damaged = true;
                                     this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
+                                    // TODO: update opponent's client
                                     impacted = true;
                                     break;
                                 }
@@ -651,6 +654,7 @@ class Septikon {
                     ordUUID = uuid();
                     this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
                     this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    //TODO: updatePersonnel on opponent client
                     break;
                 case "thermite":
                     if (this.activePlayer.id == 1) {
@@ -975,6 +979,8 @@ class Septikon {
     }
     
     emit(msg, data, socketID) {
+
+        //TODO: If this is an action, immediately emit to opponent for client update
         if(msg == "response" || msg == "request" || msg == "update") {
             if(typeof(socketID) == "undefined") {
                 console.error("No SocketID found!");

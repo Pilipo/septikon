@@ -171,6 +171,21 @@ class Septikon {
     for (var i in details) {
         this.player[i] = details[i];
     }
+
+    // DEBUG BLOCK
+    this.game.client.sendInput({event: 'tileClicked', x:7, y:0});
+    this.game.client.sendInput({event: 'tileClicked', x:7, y:19});
+    this.game.client.sendInput({event: 'tileClicked', x:6, y:10});
+    this.game.client.sendInput({event: 'tileClicked', x:4, y:10});
+    this.game.client.sendInput({event: 'tileClicked', x:0, y:10});
+                    
+    this.game.client.sendInput({event: 'tileClicked', x:23, y:20});
+    this.game.client.sendInput({event: 'tileClicked', x:23, y:1});
+    this.game.client.sendInput({event: 'tileClicked', x:24, y:10});
+    this.game.client.sendInput({event: 'tileClicked', x:26, y:10});
+    this.game.client.sendInput({event: 'tileClicked', x:30, y:10});
+                    
+    
   }
 
   initResources() {
@@ -328,11 +343,19 @@ class Septikon {
   }
   
   tileClicked(obj) {
-      this.hideTiles();
-      this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
-    //   this.addOrdnance({point:{x:obj.tileX, y:obj.tileY}, type:'shield', uuid:Math.random()});
+    this.hideTiles();
+    this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
 
-      return;
+    // DEBUG BLOCK
+    console.log("----TILE DETAIL----");
+    console.log("Name: " + obj.tileName);
+    console.log("Type: " + obj.tileType);
+    console.log("Occupied: " + obj.tileOccupied);
+    console.log("Damaged: " + obj.tileDamaged);
+    console.log("X: " + obj.tileX + " Y:" + obj.tileY);
+    //   this.addOrdnance({point:{x:obj.tileX, y:obj.tileY}, type:'biodrone', uuid:Math.random()});
+
+    return;
   }
   
   showTiles(coordsArray, color) {

@@ -26,7 +26,7 @@ class Client {
                 this.septikon.game.dice.setValue(data.details.value);
             }
             console.log('UPDATE:');
-            console.log(data.type);
+            console.log(data);
         });
 
         this.socket.on('request', function(data){
@@ -44,7 +44,7 @@ class Client {
             if (typeof(this.septikon[data.callback]) === "function") {
                 console.log(data);
                 this.septikon[data.callback](data.details);
-                
+
             } else {
                 console.log("ERROR: no method found called septikon." + data.callback);
             }
