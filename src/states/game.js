@@ -24,37 +24,17 @@ class Game extends Phaser.State {
 
     this.game.hudBg = this.game.add.sprite(0,0,'hud-bg');
 
-    this.game.go = this.game.add.sprite(40,80,'text_go');
-    this.game.go.scale.setTo(0.25);
-    this.game.go.inputEnabled = false;
-    this.game.go.filters = [this.game.add.filter('Gray')];
-
-    this.game.go.clicked = function() {
-        if (this.game.septikon.choosingTargets === true) {
-            this.game.client.sendInput({event: 'go'});
-        }
-    };
-
-    this.game.go.events.onInputDown.add(this.game.go.clicked, this);
-
-    this.game.go.enable = function() {
-        this.filters = null;
-        this.inputEnabled = true;
-    };
-
-    this.game.go.disable = function() {
-        this.filters = [this.game.add.filter('Gray')];
-        this.inputEnabled = false;
-    };
-
     this.game.dice = new Dice(this.game, 50, 40);
     this.game.dice.scale.setTo(0.25);
+    this.game.confirm = new Confirm(this.game, 40,80);
+    this.game.confirm.scale.setTo(0.25);
 
     this.game.add.existing(this.game.dice);
+    this.game.add.existing(this.game.confirm);
     
     this.game.hudGroup.add(this.game.hudBg);
     this.game.hudGroup.add(this.game.dice);
-    this.game.hudGroup.add(this.game.go);
+    this.game.hudGroup.add(this.game.confirm);
     this.game.boardGroup.add(this.background);
 
     this.game.septikon.createTileArray(31, 21, {x:0-this.background.width/2, y:0-this.background.height/2});

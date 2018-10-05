@@ -50,7 +50,49 @@ class Septikon {
         this.queuedTile = null;
         this.tilesRepairedThisTurn = 0;
         this.availableClonesToAdd = 0;
-	}
+    }
+    
+    processClick(data) {
+        // What is always true of a click?
+        //  - send tile details to the client
+        //  - send occupant details to client (if any)
+
+        // Do the needful
+        let player = this.getPlayerBySocketID(data.socketID);
+
+        // (1) Check gamestate
+        // (2) Check turnphase
+        // (3) Check phasestep
+
+        if (this.gameState === this.gameStateEnum.SETUP) {
+            // This gamestate allows:
+            //  - placing clones
+            //    - check legal placement
+            //    - add clone
+            //  - removing clones
+            //    - check if clone exists here
+            //    - remove clone
+            //  - confirming selection
+            //    - check if starting count is placed
+            //    - advance gamestate
+
+            if (this.placeClone(player, data.x, data.y) === true) {
+                // emit clones array to this player
+            }
+        } else if (this.gameState === this.gameStateEnum.GAME) {
+            // This gamestate has phases:
+            // (1) - rolling die
+            // (2) - moving a clone
+            // (3) - tile activation
+            // (4) - moving biodrone(s)
+            // (5) - moving rockets
+            // (6) - assessing damage
+            // (7) - check victory
+        } else if (this.gameState === this.gameStateEnum.PAUSE) {
+        } else if (this.gameState === this.gameStateEnum.GAMEOVER) {
+        } else if (this.gameState === this.gameStateEnum.SERVERFULL) {
+        }
+    }
 
     clicked(data) {
         
@@ -603,6 +645,7 @@ class Septikon {
                             ordnancePoint.x--;
                         }
                         currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
+                        console.log(currentTile);
                         switch (currentTile.name) {
                             case "space":
                             case "surface":
@@ -750,6 +793,9 @@ class Septikon {
 
         // if gamestate is SETUP
         if (this.gameState === this.gameStateEnum.SETUP) {
+            if (player.getPersonnel('clone').length === player.startingCloneCount) {
+                return false;
+            }
             if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
                 cloneUUID = uuid();
                 //var uuid = require('uuid/v4')();
