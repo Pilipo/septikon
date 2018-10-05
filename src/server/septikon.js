@@ -66,7 +66,7 @@ class Septikon {
         // (2) Check turnphase
         // (3) Check phasestep
 
-        if (this.gameState === this.gameStateEnum.SETUP) {
+        if (this.gameStateEnum.SETUP === this.gameState) {
             if (data.event === "confirmClicked") {
                 if (player.personnelArray.length === player.startingCloneCount) {
                     this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
@@ -87,7 +87,7 @@ class Septikon {
                     this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: true}]});
                 }
             }
-        } else if (this.gameState === this.gameStateEnum.GAME) {
+        } else if (this.gameStateEnum.GAME === this.gameState) {
             // This gamestate has phases (or "this.turnstate"):
             // (1) - rolling die
             // (2) - moving a clone
@@ -97,14 +97,24 @@ class Septikon {
             // (6) - assessing damage
             // (7) - check victory
         
-            if (data.event === "diceClicked" 
-            && this.turnState === this.turnStateEnum.ROLL 
-            && this.activePlayer.socketID === data.socketID) {
-                this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
-                this.activePlayer.currentLegalPieces = this.getLegalPieces();    
-                this.emit('update', {type:"dice", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}});
-                this.turnState++;
+            if (this.turnStateEnum.ROLL === this.turnState) {
+                if(data.event === "diceClicked" 
+                && this.activePlayer.socketID === data.socketID) {
+                    this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
+                    this.activePlayer.currentLegalPieces = this.getLegalPieces();    
+                    this.emit('update', {type:"dice", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}});
+                    this.turnState++;
+                }
+            } else if (this.turnStateEnum.MOVE === this.turnState
+                && data.event === "tileClicked") {
+                // If no clone is selected, check for legal clone select it
+
+                // If legal clone is selected and this is a legal move, move the clone
+
+                // else bail
             }
+
+
         } else if (this.gameState === this.gameStateEnum.PAUSE) {
         } else if (this.gameState === this.gameStateEnum.GAMEOVER) {
         } else if (this.gameState === this.gameStateEnum.SERVERFULL) {
