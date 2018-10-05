@@ -37,6 +37,11 @@ class Septikon {
             this.addPersonnel(data.details.personnel, data.details.playerID);
         }
 
+        if (data.details.action === "remove") {
+            console.log("removing personnel");
+            this.removePersonnel(data.details.personnel, data.details.playerID);
+        }
+
             // for (let j = 0; j < this.player.personnelArray.length; j++) {
             //     let myPerson = this.player.personnelArray[j];
             //     if (myPerson.uuid === p.uuid) {
@@ -120,7 +125,7 @@ class Septikon {
     } else {
         this.opponent.personnelArray.push(newPersonnel);
     }
-    this.game.boardGroup.add(newPersonnel);
+    
   }
 
   addOrdnance(details) {
@@ -177,16 +182,23 @@ class Septikon {
 
 
   removePersonnel(data) {
-      var personnelToDestroy;
-      for (var i = 0; i < this.player.personnelArray.length; i++) {
-          if (this.player.personnelArray[i].uuid == data.uuid) {
-              personnelToDestroy = this.player.personnelArray[i];
-              this.player.personnelArray.splice(i,1);
-              personnelToDestroy.destroy();
-              return true;
-          }
-      }
-      return false;
+        console.log(this.game.personnelGroup.children);
+        for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
+            if (this.game.personnelGroup.children[i].uuid === data.uuid) {
+                this.game.personnelGroup.children[i].destroy();
+            }
+        }
+        console.log(this.game.personnelGroup.children);
+        return true;
+    //   for (let i = 0; i < this.player.personnelArray.length; i++) {
+    //       if (this.player.personnelArray[i].uuid == data.uuid) {
+    //           let personnelToDestroy = this.player.personnelArray[i];
+    //           this.player.personnelArray.splice(i,1);
+    //           personnelToDestroy.destroy();
+    //           return true;
+    //       }
+    //   }
+    //   return false;
   }
 
   removeAllPersonnel(){

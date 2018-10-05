@@ -17,11 +17,11 @@ class Clone extends Phaser.Sprite {
     this.scale.y = Math.abs(this.scale.x);
     
     //set rotation (this should be based on the base this clone occupies)
-    this.angle = this.game.boardGroup.angle * -1;
+    this.angle = this.game.personnelGroup.angle * -1;
 
     this.currentTileCoordinates = this.game.septikon.pixelsToTile(this.x, this.y);
     this.game.septikon.tileArray[this.currentTileCoordinates.x][this.currentTileCoordinates.y].tileOccupied = true;
-
+    this.game.personnelGroup.add(this);
   }
   
   remove() {

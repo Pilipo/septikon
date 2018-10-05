@@ -78,14 +78,27 @@ class Septikon {
             //    - check if starting count is placed
             //    - advance gamestate
 
-            // console.log("placing clone")
-            let clone = this.placeClone(player, data.x, data.y);
-            // console.log(clone); 
-            if (clone !== false) {
-                // emit the added clone and the tile occupation
-                // this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:cloneUUID}}, player.socketID);
-                this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
-                this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: true}]});
+            if (data.event === "confirmClicked") {
+                if (player.personnelArray.length === player.startingCloneCount) {
+                    //Alert that player is ready or start game.
+                }
+            } else if (data.event === "tileClicked") {
+                for (let i = 0; i < player.personnelArray.length; i++) {
+                    let personnel = player.personnelArray[i];
+                    if (data.x === personnel.x && data.y === personnel.y) {
+                        player.personnelArray.splice(i,1);
+                        this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'remove', playerID: player.id}});
+                        this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: false}]});
+                        return;
+                    }
+                }
+                let clone = this.placeClone(player, data.x, data.y);
+                if (clone !== false) {
+                    // emit the added clone and the tile occupation
+                    // this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:cloneUUID}}, player.socketID);
+                    this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
+                    this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: true}]});
+                }
             }
         } else if (this.gameState === this.gameStateEnum.GAME) {
             // This gamestate has phases:
@@ -810,6 +823,7 @@ class Septikon {
                 return clone;
             }
         }
+        return false;
     }
 
     createTileArray() {
@@ -1010,6 +1024,7 @@ class Septikon {
 
         if(typeof(socketID) == "undefined") {
             console.error("No SocketID found, so I'm broadcasting!");
+            console.log(data);
             this.broadcast(msg, data);
             return;
         } else {

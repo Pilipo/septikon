@@ -14,14 +14,17 @@ class Game extends Phaser.State {
     
     this.game.boardGroup = this.game.add.group();
     this.game.hudGroup = this.game.add.group();
+    this.game.personnelGroup = this.game.add.group();
+    this.game.ordnanceGroup = this.game.add.group();
+    this.game.resourcesGroup = this.game.add.group();
 
     this.game.modal = new gameModal(this.game);
     this.createModals();
 
     this.background = this.game.add.sprite(0,0,'background');
     this.background.anchor.setTo(0.5,0.5);
-    this.game.boardGroup.centerX = this.game.world.centerX;
-    this.game.boardGroup.centerY = this.game.world.centerY;
+    this.game.boardGroup.centerX = this.game.personnelGroup.centerX = this.game.ordnanceGroup.centerX = this.game.resourcesGroup.centerX = this.game.world.centerX;
+    this.game.boardGroup.centerY = this.game.personnelGroup.centerY = this.game.ordnanceGroup.centerY = this.game.resourcesGroup.centerY = this.game.world.centerY;
 
     this.game.hudBg = this.game.add.sprite(0,0,'hud-bg');
 
@@ -95,20 +98,24 @@ class Game extends Phaser.State {
     if(scale > 1.9) {
         scale = 1.9;
     }
-    
+    this.game.personnelGroup.scale.setTo(scale);
+    this.game.ordnanceGroup.scale.setTo(scale);
+    this.game.resourcesGroup.scale.setTo(scale);
     this.game.boardGroup.scale.setTo(scale);
+    this.game.personnelGroup.scale = this.game.ordnanceGroup.scale = this.game.resourcesGroup.scale = this.game.boardGroup.scale;
     this.game.boardGroup.x = this.game.world.centerX;
-
+    this.game.personnelGroup.x = this.game.ordnanceGroup.x = this.game.resourcesGroup.x = this.game.boardGroup.x;
+    
     if(this.game.septikon.player.id == 1) {
-        this.game.boardGroup.angle = -90; 
+        this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = -90; 
         //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
         //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
-        this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
+        this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
     } else {
-        this.game.boardGroup.angle = 90; 
+        this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = 90; 
         //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
         //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
-        this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
+        this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
     }
 
   }
