@@ -13,10 +13,11 @@ class Game extends Phaser.State {
     this.game.stage.disableVisibilityChange = true;
     
     this.game.boardGroup = this.game.add.group();
-    this.game.hudGroup = this.game.add.group();
     this.game.personnelGroup = this.game.add.group();
     this.game.ordnanceGroup = this.game.add.group();
     this.game.resourcesGroup = this.game.add.group();
+    this.game.hudGroup = this.game.add.group();
+
 
     this.game.modal = new gameModal(this.game);
     this.createModals();
@@ -86,7 +87,6 @@ class Game extends Phaser.State {
             contentScale: 0.6,
             callback: function () {
                 this.game.modal.hideModal("askStart");
-                this.game.client.sendInput({event:'setPlayerState', value:'reset'});
             }
         }, ]
     });

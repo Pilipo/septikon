@@ -71,7 +71,7 @@ class Septikon {
                 if (player.personnelArray.length === player.startingCloneCount) {
                     this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
-            } else if (data.event === "tileClicked") {
+            } else if (data.event === "tileClicked" && player.readyToStart === false) {
                 for (let i = 0; i < player.personnelArray.length; i++) {
                     let personnel = player.personnelArray[i];
                     if (data.x === personnel.x && data.y === personnel.y) {
@@ -351,11 +351,6 @@ class Septikon {
     setPlayerState(state) {
         var player = null;
         switch (state.value) {
-            case 'reset': 
-                player = this.getPlayerBySocketID(state.socketID);
-                player.removePersonnel(null, true);
-                this.emit('action', {callback:"removeAllPersonnel", details: {}}, player.socketID);
-                break;
             case 'start': 
                 player = this.getPlayerBySocketID(state.socketID);
                 player.readyToStart = true;
@@ -363,36 +358,8 @@ class Septikon {
                 if(!opponent || !opponent.readyToStart) {
                     return;
                 } else {
-                    var oppClones = opponent.getPersonnel('clone');
-                    var currentPlayerClones = player.getPersonnel('clone');
-
-                    // Notify current player of opponent positions
-                    var playerPayload = [];
-                    for (var i in oppClones) {
-                        playerPayload.push({
-                            x:oppClones[i].x,
-                            y:oppClones[i].y,
-                            uuid:oppClones[i].uuid,                            
-                        });
-                    }
-                    this.emit('update', {type:"personnel", details:playerPayload}, player.socketID);
-
-                    // Notify opponent of current player's positions
-                    var oppPayload = [];
-                    for (var c in currentPlayerClones) {
-                        oppPayload.push({
-                            x:currentPlayerClones[c].x,
-                            y:currentPlayerClones[c].y,
-                            uuid:currentPlayerClones[c].uuid,
-                        });
-                    }
-                    this.emit('update', {type:"personnel", details:oppPayload}, opponent.socketID);
-                    this.broadcast('update', {type:"resources", action:'init'});
-
                     this.activePlayer = this.getRandomPlayer();
-                    this.emit('action', {callback:"offerDice", details: {}}, this.activePlayer.socketID);
                     this.gameState++;
-
                 }
                 break;
             default:
