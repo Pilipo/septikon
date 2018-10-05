@@ -75,13 +75,13 @@ io.on('connection',function(socket){
                 break;
                 
             case 'diceClicked':
-                socket.game.clicked(data);
+                socket.game.processClick(data);
                 // socket.game.rollDice(data);
                 break;
 
             case 'confirmClicked':
             // case 'go':
-                socket.game.clicked(data);
+                socket.game.processClick(data);
                 // socket.game.go(data);
                 break;
                 

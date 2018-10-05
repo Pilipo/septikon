@@ -67,20 +67,9 @@ class Septikon {
         // (3) Check phasestep
 
         if (this.gameState === this.gameStateEnum.SETUP) {
-            // This gamestate allows:
-            //  - placing clones
-            //    - check legal placement
-            //    - add clone
-            //  - removing clones
-            //    - check if clone exists here
-            //    - remove clone
-            //  - confirming selection
-            //    - check if starting count is placed
-            //    - advance gamestate
-
             if (data.event === "confirmClicked") {
                 if (player.personnelArray.length === player.startingCloneCount) {
-                    //Alert that player is ready or start game.
+                    this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
             } else if (data.event === "tileClicked") {
                 for (let i = 0; i < player.personnelArray.length; i++) {
@@ -94,8 +83,6 @@ class Septikon {
                 }
                 let clone = this.placeClone(player, data.x, data.y);
                 if (clone !== false) {
-                    // emit the added clone and the tile occupation
-                    // this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:cloneUUID}}, player.socketID);
                     this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
                     this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: true}]});
                 }
@@ -1023,8 +1010,6 @@ class Septikon {
     emit(msg, data, socketID) {
 
         if(typeof(socketID) == "undefined") {
-            console.error("No SocketID found, so I'm broadcasting!");
-            console.log(data);
             this.broadcast(msg, data);
             return;
         } else {
@@ -1034,7 +1019,6 @@ class Septikon {
     
     broadcast(msg, data) {
         for (let i in this.playersArray) {
-            console.log(msg + " :: " + data + " :: " +  this.playersArray[i].socketID);
             this.emit(msg, data, this.playersArray[i].socketID);
         }
     }
