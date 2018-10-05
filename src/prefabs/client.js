@@ -15,18 +15,22 @@ class Client {
             if(data.type == "personnel") {
                 this.septikon.updatePersonnel(data);
             }
+            if(data.type == "ordnance") {
+                this.septikon.updateOrdnance(data);
+            }
             if(data.type == "resources") {
-                if (data.action == "init") {
-                    this.septikon.initResources();
-                } else {
-                    console.error(data.action + " not a legal action for Resource update.");
-                }
+                this.septikon.updateResources(data);
+            }
+            if(data.type == "tiles") {
+                this.septikon.updateTiles(data);
             }
             if (data.type == "dice") {
                 this.septikon.game.dice.setValue(data.details.value);
             }
-            console.log('UPDATE:');
-            console.log(data);
+            if (data.type == "info") {
+                console.log(data);
+                // this.septikon.updateInfo(data);
+            }
         });
 
         this.socket.on('request', function(data){

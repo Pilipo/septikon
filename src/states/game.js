@@ -1,4 +1,5 @@
 import Dice from '../prefabs/dice';
+import Confirm from '../prefabs/confirm';
 
 class Game extends Phaser.State {
 

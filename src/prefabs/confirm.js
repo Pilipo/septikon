@@ -10,14 +10,14 @@ class Confirm extends Phaser.Sprite {
       this.game.physics.arcade.enableBody(this);
   
       //set click event
-      this.inputEnabled = false;
+      this.inputEnabled = true;
       this.events.onInputDown.add(this.clicked, this);
   
       //set size
       this.width = 50;
       this.scale.y = Math.abs(this.scale.x);
-      this.filters = [this.game.add.filter('Gray')];
-      this.alpha = 0.5;
+      // this.filters = [this.game.add.filter('Gray')];
+      // this.alpha = 0.5;
     }
   
     clicked () {
@@ -25,15 +25,15 @@ class Confirm extends Phaser.Sprite {
     }
   
     enable() {
-        this.alpha = 1;
+        // this.alpha = 1;
         this.filters = null;
-        this.inputEnabled = true;
+        // this.inputEnabled = true;
     }
   
     disable() {
-        this.alpha = 0.5;
-        this.filters = [this.game.add.filter('Gray')];
-        this.inputEnabled = false;
+        // this.alpha = 0.5;
+        // this.filters = [this.game.add.filter('Gray')];
+        // this.inputEnabled = false;
     }
   
   }

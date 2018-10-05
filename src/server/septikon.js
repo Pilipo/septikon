@@ -12,6 +12,7 @@ class Septikon {
         this.gameState = 0;
         this.turnState = 0;
         this.uuid = require('uuid/v4')();
+        this.sequence = 0;
 
         this.activePlayer = null;
         this.currentDiceValue = 0;
@@ -56,6 +57,7 @@ class Septikon {
         // What is always true of a click?
         //  - send tile details to the client
         //  - send occupant details to client (if any)
+        //  - successful interactions (like moving a clone) should emit to client ONLY from this function.
 
         // Do the needful
         let player = this.getPlayerBySocketID(data.socketID);
@@ -76,8 +78,14 @@ class Septikon {
             //    - check if starting count is placed
             //    - advance gamestate
 
-            if (this.placeClone(player, data.x, data.y) === true) {
-                // emit clones array to this player
+            // console.log("placing clone")
+            let clone = this.placeClone(player, data.x, data.y);
+            // console.log(clone); 
+            if (clone !== false) {
+                // emit the added clone and the tile occupation
+                // this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:cloneUUID}}, player.socketID);
+                this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
+                this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: true}]});
             }
         } else if (this.gameState === this.gameStateEnum.GAME) {
             // This gamestate has phases:
@@ -774,12 +782,6 @@ class Septikon {
     
     placeClone(player, x, y) {
 
-        // Attempt to place clones
-        // If the gamestate is SETUP, clones can go into any unoccupied, player-owned, battle, production, lock, or armory tile.
-        // If the gamestate is GAME, clones can only go into unoccupied, player-owned, locks.
-        // RETURN true or false for success or failure.
-        // I should refactor this, but I'm tired.
-
         if (typeof player === 'undefined' || player === null) {
             return false;
         }
@@ -788,46 +790,26 @@ class Septikon {
         var clone, cloneUUID;
 
         if (player.id != selectedTile.owner || selectedTile.occupied === true) {
-            return;
+            return false;
         }
 
-        // if gamestate is SETUP
+        // if gamestate is SETUP you can place in lock, battle, armory, and production tiles, otherwise only in lock tiles.
         if (this.gameState === this.gameStateEnum.SETUP) {
             if (player.getPersonnel('clone').length === player.startingCloneCount) {
                 return false;
             }
             if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
                 cloneUUID = uuid();
-                //var uuid = require('uuid/v4')();
                 clone = player.addPersonnel('clone', x, y, cloneUUID);
-                if (clone !== false) {
-                    this.checkArms(player);
-                    selectedTile.occupied = true;
-                    this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:cloneUUID}}, player.socketID);
-                    return true;
-                } else {
-                    return false;
-                }
+                return clone;
             }
-        }
-
-        // if gamestate is GAME
-        if (this.gameState === this.gameStateEnum.GAME) {
+        } else  {
             if (selectedTile.type == "lock") {
                 cloneUUID = uuid();
-                //var uuid = require('uuid/v4')();
                 clone = player.addPersonnel('clone', x, y, cloneUUID);
-                if (clone !== false) {
-                    this.checkArms(player);
-                    selectedTile.occupied = true;
-                    this.emit('action', {callback:"addClone", details: {x:x, y:y, playerID: player.id, uuid:cloneUUID}}, player.socketID);
-                    return true;
-                } else {
-                    return false;
-                }
+                return clone;
             }
         }
-        
     }
 
     createTileArray() {
@@ -1026,30 +1008,18 @@ class Septikon {
     
     emit(msg, data, socketID) {
 
-        //TODO: If this is an action, immediately emit to opponent for client update
-        if(msg == "response" || msg == "request" || msg == "update") {
-            if(typeof(socketID) == "undefined") {
-                console.error("No SocketID found!");
-                return;
-            }
+        if(typeof(socketID) == "undefined") {
+            console.error("No SocketID found, so I'm broadcasting!");
+            this.broadcast(msg, data);
+            return;
+        } else {
             this.io.sockets.connected[socketID].emit(msg, data);
-        }
-    
-        if(msg == "action") {
-            if(typeof(socketID) == "undefined") {
-                console.error("No SocketID found!");
-                return;
-            }
-            this.io.sockets.connected[socketID].emit(msg, data);
-        }
-        
-        if(msg == "log") {
-            this.io.sockets.emit(msg, data);
         }
     }
     
     broadcast(msg, data) {
-        for (var i in this.playersArray) {
+        for (let i in this.playersArray) {
+            console.log(msg + " :: " + data + " :: " +  this.playersArray[i].socketID);
             this.emit(msg, data, this.playersArray[i].socketID);
         }
     }

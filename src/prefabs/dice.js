@@ -10,14 +10,14 @@ class Dice extends Phaser.Sprite {
     this.game.physics.arcade.enableBody(this);
 
     //set click event
-    this.inputEnabled = false;
+    this.inputEnabled = true;
     this.events.onInputDown.add(this.clicked, this);
 
     //set size
     this.width = 50;
     this.scale.y = Math.abs(this.scale.x);
-    this.filters = [this.game.add.filter('Gray')];
-    this.alpha = 0.5;
+    // this.filters = [this.game.add.filter('Gray')];
+    // this.alpha = 0.5;
     
     this.value = 10;
     this.frame = this.value-1;
@@ -34,9 +34,9 @@ class Dice extends Phaser.Sprite {
   }
 
   disable() {
-      this.alpha = 0.5;
-      this.filters = [this.game.add.filter('Gray')];
-      this.inputEnabled = false;
+      // this.alpha = 0.5;
+      // this.filters = [this.game.add.filter('Gray')];
+      // this.inputEnabled = false;
   }
 
   setValue(value) {

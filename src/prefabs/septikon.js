@@ -1,4 +1,5 @@
 import Clone from '../prefabs/clone';
+import Biodrone from '../prefabs/biodrone';
 import Ordnance from '../prefabs/ordnance';
 
 class Septikon {
@@ -6,13 +7,10 @@ class Septikon {
   //initialization code in the constructor
   constructor(game) { 
     this.game = game;
-    
-    this.player = {
-        id: 0,
+    this.player = { 
         personnelArray: [],
         ordnanceArray: []
     };
-
     this.opponent = {
         personnelArray: [],
         ordnanceArray: []
@@ -28,6 +26,55 @@ class Septikon {
     this.choosingTargets = false;
     this.selectedGunners = [];
   }
+
+    updatePersonnel(data) {
+        // ADD personnel
+        // REMOVE personnel
+        // MOVE personnel
+
+        if (data.details.action === "add") {
+            console.log("adding personnel");
+            this.addPersonnel(data.details.personnel, data.details.playerID);
+        }
+
+            // for (let j = 0; j < this.player.personnelArray.length; j++) {
+            //     let myPerson = this.player.personnelArray[j];
+            //     if (myPerson.uuid === p.uuid) {
+            //         matchFound = true;
+            //     }
+            // }
+        // var currentPersonnel = null;
+        // if (Array.isArray(data.details) === false) {
+        //     data.details = [data.details];
+        // }
+
+        // if (this.opponent.personnelArray.length === 0 && data.details.length === 5) {
+        //     for (var i in data.details) {
+        //         this.addClone(data.details[i]);
+        //     }      
+        // } else {
+        //     for (var p in this.opponent.personnelArray) {
+        //         currentPersonnel = this.opponent.personnelArray[p];
+        //         for (var d in data.details) {
+        //             if (currentPersonnel.uuid == data.details[d].uuid) {
+        //                 this.movePersonnel(data.details[d]);
+        //             }
+        //         }
+        //     }
+        // }
+    }
+
+    updateOrdnance(data) {
+        
+    }
+
+    updateResources(data) {
+        
+    }
+
+    updateTiles(data) {
+        
+    }
 
   showModal(type) {
     this.game.modal.showModal(type);
@@ -60,15 +107,20 @@ class Septikon {
       //TODO: Emit an indicator for selecting a gunner
   }
   
-  addClone(details) {
-    var point = this.tileToPixels(details.x, details.y);
-    var clone = new Clone(this.game, point.x, point.y, null, details.uuid);
-    if(details.playerID == this.player.id) {
-        this.player.personnelArray.push(clone);
-    } else {
-        this.opponent.personnelArray.push(clone);
+  addPersonnel(personnel, playerID) {
+    let point = this.tileToPixels(personnel.x, personnel.y);
+    let newPersonnel = null;
+    if (personnel.typeEnum.CLONE === personnel.type) {
+        newPersonnel = new Clone(this.game, point.x, point.y, null, personnel.uuid);
+    } else if (personnel.typeEnum.BIODRONE === personnel.type) {
+        newPersonnel = new Biodrone(this.game, point.x, point.y, null, personnel.uuid);
     }
-    this.game.boardGroup.add(clone);
+    if(playerID == this.player.id) {
+        this.player.personnelArray.push(newPersonnel);
+    } else {
+        this.opponent.personnelArray.push(newPersonnel);
+    }
+    this.game.boardGroup.add(newPersonnel);
   }
 
   addOrdnance(details) {
@@ -123,27 +175,6 @@ class Septikon {
     }
   }
 
-  updatePersonnel(data) {
-      var currentPersonnel = null;
-      if (Array.isArray(data.details) === false) {
-          data.details = [data.details];
-      }
-
-      if (this.opponent.personnelArray.length === 0 && data.details.length === 5) {
-        for (var i in data.details) {
-            this.addClone(data.details[i]);
-        }      
-      } else {
-        for (var p in this.opponent.personnelArray) {
-            currentPersonnel = this.opponent.personnelArray[p];
-            for (var d in data.details) {
-                if (currentPersonnel.uuid == data.details[d].uuid) {
-                    this.movePersonnel(data.details[d]);
-                }
-            }
-        }
-      }
-  }
 
   removePersonnel(data) {
       var personnelToDestroy;

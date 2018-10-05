@@ -30,11 +30,12 @@ class Player {
     }
         
     addPersonnel(type, x, y, uuid) {
-        if(type == "clone" && this.getPersonnel(type).length < 10) {
+        if(type == "clone") {
             var personnel = new Personnel('clone', x, y, uuid);
             this.personnelArray.push(personnel);
             return personnel;
         }
+        console.log("personnel is not a clone type.");
         return false;
     }
 

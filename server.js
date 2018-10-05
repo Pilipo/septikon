@@ -67,17 +67,22 @@ io.on('connection',function(socket){
 
     socket.on('input', function(data) {
         data.socketID = socket.id;
+        console.log(data);
         switch(data.event) {
             case 'tileClicked':
-                socket.game.clicked(data);
+                socket.game.processClick(data);
+                // socket.game.clicked(data);
                 break;
                 
             case 'diceClicked':
-                socket.game.rollDice(data);
+                socket.game.clicked(data);
+                // socket.game.rollDice(data);
                 break;
 
-            case 'go':
-                socket.game.go(data);
+            case 'confirmClicked':
+            // case 'go':
+                socket.game.clicked(data);
+                // socket.game.go(data);
                 break;
                 
             case 'get':
