@@ -88,7 +88,7 @@ class Septikon {
                 }
             }
         } else if (this.gameState === this.gameStateEnum.GAME) {
-            // This gamestate has phases:
+            // This gamestate has phases (or "this.turnstate"):
             // (1) - rolling die
             // (2) - moving a clone
             // (3) - tile activation
@@ -96,6 +96,15 @@ class Septikon {
             // (5) - moving rockets
             // (6) - assessing damage
             // (7) - check victory
+        
+            if (data.event === "diceClicked" 
+            && this.turnState === this.turnStateEnum.ROLL 
+            && this.activePlayer.socketID === data.socketID) {
+                this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
+                this.activePlayer.currentLegalPieces = this.getLegalPieces();    
+                this.emit('update', {type:"dice", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}});
+                this.turnState++;
+            }
         } else if (this.gameState === this.gameStateEnum.PAUSE) {
         } else if (this.gameState === this.gameStateEnum.GAMEOVER) {
         } else if (this.gameState === this.gameStateEnum.SERVERFULL) {
@@ -957,16 +966,6 @@ class Septikon {
 
     }
     
-    rollDice(data) {
-        if(this.turnState == this.turnStateEnum.ROLL && this.gameState == this.gameStateEnum.GAME && this.activePlayer.socketID == data.socketID) {
-            this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
-            this.activePlayer.currentLegalPieces = this.getLegalPieces();
-
-            // Player receives array of legal personnel (clones) and turn state advances to MOVE
-            this.emit('action', {callback:"diceRolled", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}}, data.socketID);
-            this.turnState++;
-        }
-    }
     
     get(data) {
         if(typeof(data.property) == 'undefined') {
