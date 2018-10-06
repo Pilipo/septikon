@@ -92,8 +92,8 @@ class Septikon {
             }
         } else if (this.gameStateEnum.GAME === this.gameState) {
             // This gamestate has phases (or "this.turnstate"):
-            // (1) - rolling die
-            // (2) - moving a clone
+            // ---- (1) - rolling die
+            // ---- (2) - moving a clone
             // (3) - tile activation
             // (4) - moving biodrone(s)
             // (5) - moving rockets
@@ -131,12 +131,8 @@ class Septikon {
                         let originalTile = this.getTile(selectedClone.x, selectedClone.y);
                         originalTile.occupied = false;
                         let newTile = this.getTile(data.x, data.y);
-                        console.log(newTile);
                         newTile.occupied = true;
-                        console.log(newTile);
                         selectedClone.move(data.x, data.y);
-                        console.log("X: " + selectedClone.x + "Y: " + selectedClone.y);
-                        console.log(newTile);
                         if (originalTile.type === "surface") {
                             selectedClone.isGunner = false;
                         }
@@ -154,12 +150,23 @@ class Septikon {
                             this.activePlayer.addArms(newTile.name.toUpperCase());
                             this.emit('update', {type:"arms", details: {type: newTile.name, action: "add"}});
                         }
+                        this.turnState++;
+                        // TODO: activate battle and production tiles. Eventually, biodrone movement will have ability to destroy crap too. ;)
+                        // TODO: optional tiles (battle and repair) need client confirmation
+
+                        // if new tile is a production tile (except "repair" and "sensor cabin"), check resources and broker the trade.
+                        if (newTile.type === "production" && newTile.name !== "sensorCabin" && newTile.name !== "prodRepair") {
+                            this.activePlayer.produceResource(newTile.properties.resourceCostType, newTile.properties.resourceCostCount, newTile.properties.resourceYieldType, newTile.properties.resourceYieldCount);
+                        }
+                        // if new tile is a battle tile (except "repair" and "counter-espionage"), check for gunner(s) and resources.
+                        // if new tile is a "repair" tile, check for damaged tiles.
+                        // if new tile is a "counter-espionage" tile, check for enemy-controlled clones
+                        // if new tile is a "sensor cabin" tile, check for enemy biodrones or enemy-controlled clones.
+
                         return;
                     }
                 }
             }
-
-
         } else if (this.gameState === this.gameStateEnum.PAUSE) {
         } else if (this.gameState === this.gameStateEnum.GAMEOVER) {
         } else if (this.gameState === this.gameStateEnum.SERVERFULL) {

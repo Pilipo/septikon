@@ -248,6 +248,16 @@ class Player {
         return foundResources;
     }
 
+    produceResource(spendType, spendCount, yieldType, yieldCount) {
+        if (this.checkResource(spendType, spendCount) === true) {
+            this.spendResource(spendType, spendCount);
+            this.acceptResource(yieldType, yieldCount);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     // CheckResource defaults to assume you are checking to spend a resource. Set "accept" to true if you are checking to receive a resource
     checkResource(type, count, accept) {
         var currentResourceSlot = 9;
