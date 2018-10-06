@@ -27,6 +27,11 @@ class Client {
             if (data.type == "dice") {
                 this.septikon.game.dice.setValue(data.details.value);
             }
+            if(data.type == "arms") {
+                console.log("update personnel arms!");
+                console.log(data);
+                this.septikon.updateArms(data);
+            }
             if (data.type == "info") {
                 console.log(data);
                 // this.septikon.updateInfo(data);

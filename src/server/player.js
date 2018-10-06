@@ -14,8 +14,12 @@ class Player {
         this.ordnanceArray = [];
         this.readyToStart = false;
         this.startingCloneCount = 5;
-        this.armsArray = [];
-
+        this.armsArray = [false, false, false];
+        this.armsEnum = Object.freeze({
+            EXPLOSIVES: 0,
+            DRILL: 1, 
+            CANNON: 2,
+        });
         this.selectedPersonnelToMove = null;
         this.selectedGunners = [];
         this.currentLegalPieces = [];
@@ -91,6 +95,14 @@ class Player {
             }
         }
         return false;
+    }
+
+    addArms (type) {
+        this.armsArray[type] = true;
+    }
+
+    removeArms (type) {
+        this.armsArray[type] = false;
     }
 
     addOrdnance(type, point, uuid) {

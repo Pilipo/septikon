@@ -28,8 +28,6 @@ class Septikon {
   }
 
     updatePersonnel(data) {
-        // ADD personnel
-        // REMOVE personnel
         // MOVE personnel
 
         if (data.details.action === "add") {
@@ -42,6 +40,20 @@ class Septikon {
             this.removePersonnel(data.details.personnel, data.details.playerID);
         }
 
+        if (data.details.action === "move") {
+            console.log("moving personnel");
+            for (let j = 0; j < this.player.personnelArray.length; j++) {
+                let myPerson = this.player.personnelArray[j];
+                if (myPerson.uuid === data.details.personnel.uuid) {
+                    let point = this.tileToPixels(data.details.personnel.x, data.details.personnel.y);
+                    let distance = Math.abs(myPerson.y - point.y + myPerson.x - point.x).toFixed(1);
+                    this.game.add.tween(myPerson).to( {x:point.x, y:point.y}, (distance*11), Phaser.Easing.Cubic.Out, true);
+                    this.player.personnelArray[j] = data.details.personnel;
+                }
+            }
+            console.log(data);
+        }
+    
             // for (let j = 0; j < this.player.personnelArray.length; j++) {
             //     let myPerson = this.player.personnelArray[j];
             //     if (myPerson.uuid === p.uuid) {
@@ -125,7 +137,6 @@ class Septikon {
     } else {
         this.opponent.personnelArray.push(newPersonnel);
     }
-    
   }
 
   addOrdnance(details) {
@@ -140,9 +151,9 @@ class Septikon {
   }
 
   movePersonnel(data) {
-    var tween = null;
-    var distance = null;
-    var point = this.tileToPixels(data.x, data.y);
+    let tween = null;
+    let distance = null;
+    let point = this.tileToPixels(data.x, data.y);
     for (var i in this.player.personnelArray) {
         if (this.player.personnelArray[i].uuid == data.uuid) {
             distance = Math.abs(this.player.personnelArray[i].y - point.y + this.player.personnelArray[i].x - point.x).toFixed(1);

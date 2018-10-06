@@ -60,14 +60,14 @@ class Septikon {
         //  - successful interactions (like moving a clone) should emit to client ONLY from this function.
 
         // Do the needful
-        let player = this.getPlayerBySocketID(data.socketID);
+        let player = this.getPlayerBySocketID(data.socketID); // DOES THIS ALLOW BOTH PLAYERS TO INTERACT?!?!
 
         // (1) Check gamestate
         // (2) Check turnphase
         // (3) Check phasestep
 
         if (this.gameStateEnum.SETUP === this.gameState) {
-            if (data.event === "confirmClicked") {
+            if (data.event === "confirmClicked" && player.readyToStart === false) {
                 if (player.personnelArray.length === player.startingCloneCount) {
                     this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
@@ -98,20 +98,56 @@ class Septikon {
             // (7) - check victory
         
             if (this.turnStateEnum.ROLL === this.turnState) {
-                if(data.event === "diceClicked" 
-                && this.activePlayer.socketID === data.socketID) {
+                if(data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
                     this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
                     this.activePlayer.currentLegalPieces = this.getLegalPieces();    
                     this.emit('update', {type:"dice", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}});
                     this.turnState++;
                 }
-            } else if (this.turnStateEnum.MOVE === this.turnState
-                && data.event === "tileClicked") {
-                // If no clone is selected, check for legal clone select it
+            } else if (this.turnStateEnum.MOVE === this.turnState && data.event === "tileClicked") {
+                let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
+                let doesSelectedCloneHaveLegalMoves = this.activePlayer.checkPersonnelMove(selectedClone);
 
-                // If legal clone is selected and this is a legal move, move the clone
-
-                // else bail
+                if (this.activePlayer.selectedPersonnelToMove === null) {
+                    if (selectedClone === false || doesSelectedCloneHaveLegalMoves === false) {
+                        return;
+                    } else {
+                        this.activePlayer.selectedPersonnelToMove = selectedClone;
+                        let pointArray = this.getLegalMoves(selectedClone, this.currentDiceValue, {x:selectedClone.x, y:selectedClone.y});
+                        this.emit('action', {callback: 'showTiles', details: [{x:data.x, y:data.y}]}, this.activePlayer.socketID);
+                        this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
+                        return;
+                    }
+                } else {
+                    this.emit('action', {callback: 'hideTiles', details: null}, this.activePlayer.socketID);
+                    selectedClone = this.activePlayer.selectedPersonnelToMove;
+                    if (selectedClone.x === data.x && selectedClone.y === data.y) {
+                        this.activePlayer.selectedPersonnelToMove = null;
+                        return;
+                    } else if (this.activePlayer.checkPersonnelMove(selectedClone, {x:data.x, y:data.y}) === true) {
+                        let originalTile = this.getTile(selectedClone.x, selectedClone.y);
+                        let newTile = this.getTile(data.x, data.y);
+                        selectedClone.move(data.x, data.y);
+                        if (originalTile.type === "surface") {
+                            selectedClone.isGunner = false;
+                        }
+                        if (newTile.type === "surface") {
+                            selectedClone.isGunner = true;
+                        }
+                        this.emit('update', {type:"personnel", details: {personnel: selectedClone, action: 'move', playerID: this.activePlayer.id}});
+                        this.emit('update', {type:"tile", details: [{x:originalTile.x, y:originalTile.y, occupied: false}]});
+                        this.emit('update', {type:"tile", details: [{x:newTile.x, y:newTile.y, occupied: true}]});
+                        if (originalTile.type === "armory") {
+                            this.activePlayer.removeArms(originalTile.name.toUpperCase());
+                            this.emit('update', {type:"arms", details: {type: originalTile.name, action: "remove"}});
+                        }
+                        if (newTile.type === "armory") {
+                            this.activePlayer.addArms(newTile.name.toUpperCase());
+                            this.emit('update', {type:"arms", details: {type: newTile.name, action: "add"}});
+                        }
+                        return;
+                    }
+                }
             }
 
 
@@ -128,25 +164,7 @@ class Septikon {
         // Basically, check game state and turn state.
         
         switch (this.gameState) {
-        
-            case this.gameStateEnum.SETUP:
-
-                // Player is placing new clones in the field.
-                var player = this.getPlayerBySocketID(data.socketID);
-                var success = false;
-
-                if(player.getPersonnel('clone').length < player.startingCloneCount) {
-                    success = this.placeClone(player, data.x, data.y);
-                }
-
-                if (success === true) {
-                    // Check on personnel count. If personnel is at the start count, send modal to start game.
-                    if(player.getPersonnel('clone').length == player.startingCloneCount) {
-                        this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
-                    }
-                }
-                break;
-                
+                        
             case this.gameStateEnum.GAME:
 
                 var selectedPersonnel = false;
