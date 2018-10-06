@@ -72,19 +72,22 @@ class Septikon {
                     this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
             } else if (data.event === "tileClicked" && player.readyToStart === false) {
+                let selectedTile = this.getTile(data.x, data.y);
                 for (let i = 0; i < player.personnelArray.length; i++) {
                     let personnel = player.personnelArray[i];
                     if (data.x === personnel.x && data.y === personnel.y) {
                         player.personnelArray.splice(i,1);
+                        selectedTile.occupied = false;
                         this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'remove', playerID: player.id}});
-                        this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: false}]});
+                        this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
                         return;
                     }
                 }
                 let clone = this.placeClone(player, data.x, data.y);
                 if (clone !== false) {
+                    selectedTile.occupied = true;
                     this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
-                    this.emit('update', {type:"tile", details: [{x:data.x, y:data.y, occupied: true}]});
+                    this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
                 }
             }
         } else if (this.gameStateEnum.GAME === this.gameState) {
@@ -126,8 +129,14 @@ class Septikon {
                         return;
                     } else if (this.activePlayer.checkPersonnelMove(selectedClone, {x:data.x, y:data.y}) === true) {
                         let originalTile = this.getTile(selectedClone.x, selectedClone.y);
+                        originalTile.occupied = false;
                         let newTile = this.getTile(data.x, data.y);
+                        console.log(newTile);
+                        newTile.occupied = true;
+                        console.log(newTile);
                         selectedClone.move(data.x, data.y);
+                        console.log("X: " + selectedClone.x + "Y: " + selectedClone.y);
+                        console.log(newTile);
                         if (originalTile.type === "surface") {
                             selectedClone.isGunner = false;
                         }
@@ -135,8 +144,8 @@ class Septikon {
                             selectedClone.isGunner = true;
                         }
                         this.emit('update', {type:"personnel", details: {personnel: selectedClone, action: 'move', playerID: this.activePlayer.id}});
-                        this.emit('update', {type:"tile", details: [{x:originalTile.x, y:originalTile.y, occupied: false}]});
-                        this.emit('update', {type:"tile", details: [{x:newTile.x, y:newTile.y, occupied: true}]});
+                        this.emit('update', {type:"tile", details: {x:originalTile.x, y:originalTile.y, tile: originalTile}});
+                        this.emit('update', {type:"tile", details: {x:newTile.x, y:newTile.y, tile: newTile}});
                         if (originalTile.type === "armory") {
                             this.activePlayer.removeArms(originalTile.name.toUpperCase());
                             this.emit('update', {type:"arms", details: {type: originalTile.name, action: "remove"}});

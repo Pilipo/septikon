@@ -89,8 +89,8 @@ class Septikon {
         
     }
 
-    updateTiles(data) {
-        
+    updateTile(data) {
+        this.tileArray[data.details.x][data.details.y].tileDetail = data.details.tile;
     }
 
   showModal(type) {
@@ -349,25 +349,25 @@ class Septikon {
                 var coords = obj[prop].locations[i].split(",");
                 x = coords[0];
                 y = coords[1];
-                
-                this.tileArray[x][y].tileDamaged = false;
-                this.tileArray[x][y].tileOccupied = false;
-                this.tileArray[x][y].tileX = x;
-                this.tileArray[x][y].tileY = y;
-                this.tileArray[x][y].tileType = obj[prop].type;
+                this.tileArray[x][y].tileDetail = {};
+                this.tileArray[x][y].tileDetail.damaged = false;
+                this.tileArray[x][y].tileDetail.occupied = false;
+                this.tileArray[x][y].tileDetail.x = x;
+                this.tileArray[x][y].tileDetail.y = y;
+                this.tileArray[x][y].tileDetail.type = obj[prop].type;
 
                 if (typeof this.tileArray[x][y] != 'undefined')
-                    this.tileArray[x][y].tileName = obj[prop].name;
+                    this.tileArray[x][y].tileDetail.name = obj[prop].name;
                 else
                     console.log(x + ":" + y + " not found!");
 
                 if(x < 9)
-                    this.tileArray[x][y].tileOwner = 1;
+                    this.tileArray[x][y].tileDetail.owner = 1;
                 else if (x>20)
-                    this.tileArray[x][y].tileOwner = 2;
+                    this.tileArray[x][y].tileDetail.owner = 2;
                  
                 if (typeof obj[prop].properties != 'undefined') {
-                    this.tileArray[x][y].tileProperties = obj[prop].properties;
+                    this.tileArray[x][y].tileDetail.properties = obj[prop].properties;
                 }
             }
         }
@@ -398,15 +398,15 @@ class Septikon {
   
   tileClicked(obj) {
     this.hideTiles();
-    this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileX), y:parseInt(obj.tileY)});
+    this.game.client.sendInput({event: 'tileClicked', x:parseInt(obj.tileDetail.x), y:parseInt(obj.tileDetail.y)});
 
     // DEBUG BLOCK
     console.log("----TILE DETAIL----");
-    console.log("Name: " + obj.tileName);
-    console.log("Type: " + obj.tileType);
-    console.log("Occupied: " + obj.tileOccupied);
-    console.log("Damaged: " + obj.tileDamaged);
-    console.log("X: " + obj.tileX + " Y:" + obj.tileY);
+    console.log("Name: " + obj.tileDetail.name);
+    console.log("Type: " + obj.tileDetail.type);
+    console.log("Occupied: " + obj.tileDetail.occupied);
+    console.log("Damaged: " + obj.tileDetail.damaged);
+    console.log("X: " + obj.tileDetail.x + " Y:" + obj.tileDetail.y);
     //   this.addOrdnance({point:{x:obj.tileX, y:obj.tileY}, type:'biodrone', uuid:Math.random()});
 
     return;

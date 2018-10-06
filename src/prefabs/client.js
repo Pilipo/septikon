@@ -21,8 +21,8 @@ class Client {
             if(data.type == "resources") {
                 this.septikon.updateResources(data);
             }
-            if(data.type == "tiles") {
-                this.septikon.updateTiles(data);
+            if(data.type == "tile") {
+                this.septikon.updateTile(data);
             }
             if (data.type == "dice") {
                 this.septikon.game.dice.setValue(data.details.value);
