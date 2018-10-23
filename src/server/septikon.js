@@ -151,12 +151,29 @@ class Septikon {
                             this.emit('update', {type:"arms", details: {type: newTile.name, action: "add"}});
                         }
                         this.turnState++;
-                        // TODO: activate battle and production tiles. Eventually, biodrone movement will have ability to destroy crap too. ;)
+                        // TODO: activate battle (optional) and production (mandatory) tiles. Eventually, biodrone movement will have ability to destroy crap too. ;)
                         // TODO: optional tiles (battle and repair) need client confirmation
 
-                        // if new tile is a production tile (except "repair" and "sensor cabin"), check resources and broker the trade.
+                        // if new tile is a production tile (except "repair" and "sensor cabin"), check resources and broker the trade. This is a mandatory action,
+                        // so no client interaction is needed until later in the turn.
+                        // These special cases are spent first and then septikon server handles the "yield"
+                        //  piece, because client interaction is required.
+                        // Special cases:
+                        //  - nuclear armory applies a warhead to a selected rocket resource
+                        //  - sensor cabin kills a selected biodrone and converts into a selected resource type
+                        //  - repair fixes selected damaged tile
+
                         if (newTile.type === "production" && newTile.name !== "sensorCabin" && newTile.name !== "prodRepair") {
-                            this.activePlayer.produceResource(newTile.properties.resourceCostType, newTile.properties.resourceCostCount, newTile.properties.resourceYieldType, newTile.properties.resourceYieldCount);
+                            let resCostType = null;
+                            let resCostCount = 0;
+                            let resYieldType = newTile.properties.resourceYieldType;
+                            let resYieldCount = newTile.properties.resourceYieldCount;
+                            if (typeof newTile.properties.resourceCostCount !== 'undefined') {
+                                resCostCount = newTile.properties.resourceCostCount;
+                                resCostType = newTile.properties.resourceCostType;
+                            }
+                            this.activePlayer.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
+                            // TODO: emit to client the production exchange.
                         }
                         // if new tile is a battle tile (except "repair" and "counter-espionage"), check for gunner(s) and resources.
                         // if new tile is a "repair" tile, check for damaged tiles.
@@ -673,7 +690,6 @@ class Septikon {
                             ordnancePoint.x--;
                         }
                         currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
-                        console.log(currentTile);
                         switch (currentTile.name) {
                             case "space":
                             case "surface":

@@ -249,7 +249,8 @@ class Player {
     }
 
     produceResource(spendType, spendCount, yieldType, yieldCount) {
-        if (this.checkResource(spendType, spendCount) === true) {
+        // check if you can accept the yield
+        if ( (spendCount === 0 || this.checkResource(spendType, spendCount) === true) && this.checkResource(yieldType, yieldCount, true) ) {
             this.spendResource(spendType, spendCount);
             this.acceptResource(yieldType, yieldCount);
             return true;
@@ -260,23 +261,19 @@ class Player {
 
     // CheckResource defaults to assume you are checking to spend a resource. Set "accept" to true if you are checking to receive a resource
     checkResource(type, count, accept) {
-        var currentResourceSlot = 9;
-        var foundResources = 0;
-        var resourceSlots = 0;
-
-        if (type == "nuke") {
-            if (accept === true) {
-                return true;
-            } else {
-                return this.resourceArray[type].length;
-            }
+        if (typeof (accept) === 'undefined') {
+            accept = false;
         }
+        let resCollection = this.resourceArray[type];
+        let resFound = 0;
+        let resEmptySlots = 0;
+        let blockedByDamage = false;
 
-        if(type == "energy") {
-            var e1 = this.checkResource("energy1", count, accept);
-            var e2 = this.checkResource("energy2", count, accept);
+        if (type == "energy") {
+            let e1 = this.checkResource("energy1", count, accept);
+            let e2 = this.checkResource("energy2", count, accept);
 
-            if(e1 === true) {
+            if (e1 === true) {
                 return e1;
             } else if (e2 === true) {
                 return e2;
@@ -285,40 +282,36 @@ class Player {
             }
         }
 
-        while (currentResourceSlot >= 0) {
-            if (this.resourceArray[type][currentResourceSlot] === null) {
-                if (accept === true) {
-                    resourceSlots++;
-                    if (resourceSlots == count) {
-                        return true;
-                    }
+        for (let i = 9; i > -1; i--) {
+            if (resCollection[i] !== null && resCollection[i].damaged === true) {
+                if (resFound === 0) {
+                    blockedByDamage = true;
                 }
-                currentResourceSlot--;
-                continue;
-            } else if (this.resourceArray[type][currentResourceSlot].damaged === true) {
-                if(accept === true) {
-                    // return false;
-                } else {
-                    return false;
-                }
+                break;
+            }
+            if (resCollection[i] === null) {
+                resEmptySlots++;
             } else {
-                foundResources++;
+                resFound++;
             }
-
-            if(accept !== false && foundResources === count) {
-                return true;
-            }
-            currentResourceSlot--;
         }
+
+        if (accept === true && resEmptySlots >= count && blockedByDamage === false) {
+            return true;
+        } else if (accept === false && resFound >= count) {
+            return true;
+        }
+
         return false;
-    }
+    }      
 
     spendResource(type, count) {
-        var currentResourceSlot = 9;
-        var originalCount = count;
+        if (this.checkResource(type, count) === false) {
+            return false;
+        }
 
         if (type == "energy") {
-            var success = false;
+            let success = false;
             while (count > 0) {
                 success = this.spendResource("energy1", 1);
                 if (success !== false) {
@@ -330,34 +323,24 @@ class Player {
                     }
                 }
             }
-            return originalCount;
+            return;
         }
 
-        while (currentResourceSlot >= 0 && count > 0) {
-            if (this.resourceArray[type][currentResourceSlot] === null) {
-                currentResourceSlot--;
-                continue;
-            } else if (this.resourceArray[type][currentResourceSlot].damaged === true) {
-                //console.error("Tried to spend resources you don't have!");
-                return false;
-            } else {
-                this.resourceArray[type][currentResourceSlot] = null;
+        let targetIndex = null;
+        for (let i = 9; i > -1; i--) {
+            if (this.resourceArray[type][i] !== null) {
+                this.resourceArray[type][i] = null;
                 count--;
+                if (count === 0) {
+                    break;
+                }
             }
         }
-
-        return originalCount;
     }
 
     acceptResource(type, count) {
-        var resource = null;
-        var currentResourceSlot = 9;
-        var searching = true;
-        var originalCount = count;
-
-        if (type == "nuke") {
-            this.resourceArray[type].push(new Resource(type));
-            return this.resourceArray[type].length;
+        if (this.checkResource(type, count, true) === false) {
+            return false;
         }
 
         if (type == "energy") {
@@ -373,36 +356,23 @@ class Player {
                     }
                 }
             }
-            return originalCount;
         }
 
-        while (1) {
-            if (searching === true) {
-                // peek at next resource
-                if (this.resourceArray[type][currentResourceSlot] !== null) {
-                    console.error("no room for this resource!");
-                    return false;
-                }
-                if (currentResourceSlot === 0 || this.resourceArray[type][currentResourceSlot - 1] !== null) {
-                    searching = false;
-                    continue;
-                }
-                currentResourceSlot--;
-            } else {
-                if(currentResourceSlot + 1 > this.resourceArray[type].length) {
-                    return originalCount - count;
-                }
-                resource = new Resource(type);
-                this.resourceArray[type][currentResourceSlot] = resource;
+        let lastDamageIndex = 0;
+
+        for (let i = 0; i < 10; i++) {
+            if (this.resourceArray[type][i] !== null && this.resourceArray[type][i].damaged === true) {
+                lastDamageIndex = i;
+            }
+        }
+
+        for (let j = lastDamageIndex; j < 10; j++) {
+            if (this.resourceArray[type][j] === null) {
+                this.resourceArray[type][j] = new Resource(type);
                 count--;
-                if(count === 0) {
-                    return originalCount;
-                }
-                currentResourceSlot++;
-         }
-            if(currentResourceSlot < 0) {
-                console.error("Out of bounds. No empty resouruce slots found.");
-                return false;
+            }
+            if (count === 0) {
+                return;
             }
         }
     }
