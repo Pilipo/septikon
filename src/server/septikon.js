@@ -159,11 +159,11 @@ class Septikon {
                         // These special cases are spent first and then septikon server handles the "yield"
                         //  piece, because client interaction is required.
                         // Special cases:
-                        //  - nuclear armory applies a warhead to a selected rocket resource
-                        //  - sensor cabin kills a selected biodrone and converts into a selected resource type
-                        //  - repair fixes selected damaged tile
+                        //  - nuclear armory applies a warhead to a selected rocket resource (nuclearArmory)
+                        //  - sensor cabin kills a selected biodrone and converts into a selected resource type (sensorCabin)
+                        //  - repair fixes selected damaged tile (prodRepair)
 
-                        if (newTile.type === "production" && newTile.name !== "sensorCabin" && newTile.name !== "prodRepair") {
+                        if (newTile.type === "production" && newTile.name !== "sensorCabin" && newTile.name !== "prodRepair" && newTile.name !== "nuclearArmory") {
                             let resCostType = null;
                             let resCostCount = 0;
                             let resYieldType = newTile.properties.resourceYieldType;

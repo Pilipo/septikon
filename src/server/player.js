@@ -250,7 +250,7 @@ class Player {
 
     produceResource(spendType, spendCount, yieldType, yieldCount) {
         // check if you can accept the yield
-        if ( (spendCount === 0 || this.checkResource(spendType, spendCount) === true) && this.checkResource(yieldType, yieldCount, true) ) {
+        if ( (spendCount === 0 || this.checkResource(spendType, spendCount) === true) && this.checkResource(yieldType, yieldCount, true) === true ) {
             this.spendResource(spendType, spendCount);
             this.acceptResource(yieldType, yieldCount);
             return true;
@@ -343,6 +343,7 @@ class Player {
             return false;
         }
 
+        // This should eventually allow the client to select which resource pool to use
         if (type == "energy") {
             var success = false;
             while (count > 0) {

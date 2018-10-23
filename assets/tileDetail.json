@@ -347,9 +347,7 @@
 			"properties": {
                 "action": "required",
 				"resourceCostType": ["oxygen", "energy", "uranium"],
-				"resourceCostCount": [1, 1, 1],
-				"resourceYieldType": ["nuke"],
-				"resourceYieldCount": [1]
+				"resourceCostCount": [1, 1, 1]
 			},
 			"locations": ["0,20", "1,4", "1,18", "30,0", "29,16", "29,2"]
 		},
