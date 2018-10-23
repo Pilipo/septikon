@@ -10,7 +10,7 @@ var games = [];
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
 app.use('/assets',express.static(__dirname + '/assets'));
-app.use('/src',express.static(__dirname + '/src'));
+app.use('/src/client',express.static(__dirname + '/src/client'));
 
 app.get('/',function(req,res){
     res.sendFile(__dirname+'/index.html');
