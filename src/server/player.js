@@ -125,10 +125,21 @@ class Player {
         }
     }
 
+    getEspionagedClones() {
+        let returnArray = [];
+        let clones = this.getPersonnel('clone');
+        for (let i in clones) {
+            if (clones[i].underEspionage === true) {
+                returnArray.push(clones[i]);
+            }
+        }
+        return returnArray;
+    }
+
     getGunners() {
-        var returnArray = [];
-        var clones = this.getPersonnel('clone');
-        for (var i in clones) {
+        let returnArray = [];
+        let clones = this.getPersonnel('clone');
+        for (let i in clones) {
             if (clones[i].isGunner) {
                 returnArray.push(clones[i]);
             }
@@ -203,26 +214,40 @@ class Player {
             'biodrone',
             'rocket',
             'uranium',
-            'biomass',
-            'nuke'
-            ];
+            'biomass'
+        ];
         var rec = null;
         for (var i in recArray) {
             rec = new Resource(recArray[i]);
             this.resourceArray[recArray[i]] = [];
-            if (recArray[i] != "nuke") {
-                for (var count = 0; count < 10; count++) {
-                    if (count < 5) {
-                        this.resourceArray[recArray[i]].push(rec);
-                    } else {
-                        this.resourceArray[recArray[i]].push(null);
-                    }
+            for (var count = 0; count < 10; count++) {
+                if (count < 5) {
+                    this.resourceArray[recArray[i]].push(rec);
+                } else {
+                    this.resourceArray[recArray[i]].push(null);
                 }
             }
         }
     }
 
     getResourceCount(type) {
+        if (type === undefined) {
+            let recArray = [
+                'energy1', 
+                'energy2',
+                'oxygen',
+                'metal',
+                'biodrone',
+                'rocket',
+                'uranium',
+                'biomass'
+            ];
+            let returnArray = [];
+            for (let i in recArray) {
+                returnArray.push([recArray[i],this.getResourceCount(recArray[i])]);
+            }
+            return returnArray;
+        }
         var foundResources = 0;
         var currentResourceSlot = 9;
 
@@ -261,119 +286,141 @@ class Player {
 
     // CheckResource defaults to assume you are checking to spend a resource. Set "accept" to true if you are checking to receive a resource
     checkResource(type, count, accept) {
-        if (typeof (accept) === 'undefined') {
+        if (type === undefined || type === null) {
+            return false;
+        }
+        if (count === undefined || count === 0) {
+            return false;
+        }
+        if (accept === undefined) {
             accept = false;
         }
-        let resCollection = this.resourceArray[type];
-        let resFound = 0;
-        let resEmptySlots = 0;
-        let blockedByDamage = false;
+        for (let j in type) {
+            let thisType = type[j];
+            let thisCount = count[j];
+            console.log(thisType);
+            let resCollection = this.resourceArray[thisType];
+            let resFound = 0;
+            let resEmptySlots = 0;
+            let blockedByDamage = false;
 
-        if (type == "energy") {
-            let e1 = this.checkResource("energy1", count, accept);
-            let e2 = this.checkResource("energy2", count, accept);
+            if (thisType === "energy") {
+                let e1 = this.checkResource(["energy1"], [thisCount], accept);
+                let e2 = this.checkResource(["energy2"], [thisCount], accept);
 
-            if (e1 === true) {
-                return e1;
-            } else if (e2 === true) {
-                return e2;
-            } else {
-                return false;
-            }
-        }
-
-        for (let i = 9; i > -1; i--) {
-            if (resCollection[i] !== null && resCollection[i].damaged === true) {
-                if (resFound === 0) {
-                    blockedByDamage = true;
+                if (e1 === true) {
+                    return e1;
+                } else if (e2 === true) {
+                    return e2;
+                } else {
+                    return false;
                 }
-                break;
             }
-            if (resCollection[i] === null) {
-                resEmptySlots++;
-            } else {
-                resFound++;
+
+            for (let i = 9; i > -1; i--) {
+                if (resCollection[i] !== null && resCollection[i].damaged === true) {
+                    if (resFound === 0) {
+                        blockedByDamage = true;
+                    }
+                    break;
+                }
+                if (resCollection[i] === null) {
+                    resEmptySlots++;
+                } else {
+                    resFound++;
+                }
             }
-        }
 
-        if (accept === true && resEmptySlots >= count && blockedByDamage === false) {
-            return true;
-        } else if (accept === false && resFound >= count) {
-            return true;
-        }
+            if (accept === true && resEmptySlots >= thisCount && blockedByDamage === false) {
+                return true;
+            } else if (accept === false && resFound >= thisCount) {
+                return true;
+            }
 
+        }
         return false;
     }      
 
     spendResource(type, count) {
-        if (this.checkResource(type, count) === false) {
-            return false;
-        }
+        for (let j in type) {
+            let thisType = type[j];
+            let thisCount = count[j];
+            if (this.checkResource([thisType], [thisCount]) === false) {
+                return false;
+            }
+            console.log("Spending " + thisCount + " of " + thisType);
 
-        if (type == "energy") {
-            let success = false;
-            while (count > 0) {
-                success = this.spendResource("energy1", 1);
-                if (success !== false) {
-                    count--;
-                } else {
-                    success = this.spendResource("energy2", 1);
+            if (thisType == "energy") {
+                let success = false;
+                while (thisCount > 0) {
+                    success = this.spendResource(["energy1"], [1]);
                     if (success !== false) {
-                        count--;
+                        thisCount--;
+                    } else {
+                        success = this.spendResource(["energy2"], [1]);
+                        if (success !== false) {
+                            thisCount--;
+                        }
                     }
                 }
+                return;
             }
-            return;
-        }
 
-        let targetIndex = null;
-        for (let i = 9; i > -1; i--) {
-            if (this.resourceArray[type][i] !== null) {
-                this.resourceArray[type][i] = null;
-                count--;
-                if (count === 0) {
-                    break;
+            let targetIndex = null;
+            for (let i = 9; i > -1; i--) {
+                if (this.resourceArray[thisType][i] !== null) {
+                    this.resourceArray[thisType][i] = null;
+                    thisCount--;
+                    if (thisCount === 0) {
+                        break;
+                    }
                 }
             }
         }
     }
 
     acceptResource(type, count) {
-        if (this.checkResource(type, count, true) === false) {
-            return false;
-        }
+        for (let j in type) {
+            let thisType = type[j];
+            let thisCount = count[j];
+            if (this.checkResource([thisType], [thisCount], true) === false) {
+                return false;
+            }
+            console.log("Yielding " + thisCount + " of " + thisType);
 
-        // This should eventually allow the client to select which resource pool to use
-        if (type == "energy") {
-            var success = false;
-            while (count > 0) {
-                success = this.acceptResource("energy1", 1);
-                if (success !== false) {
-                    count--;
-                } else {
-                    success = this.acceptResource("energy2", 1);
+            // This should eventually allow the client to select which resource pool to use
+            if (thisType == "energy") {
+                var success = false;
+                while (thisCount > 0) {
+                    success = this.acceptResource("energy1", 1);
                     if (success !== false) {
-                        count--;
+                        thisCount--;
+                    } else {
+                        success = this.acceptResource("energy2", 1);
+                        if (success !== false) {
+                            thisCount--;
+                        }
                     }
                 }
             }
-        }
 
-        let lastDamageIndex = 0;
+            let lastDamageIndex = 0;
 
-        for (let i = 0; i < 10; i++) {
-            if (this.resourceArray[type][i] !== null && this.resourceArray[type][i].damaged === true) {
-                lastDamageIndex = i;
+            for (let i = 0; i < 10; i++) {
+                if (this.resourceArray[thisType][i] !== null && this.resourceArray[thisType][i].damaged === true) {
+                    lastDamageIndex = i;
+                }
             }
-        }
 
-        for (let j = lastDamageIndex; j < 10; j++) {
-            if (this.resourceArray[type][j] === null) {
-                this.resourceArray[type][j] = new Resource(type);
-                count--;
-            }
-            if (count === 0) {
-                return;
+            for (let k = lastDamageIndex; k < 10; k++) {
+                if (this.resourceArray[thisType][k] === null) {
+                    let rec = new Resource(thisType);
+                    this.resourceArray[thisType][k] = rec;
+                    thisCount--;
+                }
+                if (thisCount === 0) {
+                    return;
+                }
             }
         }
     }

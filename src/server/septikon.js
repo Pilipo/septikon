@@ -68,8 +68,9 @@ class Septikon {
 
         if (this.gameStateEnum.SETUP === this.gameState) {
             if (data.event === "confirmClicked" && player.readyToStart === false) {
+                this.gameState++;
                 if (player.personnelArray.length === player.startingCloneCount) {
-                    this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
+                    // this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
             } else if (data.event === "tileClicked" && player.readyToStart === false) {
                 let selectedTile = this.getTile(data.x, data.y);
@@ -128,6 +129,7 @@ class Septikon {
                         this.activePlayer.selectedPersonnelToMove = null;
                         return;
                     } else if (this.activePlayer.checkPersonnelMove(selectedClone, {x:data.x, y:data.y}) === true) {
+
                         let originalTile = this.getTile(selectedClone.x, selectedClone.y);
                         originalTile.occupied = false;
                         let newTile = this.getTile(data.x, data.y);
@@ -151,34 +153,10 @@ class Septikon {
                             this.emit('update', {type:"arms", details: {type: newTile.name, action: "add"}});
                         }
                         this.turnState++;
-                        // TODO: activate battle (optional) and production (mandatory) tiles. Eventually, biodrone movement will have ability to destroy crap too. ;)
+                        // TODO: activate battle (optional). Eventually, biodrone movement will have ability to destroy crap too. ;)
                         // TODO: optional tiles (battle and repair) need client confirmation
 
-                        // if new tile is a production tile (except "repair" and "sensor cabin"), check resources and broker the trade. This is a mandatory action,
-                        // so no client interaction is needed until later in the turn.
-                        // These special cases are spent first and then septikon server handles the "yield"
-                        //  piece, because client interaction is required.
-                        // Special cases:
-                        //  - nuclear armory applies a warhead to a selected rocket resource (nuclearArmory)
-                        //  - sensor cabin kills a selected biodrone and converts into a selected resource type (sensorCabin)
-                        //  - repair fixes selected damaged tile (prodRepair)
-
-                        if (newTile.type === "production" && newTile.name !== "sensorCabin" && newTile.name !== "prodRepair" && newTile.name !== "nuclearArmory") {
-                            let resCostType = null;
-                            let resCostCount = 0;
-                            let resYieldType = newTile.properties.resourceYieldType;
-                            let resYieldCount = newTile.properties.resourceYieldCount;
-                            if (typeof newTile.properties.resourceCostCount !== 'undefined') {
-                                resCostCount = newTile.properties.resourceCostCount;
-                                resCostType = newTile.properties.resourceCostType;
-                            }
-                            this.activePlayer.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
-                            // TODO: emit to client the production exchange.
-                        }
-                        // if new tile is a battle tile (except "repair" and "counter-espionage"), check for gunner(s) and resources.
-                        // if new tile is a "repair" tile, check for damaged tiles.
-                        // if new tile is a "counter-espionage" tile, check for enemy-controlled clones
-                        // if new tile is a "sensor cabin" tile, check for enemy biodrones or enemy-controlled clones.
+                        this.processTileActivation(newTile, player);
 
                         return;
                     }
@@ -188,6 +166,55 @@ class Septikon {
         } else if (this.gameState === this.gameStateEnum.GAMEOVER) {
         } else if (this.gameState === this.gameStateEnum.SERVERFULL) {
         }
+    }
+
+    processTileActivation(newTile, player) {
+
+        if (newTile.type === "production") {
+            let resCostType = null;
+            let resCostCount = 0;
+            let resYieldType = newTile.properties.resourceYieldType;
+            let resYieldCount = newTile.properties.resourceYieldCount;
+            if (typeof newTile.properties.resourceCostCount !== 'undefined') {
+                resCostCount = newTile.properties.resourceCostCount;
+                resCostType = newTile.properties.resourceCostType;
+            }
+            // SensorCabin requires a target biodrone in this player's base
+            if (newTile.name === "sensorCabin") {
+            }
+            // Repair requires a damaged tile as a target
+            if (newTile.name !== "prodRepair") {
+            }
+            // Warhead requires a rocket resource as a target
+            if (newTile.name !== "nuclearArmory") {
+            }
+            player.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
+            this.emit('update', {type:"resource", details: {resCostType:resCostType, resCostCount:resCostCount, resYieldType:resYieldType, resYieldCount:resYieldCount}});
+            return;
+        }
+        if (newTile.type === "battle") {
+            let resCostType = newTile.properties.resourceCostType;
+            let resCostCount = newTile.properties.resourceCostCount;
+
+            if (newTile.name === "repair" || newTile.name === "repairTwo" ) {
+                // if new tile is a "repair" tile, check for damaged tiles.
+                let damagedTilesArray = this.getDamagedTiles(player);
+                if (damagedTilesArray.length > 0) {
+                    // Request selection from client
+                }
+            } else if (newTile.name === "counterEspionage") {
+                let controlledClones = player.getEspionagedClones();
+                if (controlledClones.length > 0) {
+                    // Request selection from client
+                }
+            } else {
+                let gunnerArray = player.getGunners();
+                if (gunnerArray.length > 0) {
+                    // Request gunner selection from client limited by number of available resources.
+                }
+            }
+            return;
+        }    
     }
 
     clicked(data) {
@@ -530,7 +557,7 @@ class Septikon {
                     return;
                 }
 
-                for (var i in tile.properties.resourceCostType) {
+                for (let i in tile.properties.resourceCostType) {
                     if (this.activePlayer.checkResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i]) === false) {
                         // Can't afford it
                         console.log("Can't afford it!");
@@ -538,7 +565,7 @@ class Septikon {
                     }
                 }
 
-                for (var j in tile.properties.resourceYieldType) {
+                for (let j in tile.properties.resourceYieldType) {
                     if (this.activePlayer.checkResource(tile.properties.resourceYieldType[j], tile.properties.resourceYieldCount[j], true) === false) {
                         // No room to store it
                         console.log("can't accept the yield cuz we got no room!");

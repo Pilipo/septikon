@@ -2,7 +2,6 @@ class Resource {
 
     constructor(type) {
         this.type = type;
-        
     }
 }
 
