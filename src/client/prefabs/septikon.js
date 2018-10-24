@@ -191,7 +191,6 @@ class Septikon {
     }
   }
 
-
   removePersonnel(data) {
         console.log(this.game.personnelGroup.children);
         for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
@@ -227,8 +226,8 @@ class Septikon {
     }
 
     // DEBUG BLOCK
-    this.game.client.sendInput({event: 'tileClicked', x:7, y:0});
-    this.game.client.sendInput({event: 'tileClicked', x:7, y:19});
+    this.game.client.sendInput({event: 'tileClicked', x:8, y:0});
+    this.game.client.sendInput({event: 'tileClicked', x:8, y:19});
     this.game.client.sendInput({event: 'tileClicked', x:6, y:10});
     this.game.client.sendInput({event: 'tileClicked', x:4, y:10});
     this.game.client.sendInput({event: 'tileClicked', x:0, y:10});

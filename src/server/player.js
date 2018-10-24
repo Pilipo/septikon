@@ -105,10 +105,29 @@ class Player {
         this.armsArray[type] = false;
     }
 
+    unsetCloneGunnerByUUID (uuid) {
+        let clone = this.getPersonnelByUUID(uuid);
+        clone.isGunner = false;
+    }
+
+    setCloneGunnerByUUID (uuid) {
+        let clone = this.getPersonnelByUUID(uuid);
+        clone.isGunner = true;
+    }
+
     addOrdnance(type, point, uuid) {
-        var ord = new Ordnance(type, point.x, point.y, uuid);
+        let ord = new Ordnance(type, point.x, point.y, uuid);
         this.ordnanceArray.push(ord);
         return ord;
+    }
+
+    removeOrdnance(ord) {
+        let uuid = ord.uuid;
+        for (let i in this.ordnanceArray) {
+            if (this.ordnanceArray[i].uuid === uuid) {
+                this.ordnanceArray.splice(i,1);
+            }
+        }
     }
 
     purgeLegalPieces(personnel, purgeAllMatchingTypes) {

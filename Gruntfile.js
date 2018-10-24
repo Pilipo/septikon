@@ -8,21 +8,21 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     jshint: {
-        all: ['Gruntfile.js', 'src/**/*.js'],
+        all: ['Gruntfile.js', 'src/client/**/*.js'],
         options: {
             'esversion': 6
         }
     },
     watch: {
         src: {
-            files: ['src/prefabs/*.js', 'src/states/*.js', 'src/*.js'],
+            files: ['src/client/prefabs/*.js', 'src/client/states/*.js', 'src/client/*.js'],
             tasks: ['jshint','browserify']
         }
     },
     browserify: {
         dev: {
             src: [
-                "src/**/*.js",
+                "src/client/**/*.js",
             ],
             dest: "./js/bundle.js",
             options: {

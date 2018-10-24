@@ -15,7 +15,7 @@ class Septikon {
         this.sequence = 0;
 
         this.activePlayer = null;
-        this.currentDiceValue = 0;
+        this.currentDiceValue = 3;
         
         this.gameStateEnum = Object.freeze({
             SETUP: 0,
@@ -86,6 +86,10 @@ class Septikon {
                 }
                 let clone = this.placeClone(player, data.x, data.y);
                 if (clone !== false) {
+                    if (selectedTile.type === "surface") {
+                        player.setCloneGunnerByUUID(clone.uuid);
+                    }
+
                     selectedTile.occupied = true;
                     this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
                     this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
@@ -136,10 +140,10 @@ class Septikon {
                         newTile.occupied = true;
                         selectedClone.move(data.x, data.y);
                         if (originalTile.type === "surface") {
-                            selectedClone.isGunner = false;
+                            this.activePlayer.unsetCloneGunnerByUUID(selectedClone.uuid);
                         }
                         if (newTile.type === "surface") {
-                            selectedClone.isGunner = true;
+                            this.activePlayer.setCloneGunnerByUUID(selectedClone.uuid);
                         }
                         this.emit('update', {type:"personnel", details: {personnel: selectedClone, action: 'move', playerID: this.activePlayer.id}});
                         this.emit('update', {type:"tile", details: {x:originalTile.x, y:originalTile.y, tile: originalTile}});
@@ -195,7 +199,7 @@ class Septikon {
         if (newTile.type === "battle") {
             let resCostType = newTile.properties.resourceCostType;
             let resCostCount = newTile.properties.resourceCostCount;
-
+            console.log("testing battle tile...");
             if (newTile.name === "repair" || newTile.name === "repairTwo" ) {
                 // if new tile is a "repair" tile, check for damaged tiles.
                 let damagedTilesArray = this.getDamagedTiles(player);
@@ -211,6 +215,13 @@ class Septikon {
                 let gunnerArray = player.getGunners();
                 if (gunnerArray.length > 0) {
                     // Request gunner selection from client limited by number of available resources.
+
+                    // TESTING
+                    console.log("test block");
+                    this.activePlayer = player;
+                    console.log(newTile);
+                    this.fireWeapon(newTile, gunnerArray);
+                    // END TESTING
                 }
             }
             return;
@@ -696,9 +707,42 @@ class Septikon {
         }
     }
 
+    moveOrdnance(ord) {
+        let x = ord.x;
+        for (let i = this.currentDiceValue; i>0; i--) {
+            if (this.activePlayer.id === 1) {
+                x++;
+            } else {
+                x--;
+            }
+            let currentOccupantArray = this.getTileOccupant({x:x, y:ord.y});
+            if (currentOccupantArray !== false) {
+                // check for enemy collision in transit (collision destroys ord and enemy occupant)
+                //  - NOTE: friendly ordnance can stack
+                //  - NOTE: enemy shields block the rocket/biodrone movement
+                //  - NOTE: enemy satellites are destroyed by rocket/biodrone collision, not vice versa
+            }
+        }
+
+        ord.x = x;
+        // check for enemy fire vectors on the destination tile
+        let destinationTile = this.getTile(ord.x, ord.y);
+        if (destinationTile.type !== "space" && destinationTile.type !== "surface") {
+            // DESTROY! (or if a biodrone, DEPLOY!)
+        }
+    }
+
     fireWeapon(weaponTile, gunnerArray) {
         if (gunnerArray.length <= 0 ) {
             return false;
+        }
+
+        for (let j in weaponTile.properties.resourceCostType) {
+            let res = weaponTile.properties.resourceCostType[j];
+            let cou = weaponTile.properties.resourceCostCount[j] * gunnerArray.length;
+            if (this.activePlayer.checkResource([res], [cou]) === false) {
+                return false;
+            }
         }
 
         for (var i = 0; i < gunnerArray.length; i++) {
@@ -717,6 +761,9 @@ class Septikon {
                             ordnancePoint.x--;
                         }
                         currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
+                        if (currentTile === false) {
+                            return false;
+                        }
                         switch (currentTile.name) {
                             case "space":
                             case "surface":
@@ -725,6 +772,7 @@ class Septikon {
                                     this.activePlayer.remove(currentOccupant);
                                     currentTile.occupied = false;
                                     impacted = true;
+                                    this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
                                     break;
                                 }
                                 break;
@@ -745,6 +793,7 @@ class Septikon {
                                     break;
                                 } else {
                                     currentTile.damaged = true;
+                                    this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
                                     this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
                                     // TODO: update opponent's client
                                     impacted = true;
@@ -757,16 +806,19 @@ class Septikon {
                 case "biodrone":
                 case "satellite":
                 case "rocket":
-                    if (weaponTile.name == "shield" || weaponTile.name == "satellite") {
-                        if (this.activePlayer.id == 1) {
-                            ordnancePoint.x += this.currentDiceValue;
-                        } else {
-                            ordnancePoint.x -= this.currentDiceValue;
-                        }
+                    if (this.activePlayer.id == 1) {
+                        ordnancePoint.x += this.currentDiceValue;
+                    } else {
+                        ordnancePoint.x -= this.currentDiceValue;
                     }
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                     ordUUID = uuid();
+                    // if (currentTile.isOccupied === true) {
+                    //     break;
+                    // }
                     this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
+                    // currentTile.isOccupied = true;
+                    this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
                     this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
                     //TODO: updatePersonnel on opponent client
                     break;
@@ -781,6 +833,7 @@ class Septikon {
                         break;
                     } else {
                         currentTile.damaged = true;
+                        this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
                         this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
                         break;
                     }
@@ -929,7 +982,11 @@ class Septikon {
     }
 
     getTile(x, y) {
-        return this.tileArray[x][y];
+        if (x < this.tileColumns && y < this.tileRows) {
+            return this.tileArray[x][y];
+        } else {
+            return false;
+        }
     }
 
     getLegalPieces() {
