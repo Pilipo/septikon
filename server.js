@@ -71,13 +71,6 @@ io.on('connection',function(socket){
         switch(data.event) {
             case 'tileClicked':
                 socket.game.processClick(data);
-                if (socket.game.gameStateEnum.GAME === socket.game.gameState) {
-                    let player = socket.game.getPlayerBySocketID(socket.id);
-                    console.log("processing tile");
-                    let procResult = socket.game.processTileActivation(socket.game.getTile(data.x, data.y), player);
-                    console.log("Process result: " + procResult);
-                    console.log(player.getResourceCount());
-                }
                 // socket.game.clicked(data);
                 break;
                 

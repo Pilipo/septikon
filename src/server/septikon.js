@@ -861,7 +861,8 @@ class Septikon {
             if (player.getPersonnel('clone').length === player.startingCloneCount) {
                 return false;
             }
-            if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
+            // TODO: THIS IS A TEST BIT
+            if(selectedTile.type == "surface" || selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
                 cloneUUID = uuid();
                 clone = player.addPersonnel('clone', x, y, cloneUUID);
                 return clone;

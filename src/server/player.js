@@ -274,8 +274,11 @@ class Player {
     }
 
     produceResource(spendType, spendCount, yieldType, yieldCount) {
-        // check if you can accept the yield
-        if ( (spendCount === 0 || this.checkResource(spendType, spendCount) === true) && this.checkResource(yieldType, yieldCount, true) === true ) {
+        if (spendType[0] === "oxygen" && yieldType[0] === "oxygen" && this.checkResource(spendType, spendCount) === true && this.checkResource(yieldType, [1], true) === true) {
+            this.spendResource(spendType, spendCount);
+            this.acceptResource(yieldType, yieldCount);
+            return true;
+        } else if ( (spendCount === 0 || this.checkResource(spendType, spendCount) === true) && this.checkResource(yieldType, yieldCount, true) === true ) {
             this.spendResource(spendType, spendCount);
             this.acceptResource(yieldType, yieldCount);
             return true;
@@ -284,7 +287,7 @@ class Player {
         }
     }
 
-    // CheckResource defaults to assume you are checking to spend a resource. Set "accept" to true if you are checking to receive a resource
+    // "Accept" set to TRUE checks for room to accept a yield
     checkResource(type, count, accept) {
         if (type === undefined || type === null) {
             return false;
@@ -298,7 +301,6 @@ class Player {
         for (let j in type) {
             let thisType = type[j];
             let thisCount = count[j];
-            console.log(thisType);
             let resCollection = this.resourceArray[thisType];
             let resFound = 0;
             let resEmptySlots = 0;
@@ -389,19 +391,21 @@ class Player {
             console.log("Yielding " + thisCount + " of " + thisType);
 
             // This should eventually allow the client to select which resource pool to use
-            if (thisType == "energy") {
-                var success = false;
+            if (thisType === "energy") {
+                let success = false;
                 while (thisCount > 0) {
-                    success = this.acceptResource("energy1", 1);
+                    console.log("Beginning while: " + thisCount);
+                    success = this.acceptResource(["energy1"], [1]);
                     if (success !== false) {
                         thisCount--;
                     } else {
-                        success = this.acceptResource("energy2", 1);
+                        success = this.acceptResource(["energy2"], [1]);
                         if (success !== false) {
                             thisCount--;
                         }
                     }
                 }
+                return;
             }
 
             let lastDamageIndex = 0;
