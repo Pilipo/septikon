@@ -35,7 +35,6 @@ io.on('connection',function(socket){
                     player.disconnected = false;
                     socket.game = games[i];
                     player.socketID = socket.id;
-                    console.log(player.personnelArray);
                     return;
                 } 
             }
@@ -71,33 +70,26 @@ io.on('connection',function(socket){
         switch(data.event) {
             case 'tileClicked':
                 socket.game.processClick(data);
-                if (socket.game.gameStateEnum.GAME === socket.game.gameState) {
-                    let player = socket.game.getPlayerBySocketID(socket.id);
-                    console.log("processing tile");
-                    let procResult = socket.game.processTileActivation(socket.game.getTile(data.x, data.y), player);
-                    console.log("Process result: " + procResult);
-                    console.log(player.getResourceCount());
-                }
+                // if (socket.game.gameStateEnum.GAME === socket.game.gameState) {
+                //     let player = socket.game.getPlayerBySocketID(socket.id);
+                //     console.log("processing tile");
+                //     let procResult = socket.game.processTileActivation(socket.game.getTile(data.x, data.y), player);
+                //     console.log("Process result: " + procResult);
+                //     console.log(player.getResourceCount());
+                // }
                 // socket.game.clicked(data);
                 break;
                 
             case 'diceClicked':
                 socket.game.processClick(data);
-                // socket.game.rollDice(data);
                 break;
 
             case 'confirmClicked':
-            // case 'go':
                 socket.game.processClick(data);
-                // socket.game.go(data);
                 break;
                 
             case 'get':
                 socket.game.get(data);
-                break;
-
-            case 'setPlayerState':
-                socket.game.setPlayerState(data);
                 break;
             
             default:

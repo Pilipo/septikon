@@ -11,6 +11,7 @@ class Septikon {
         this.playersArray = [];
         this.gameState = 0;
         this.turnState = 0;
+        this.phaseState = 0;
         this.uuid = require('uuid/v4')();
         this.sequence = 0;
 
@@ -34,6 +35,12 @@ class Septikon {
             ORDNANCE: 5,// move ordnance according to dice roll (this may not require a state...)
             END: 6      // assess ordnance damage and clone/biodrone kills. Assess victory conditions (this may not require a state...)
         });  
+
+        this.phaseStateEnum = Object.freeze({
+            OBJECT: 0,
+            TILE: 1,
+            CONFIRM: 2
+        });
 
         this.directionEnum = Object.freeze({
             NORTH:1,
@@ -59,7 +66,6 @@ class Septikon {
         //  - send occupant details to client (if any)
         //  - successful interactions (like moving a clone) should emit to client ONLY from this function.
 
-        // Do the needful
         let player = this.getPlayerBySocketID(data.socketID); // DOES THIS ALLOW BOTH PLAYERS TO INTERACT?!?!
 
         // (1) Check gamestate
@@ -68,8 +74,8 @@ class Septikon {
 
         if (this.gameStateEnum.SETUP === this.gameState) {
             if (data.event === "confirmClicked" && player.readyToStart === false) {
-                this.gameState++;
                 if (player.personnelArray.length === player.startingCloneCount) {
+                    this.setPlayerState(data);
                     // this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                 }
             } else if (data.event === "tileClicked" && player.readyToStart === false) {
@@ -105,14 +111,71 @@ class Septikon {
             // (6) - assessing damage
             // (7) - check victory
         
+            switch (this.turnState) {
+                case this.turnStateEnum.ROLL:
+                    if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
+                        this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
+                        this.activePlayer.currentLegalPieces = this.getLegalPieces();
+                        this.emit('update', { type: "dice", details: { value: this.currentDiceValue, gamePieces: this.activePlayer.currentLegalPieces } });
+                        this.turnState++;
+                    }
+                    break;
+                case this.turnStateEnum.MOVE:
+                    if (data.event === "tileClicked") {
+                        let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}, "clone");
+                        console.log(selectedClone);
+                        if (selectedClone !== false) {
+                            if (this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedClone) {
+                                console.log("Update the player's selected clone.")
+                                this.activePlayer.selectedPersonnelToMove = selectedClone;
+                            } else {
+                                console.log("Clear the player's selected clone.")
+                                this.activePlayer.selectedPersonnelToMove = null;
+                            }
+                        } else { 
+                            console.log("Check if the player has selected a clone.")
+                            if (this.activePlayer.selectedPersonnelToMove !== null || this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove, {x:data.x, y:data.y}) === true) {
+                                console.log("PROCESS THE MOVE!");
+                            }
+                        }
+                    }
+
+                    break;
+                case this.turnStateEnum.ACTION:
+                    switch (this.phaseState) {
+                        case this.phaseStateEnum.OBJECT:
+                            break;
+                        case this.phaseStateEnum.TILE:
+                            break;
+                    }
+                    break;
+                case this.turnStateEnum.BIODRONE:
+                    switch (this.phaseState) {
+                        case this.phaseStateEnum.OBJECT:
+                            break;
+                        case this.phaseStateEnum.TILE:
+                            break;
+                        case this.phaseStateEnum.CONFIRM:
+                            break;
+                    }
+                    break;
+                case this.turnStateEnum.ORDNANCE:
+                    switch (this.phaseState) {
+                        case this.phaseStateEnum.OBJECT:
+                            break;
+                        case this.phaseStateEnum.TILE:
+                            break;
+                    }
+                    break;
+                case this.turnStateEnum.END:
+                    break;
+            }
             if (this.turnStateEnum.ROLL === this.turnState) {
-                if(data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
-                    this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
-                    this.activePlayer.currentLegalPieces = this.getLegalPieces();    
-                    this.emit('update', {type:"dice", details: {value:this.currentDiceValue, gamePieces:this.activePlayer.currentLegalPieces}});
-                    this.turnState++;
-                }
             } else if (this.turnStateEnum.MOVE === this.turnState && data.event === "tileClicked") {
+                // phase 1: select Clone
+                // phase 2: select Tile
+                // phases can go back and forth until legal tile is selected in phase 2
+
                 let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
                 let doesSelectedCloneHaveLegalMoves = this.activePlayer.checkPersonnelMove(selectedClone);
 
@@ -185,12 +248,15 @@ class Septikon {
             }
             // SensorCabin requires a target biodrone in this player's base
             if (newTile.name === "sensorCabin") {
+                return;
             }
             // Repair requires a damaged tile as a target
-            if (newTile.name !== "prodRepair") {
+            if (newTile.name === "prodRepair") {
+                return;
             }
             // Warhead requires a rocket resource as a target
-            if (newTile.name !== "nuclearArmory") {
+            if (newTile.name === "nuclearArmory") {
+                return;
             }
             player.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
             this.emit('update', {type:"resource", details: {resCostType:resCostType, resCostCount:resCostCount, resYieldType:resYieldType, resYieldCount:resYieldCount}});
@@ -214,233 +280,12 @@ class Septikon {
             } else {
                 let gunnerArray = player.getGunners();
                 if (gunnerArray.length > 0) {
-                    // Request gunner selection from client limited by number of available resources.
-
-                    // TESTING
-                    console.log("test block");
-                    this.activePlayer = player;
-                    console.log(newTile);
                     this.fireWeapon(newTile, gunnerArray);
-                    // END TESTING
+                    // Request gunner selection from client limited by number of available resources.
                 }
             }
             return;
         }    
-    }
-
-    clicked(data) {
-        
-        // Process the click from the client. 
-        // Client should do NO rule processing. Pass the click from client to server; process the data; tell the client what to do.
-        // Basically, check game state and turn state.
-        
-        switch (this.gameState) {
-                        
-            case this.gameStateEnum.GAME:
-
-                var selectedPersonnel = false;
-
-                switch (this.turnState) {
-                    case this.turnStateEnum.MOVE:
-
-                        // Player can move one clone per turn.
-                        // Note: The array of legal personnel (in this.activePlayer) was sent by rollDice().
-
-                        this.emit('action', {callback: 'hideTiles', details: null}, this.activePlayer.socketID);
-
-                        selectedPersonnel = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
-
-                        if (selectedPersonnel !== false) {
-                            // Clone was clicked, so:
-                            var isLegalPersonnel = this.activePlayer.checkPersonnelMove(selectedPersonnel);
-                            // TODO: If personnel is a "biodrone" type AND clones remain in the Player.currentlegalpieces array, emit modal warning to player.
-                            // Clone must move and tile must be triggered prior to biodrone movement.
-                            if (isLegalPersonnel === true) {
-                                this.activePlayer.selectedPersonnelToMove = selectedPersonnel;
-                                //  - Show highlight selected personnel in client
-                                //  - Show legal moves of the selected personnel in a different color
-
-                                var pointArray = [];
-                                pointArray = this.getLegalMoves(selectedPersonnel, this.currentDiceValue, {x:selectedPersonnel.x, y:selectedPersonnel.y});
-                                this.emit('action', {callback: 'showTiles', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
-                                // TODO: Show in different color...
-                                this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
-                            }
-                            
-                        } else if (this.activePlayer.selectedPersonnelToMove !== null) {
-                            var isLegalMove = this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove,{x:data.x, y:data.y});
-                            if (isLegalMove === false) {
-                                // Toggle back to highlighting the personnel with legal moves
-                                // TODO: emit something to show clones to client
-                                this.emit('action', {callback: 'showTiles', details: {}}, this.activePlayer.socketID);
-                            } else {
-                                // Move the personnel
-                                this.activePlayer.selectedPersonnelToMove.move(data.x, data.y);
-                                this.emit('action', {callback: 'movePersonnel', details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.activePlayer.socketID);
-                                this.emit('update', {type:"personnel", details: {uuid:this.activePlayer.selectedPersonnelToMove.uuid, x:data.x, y:data.y}}, this.getPlayerOpponent(this.activePlayer).socketID);                               // clear moved personnel from the player array. If moved personnel was a clone, remove ALL clones from array.
-                                this.activePlayer.purgeLegalPieces(this.activePlayer.selectedPersonnelToMove, true); // 2nd arg: true is passed for clones; null for biodrones.
-
-                                this.turnState++;
-                                // TODO: trigger tile and emit battle targets (gunners, etc) to Player
-                                this.activateTile({x:data.x, y:data.y});    
-
-                                // TODO: if tile is production, surface, or armory; check for biodrones and move ordnance, then (if none are found) change players.
-                                var tile = this.getTile(data.x, data.y);
-                                if ( tile.type == "production"  || tile.type == "surface" || tile.type == "armory" || tile.type == "lock") {
-                                    this.activePlayer.selectedPersonnelToMove = null;
-                                    if (tile.name == "prodRepair"){
-                                        this.queuedTile = tile;
-                                        return;
-                                    }
-                                    if (tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" || tile.name == "airFilter" ) {
-                                        this.queuedTile = tile;
-                                        return;
-                                    }
-                                    if (this.activePlayer.getPersonnel('biodrone').length > 0) {
-                                        // TODO: send biodrone array to client for selection
-                                        return;
-                                    }
-                                    if (this.activePlayer.getOrdnance().length > 0) {
-                                        // TODO: move ordnance
-                                        return;
-                                    }
-                                    this.changeActivePlayer();
-                                    return;
-                                }
-
-                            }
-                            this.activePlayer.selectedPersonnelToMove = null;
-                        }
-
-                        break;
-
-                    case this.turnStateEnum.ACTION:
-
-                        // Player will designate gunner(s) for firing and/or additional targets, depending on the battle tile type.
-                        // Player will confirm movement selections with GO! (unless repair or counter espionage)
-                        // Array of eligible gunners sent via activateTile();
-                        // Emit array of eligible gunners and number of selectable gunners to Player.
-
-                        var actionTile;
-
-                        if (this.queuedTile.name == "chemicalReactor" || this.queuedTile.name == "chemicalReactorTwo" || this.queuedTile.name == "airFilter") {
-                            actionTile = this.getTile(data.x, data.y);
-                            if (actionTile.name == "lock" && actionTile.damaged === false && actionTile.occupied === false) {
-                                this.placeClone(this.activePlayer, data.x, data.y);
-                                this.availableClonesToAdd--;
-                                if (this.availableClonesToAdd > 0) {
-                                    return;
-                                }
-                                if (this.activePlayer.getPersonnel('biodrones').length > 0) {
-                                    // TODO: send biodrone selection
-                                    return;
-                                }
-                                if (this.activePlayer.getOrdnance().length > 0) {
-                                    // TODO: Move ordnance and check for damage
-                                    return;
-                                }
-                                this.changeActivePlayer();
-                                return;
-                            }
-                        } else if (this.queuedTile.name == "counterEspionage" ) {
-                            // TODO: special case.
-                        } else if (this.queuedTile.name == "repair" || this.queuedTile.name == "repairTwo" || this.queuedTile.name == "prodRepair") {
-                            // TODO: Special cases. 
-                            actionTile = this.getTile(data.x, data.y).damaged;
-                            if (actionTile.damaged === false) {
-                                return;
-                            }
-                            actionTile.damaged = false;
-                            this.tilesRepairedThisTurn++;
-                            this.emit('action', {callback: 'repairTile', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
-                            if (this.tilesRepairedThisTurn == 1) {  // TODO: check for repairTwo
-                                this.tilesRepairedThisTurn = 0;
-                                if (this.activePlayer.getPersonnel('biodrones').length > 0) {
-                                    // TODO: send biodrone selection
-                                    return;
-                                }
-                                if (this.activePlayer.getOrdnance().length > 0) {
-                                    // TODO: Move ordnance and check for damage
-                                    return;
-                                }
-                                this.changeActivePlayer();
-                                return;
-                            }
-                        } else {
-                            selectedPersonnel = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
-                            if (selectedPersonnel !== false) {
-                                if (this.activePlayer.toggleGunnerSelection(selectedPersonnel) === 0) {
-                                    this.emit('action', {callback: 'showTiles', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
-                                } else {
-                                    this.emit('action', {callback: 'hideTiles', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
-                                }
-                            }
-                        }
-
-                        break;
-
-                    case this.turnStateEnum.TARGETS:
-
-                        // Player will choose additional targets if required by the tile. Espoinage, for instance, requires a gunner and an enemy clone in the selected gunner's line of fire.
-                        // Player will confirm targets with GO!
-
-                        console.log("Target queued!");
-                        break;
-
-                    case this.turnStateEnum.ORDNANCE:
-
-                        break;
-
-                    case this.turnStateEnum.END:
-
-                        // Any post-turn processing can happen here. Otherwise, the turn may already be over...
-                        this.turnState = this.turnStateEnum.ROLL;
-                        break;
-                }
-                break;
-                
-            default:
-                break;
-        }
-           
-    }
-
-    go(data) {
-        switch (this.turnState) {
-            case this.turnStateEnum.ACTION:
-                // Player has confirmed gunner selection.
-
-                if (this.activePlayer.getSelectedGunners().length > 0) {
-                    this.fireWeapon(this.queuedTile, this.activePlayer.getSelectedGunners());
-                    // TODO: If targets are required (ie espionage) send that array now and advance to TARGETS and RETURN
-                }
-
-                // TODO: If biodrones exist, send that array now and advance to BIODRONES and RETURN
-
-                // TODO: If player has ordnance, move ordnance/check damage 
-                if (this.activePlayer.ordnanceArray.length > 0) {
-                    var updatedOrdnance = this.activePlayer.moveOrdnance(this.currentDiceValue);
-                    // TODO: Check / apply damage
-                    this.emit('action', {callback:'moveOrdnance', details:updatedOrdnance}, this.activePlayer.socketID);
-                }
-
-                this.changeActivePlayer();
-                
-                break;
-            case this.turnStateEnum.TARGETS:
-                // Player has confirmed all targets (this will apply to limited battle tiles like espionage)
-                // I may come back to this a bit later.
-                // TODO: Update client with result
-                break;
-            case this.turnStateEnum.BIODRONE:
-                // Player has confirmed that biodrone selection (if any) is final. 
-                // TODO: Move biodrone(s) and wreak havok. 
-                // TODO: advance turnstate
-                break;
-            case this.turnStateEnum.END:
-                break;
-        }
-        console.log(data);
     }
 
 	addNewPlayer(socketID, uuid) {
@@ -456,24 +301,14 @@ class Septikon {
         this.emit('action', {callback: 'updatePlayer', details: {id: player.id}}, player.socketID);
     }
 
-    setPlayerState(state) {
-        var player = null;
-        switch (state.value) {
-            case 'start': 
-                player = this.getPlayerBySocketID(state.socketID);
-                player.readyToStart = true;
-                var opponent = this.getPlayerOpponent(player);
-                if(!opponent || !opponent.readyToStart) {
-                    return;
-                } else {
-                    this.activePlayer = this.getRandomPlayer();
-                    this.gameState++;
-                }
-                break;
-            default:
-                console.log(state.value);
-                console.error(state.value + " is not a valid player state!");
-        }
+    setPlayerState(data) {
+        let player = this.getPlayerBySocketID(data.socketID);
+        let opponent = this.getPlayerOpponent(player);
+        player.readyToStart = true;
+        if (opponent !== false && opponent.readyToStart !== false) {
+            this.activePlayer = this.getRandomPlayer();
+            this.gameState++;
+        }        
     }
 
     getPlayerOpponent(player) {

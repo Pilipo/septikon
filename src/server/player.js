@@ -60,21 +60,24 @@ class Player {
         return returnArray;
     }
 
-    getPersonnelByUUID(uuid) {
+    getPersonnelByUUID(uuid, type) {
         var personnel = this.getPersonnel();
         for (var i in personnel) {
-            if (personnel[i].uuid == uuid) {
+            if (personnel[i].uuid === uuid) {
+                if (type === undefined || personnel[i].type === personnel[i].typeEnum[type.toUpperCase()])
                 return personnel[i];
             }
         }
         return false;
     }
 
-    getPersonnelByPoint(point) {
+    getPersonnelByPoint(point, type) {
         var personnels = this.getPersonnel();
         for (var i = 0; i < personnels.length; i++) {
-            if (personnels[i].x == point.x && personnels[i].y == point.y) {
-                return personnels[i];
+            if (personnels[i].x === point.x && personnels[i].y === point.y) {
+                if (type === undefined || personnels[i].type === personnels[i].typeEnum[type.toUpperCase()]) {
+                    return personnels[i];
+                }
             }
         }
         return false;
@@ -293,7 +296,8 @@ class Player {
     }
 
     produceResource(spendType, spendCount, yieldType, yieldCount) {
-        if (spendType[0] === "oxygen" && yieldType[0] === "oxygen" && this.checkResource(spendType, spendCount) === true && this.checkResource(yieldType, [1], true) === true) {
+        console.log(spendType);
+        if (spendType !== null && spendType[0] === "oxygen" && yieldType[0] === "oxygen" && this.checkResource(spendType, spendCount) === true && this.checkResource(yieldType, [1], true) === true) {
             this.spendResource(spendType, spendCount);
             this.acceptResource(yieldType, yieldCount);
             return true;
