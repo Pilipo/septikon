@@ -565,6 +565,11 @@ class Septikon {
     test.animations.play("boom", 20, false, true);
   }
 
+  repairTile(data) {
+    var currentTile = this.tileArray[data.x][data.y];
+    currentTile.alpha = 0;
+  }
+
   startGame() {
     this.game.state.start("game");
   }

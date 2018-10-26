@@ -194,7 +194,7 @@ class Player {
     getOrdnance(type) {
         var returnArray = [];
         for(var i in this.ordnanceArray) {
-            if(type === null || this.ordnanceArray[i].type === 0)
+            if(type === null || this.ordnanceArray[i].type === this.ordnanceArray[i].typeEnum[type.toUpperCase()])
                 returnArray.push(this.ordnanceArray[i]);
         }
         return returnArray;
