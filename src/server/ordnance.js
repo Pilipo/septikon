@@ -12,7 +12,6 @@ class Ordnance {
         this.y = y;
         this.uuid = uuid;
         this.type = this.typeEnum[type.toUpperCase()];
-        
     }
 }
 

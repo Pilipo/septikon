@@ -2,6 +2,9 @@ class Resource {
 
     constructor(type) {
         this.type = type;
+        if (type === "rocket") {
+            this.isNuke = false;
+        }
     }
 }
 

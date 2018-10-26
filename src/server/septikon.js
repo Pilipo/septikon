@@ -135,9 +135,23 @@ class Septikon {
                                     this.processPersonnelMove(this.activePlayer.selectedPersonnelToMove, targetTile);
                                     if (targetTile.type !== "battle" && targetTile.name !== "nuclearArmory" && targetTile.name !== "prodRepair") {
                                         this.processTileActivation(targetTile, this.activePlayer);
-                                        this.turnstate += 2;
+                                        let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                        if (biodrones === false) {
+                                            let ordnance = this.activePlayer.getOrdnance();
+                                            if (ordnance === false) {
+                                                this.turnState += 4;
+                                                
+                                                // TODO: process end of turn
+                                                this.processEndOfTurn();
+                                            } else {
+                                                this.turnState += 3;
+                                                // TODO: process ordnance movement
+                                            }
+                                        } else {
+                                            this.turnState +=2;
+                                            // TODO: Process biodrone movement
+                                        }
                                     } else {
-                                        console.log("moving to action step");
                                         this.queuedForAction = [];
                                         this.actionTile = targetTile;
                                         this.turnState++;
@@ -159,7 +173,6 @@ class Septikon {
                                     this.emit('action', {callback: 'hideTiles', details: null});
                                     for (let i in this.queuedForAction) {
                                         if (this.queuedForAction[i] === selectedGunner) {
-                                            console.log("unqueuing gunner");
                                             this.queuedForAction.splice(i, 1);
                                             gunnerUnqueued = true;
                                         } else {
@@ -173,9 +186,7 @@ class Septikon {
                                         }
                                         let canAfford = this.activePlayer.checkResource(this.actionTile.properties.resourceCostType, resCount);
                                         if (canAfford === true) {
-                                            console.log("queuing gunner.");
                                             this.queuedForAction.push(selectedGunner);
-                                            // TODO: selection isn't working
                                             this.emit('action', {callback: 'showTiles', details: [{x:selectedGunner.x, y:selectedGunner.y}]});
                                         }
 
@@ -191,32 +202,59 @@ class Septikon {
                                     for (let i in this.queuedForAction) {
                                         if (targetTile === this.queuedForAction[i]) {
                                             this.queuedForAction.splice(i, 1);
-                                            console.log("unqueue damaged tile");
                                             return;
                                         }
                                     }
-
                                     if (this.actionTile.name === "repairTwo") {
                                         if (this.queuedForAction.length === 2) {
                                             this.queuedForAction.shift();
-                                            console.log("queue too long. shift");
                                         }
                                     } else {
                                         if (this.queuedForAction.length === 1) {
-                                            console.log("queue too long. shift");
                                             this.queuedForAction.shift();
                                         }
                                     }
                                     this.queuedForAction.push(targetTile);
-                                    console.log("Add damaged tile to queue");
                                     for (let i in this.queuedForAction) {
                                         this.emit('action', {callback: 'showTiles', details: [{x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}]});
                                     }
                                 }
+                            } else if (this.actionTile.name === "nuclearArmory") {
+                                if (targetTile.name === "rocket" && this.activePlayer.id === targetTile.owner) {
+                                    let rocketArray = this.activePlayer.getResourceArray('rocket')[0];
+                                    let rocket = null;
+                                    if (targetTile.x === 4) {
+                                        rocket = rocketArray[targetTile.y];
+                                    } else {
+                                        rocket = rocketArray[(targetTile.y-20)*(-1)];
+                                    }
+                                    if (rocket === null || rocket.isNuke === true) {
+                                        return;
+                                    } else {
+                                        rocket.isNuke = true;
+                                        this.readyForConfirmation = false;
+                                        this.queuedForAction = [];
+                                        let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                        if (biodrones === false) {
+                                            let ordnance = this.activePlayer.getOrdnance();
+                                            if (ordnance === false) {
+                                                this.turnState += 3;
+                                                // TODO: process end of turn
+                                                this.processEndOfTurn();
+                                            } else {
+                                                this.turnState += 2;
+                                                // TODO: process ordnance movement
+                                            }
+                                        } else {
+                                            this.turnState++;
+                                            // TODO: Process biodrone movement
+                                        }
+                                        // TODO: emit nuke armament.
+                                    }
+                                }
+                            } else if (this.actionTile.name === "counterEspionage") {
+                                // IF tile requires an espionaged clone, check that selected is an espionaged clone.
                             }
-                            // IF tile requires a rocket resource, check it selected is a filled rocket resource
-                            // IF tile requires an espionaged clone, check that selected is an espionaged clone.
-
                         } else if (data.event === "confirmClicked") {
                             if (this.readyForConfirmation === true) {
                                 if (this.queuedForAction.length > 0) {
@@ -230,6 +268,7 @@ class Septikon {
                                     if (ordnance === false) {
                                         this.turnState += 3;
                                         // TODO: process end of turn
+                                        this.processEndOfTurn();
                                     } else {
                                         this.turnState += 2;
                                         // TODO: process ordnance movement
@@ -320,20 +359,22 @@ class Septikon {
             } else if (actionTile.name === "nuclearArmory") {
                 return;
             } else {
-                player.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
+                // TODO: Oxygen production tests for new clone creation!
+
+                this.activePlayer.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
                 this.emit('update', {type:"resource", details: {resCostType:resCostType, resCostCount:resCostCount, resYieldType:resYieldType, resYieldCount:resYieldCount}});
                 return;
             }
         } else if (actionTile.type === "battle") {
             let resCostType = actionTile.properties.resourceCostType;
             let resCostCount = actionTile.properties.resourceCostCount;
-            console.log("testing battle tile...");
             if (actionTile.name === "repair" || actionTile.name === "repairTwo" ) {
                 for (let i in this.queuedForAction) {
-                    this.tileArray[this.queuedForAction[i].x][this.queuedForAction[i].y].damaged = false;
-                    this.emit('action', {callback:"repairTile" ,details:{x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}});
+                    let qAction = this.queuedForAction[i];
+                    this.tileArray[qAction.x][qAction.y].damaged = false;
+                    this.emit('action', {callback:"repairTile" ,details:{x:this.qAction.x, y:qAction.y}});
                 }
-                this.activePlayer.spendResource(this.queuedForAction[i].properties.resourceCostType, this.queuedForAction[i].properties.resourceCostCount);
+                this.activePlayer.spendResource(qAction.properties.resourceCostType, qAction.properties.resourceCostCount);
             } else if (actionTile.name === "counterEspionage") {
                 let controlledClones = player.getEspionagedClones();
                 if (controlledClones.length > 0) {
@@ -348,6 +389,14 @@ class Septikon {
             }
             return;
         }    
+    }
+
+    processEndOfTurn() {
+        console.log ("next player's turn");
+        this.changeActivePlayer();
+        this.actionTile = null;
+        this.queuedForAction = [];
+        this.readyForConfirmation = false;
     }
 
 	addNewPlayer(socketID, uuid) {
@@ -503,8 +552,6 @@ class Septikon {
             var impacted = false;
             var ordUUID;
 
-            console.log("Shot number " + i);
-
             switch (weaponTile.name) {
                 case "laser":
                     var currentTile;
@@ -597,13 +644,6 @@ class Septikon {
             }
         }
         return; 
-        // switch (weaponTile.name) {
-        //     case "espionage":
-        //     case "takeover":
-        //         break;
-        //     default:
-        //         console.error("There is a problem with that weaponTile argument");
-        // }
     }
 
     getLocks(player) {
@@ -715,21 +755,15 @@ class Septikon {
                     this.tileArray[x][y].damaged = false;
                     this.tileArray[x][y].occupied = false;
                     this.tileArray[x][y].type = obj[prop].type;
-                    // TESTING
-                    if(obj[prop].type === "production") {
-                        this.tileArray[x][y].damaged = true;
-                    }
-                    // END TESTING
                     if (x < 9) {
                         this.tileArray[x][y].owner = 1;
                     } else if (x > 21) {
                         this.tileArray[x][y].owner = 2;
                     } 
 
-                    if (typeof this.tileArray[x][y] != 'undefined')
+                    if (typeof this.tileArray[x][y] != 'undefined') {
                         this.tileArray[x][y].name = obj[prop].name;
-                    else
-                        console.log(x + ":" + y + " not found!");
+                    }
                     
                     if (typeof obj[prop].properties != 'undefined') {
                         this.tileArray[x][y].properties = obj[prop].properties;
@@ -782,7 +816,6 @@ class Septikon {
         var nextMoveToCheck = null;
         var nextTileToCheck = null;
         moves--;
-        // console.log(process.memoryUsage().heapUsed);
 
         if (typeof previousCoord === 'undefined') {
             var locks = this.getLocks(this.activePlayer);

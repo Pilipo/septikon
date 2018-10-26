@@ -39,7 +39,6 @@ class Player {
             this.personnelArray.push(personnel);
             return personnel;
         }
-        console.log("personnel is not a clone type.");
         return false;
     }
 
@@ -56,6 +55,9 @@ class Player {
             if (typeof type === 'undefined' || this.personnelArray[i].type === this.personnelArray[i].typeEnum[type.toUpperCase()]) {
                 returnArray.push(this.personnelArray[i]);
             }
+        }
+        if (returnArray.length === 0) {
+            return false;
         }
         return returnArray;
     }
@@ -197,6 +199,9 @@ class Player {
             if(type === null || this.ordnanceArray[i].type === this.ordnanceArray[i].typeEnum[type.toUpperCase()])
                 returnArray.push(this.ordnanceArray[i]);
         }
+        if (returnArray.length === 0) {
+            return false;
+        }
         return returnArray;
     }
 
@@ -217,7 +222,6 @@ class Player {
             }
         } else {
             console.error("Player.remove given bad param.");
-            console.log(target);
             return false;
         }
     }
@@ -256,17 +260,27 @@ class Player {
             'uranium',
             'biomass'
         ];
-        var rec = null;
-        for (var i in recArray) {
-            rec = new Resource(recArray[i]);
+        for (let i in recArray) {
             this.resourceArray[recArray[i]] = [];
             for (var count = 0; count < 10; count++) {
+                let rec = new Resource(recArray[i]);
                 if (count < 5) {
                     this.resourceArray[recArray[i]].push(rec);
                 } else {
                     this.resourceArray[recArray[i]].push(null);
                 }
             }
+        }
+    }
+
+    getResourceArray(type) {
+        if (type === undefined) {
+            return false;
+        }
+        if (type === "energy") {
+            return [this.getResourceArray("energy1"), this.getResourceArray("energy2")];
+        } else {
+            return [this.resourceArray[type]];
         }
     }
 
@@ -295,10 +309,6 @@ class Player {
             return this.getResourceCount('energy1') + this.getResourceCount('energy2');
         }
 
-        if (type == "nuke") {
-            return this.resourceArray[type].length;
-        }
-
         while (currentResourceSlot >= 0) {
             if (this.resourceArray[type][currentResourceSlot] === null) {
                 currentResourceSlot--;
@@ -314,7 +324,6 @@ class Player {
     }
 
     produceResource(spendType, spendCount, yieldType, yieldCount) {
-        console.log(spendType);
         if (spendType !== null && spendType[0] === "oxygen" && yieldType[0] === "oxygen" && this.checkResource(spendType, spendCount) === true && this.checkResource(yieldType, [1], true) === true) {
             this.spendResource(spendType, spendCount);
             this.acceptResource(yieldType, yieldCount);
@@ -391,7 +400,6 @@ class Player {
             if (this.checkResource([thisType], [thisCount]) === false) {
                 return false;
             }
-            console.log("Spending " + thisCount + " of " + thisType);
 
             if (thisType == "energy") {
                 let success = false;
@@ -429,13 +437,9 @@ class Player {
             if (this.checkResource([thisType], [thisCount], true) === false) {
                 return false;
             }
-            console.log("Yielding " + thisCount + " of " + thisType);
-
-            // This should eventually allow the client to select which resource pool to use
             if (thisType === "energy") {
                 let success = false;
                 while (thisCount > 0) {
-                    console.log("Beginning while: " + thisCount);
                     success = this.acceptResource(["energy1"], [1]);
                     if (success !== false) {
                         thisCount--;

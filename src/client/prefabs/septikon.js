@@ -96,6 +96,10 @@ class Septikon {
 
   updateResources(data) {}
 
+  updateArms(data) {
+    console.log("shows weapons on clones");
+  }
+
   updateTile(data) {
     this.tileArray[data.details.x][data.details.y].tileDetail =
       data.details.tile;
@@ -306,20 +310,20 @@ class Septikon {
     }
 
     // DEBUG BLOCK
-    this.game.client.sendInput({ event: "tileClicked", x: 8, y: 2 });
-    this.game.client.sendInput({ event: "tileClicked", x: 8, y: 3 });
-    this.game.client.sendInput({ event: "tileClicked", x: 7, y: 3 });
-    this.game.client.sendInput({ event: "tileClicked", x: 6, y: 7 });
-    this.game.client.sendInput({ event: "tileClicked", x: 7, y: 14 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 1, y: 20 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 17 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 16 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 15 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 14 });
 
-    this.game.client.sendInput({ event: "tileClicked", x: 22, y: 2 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 3 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 9 });
-    this.game.client.sendInput({ event: "tileClicked", x: 24, y: 14 });
-    this.game.client.sendInput({ event: "tileClicked", x: 24, y: 5 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 6 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 5 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 4 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 3 });
+    // this.game.client.sendInput({ event: "tileClicked", x: 29, y: 0 });
 
-    this.game.client.sendInput({ event: "confirmClicked"});
-    this.game.client.sendInput({ event: "diceClicked"});
+    // this.game.client.sendInput({ event: "confirmClicked"});
+    // this.game.client.sendInput({ event: "diceClicked"});
 
   }
 
