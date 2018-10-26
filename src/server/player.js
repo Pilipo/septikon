@@ -201,7 +201,25 @@ class Player {
     }
 
     remove(target) {
-        console.log(target);
+        if (target instanceof Personnel) {
+            for (let i in this.personnelArray) {
+                if (this.personnelArray[i].uuid === target.uuid) {
+                    this.personnelArray.splice(i, 1);
+                    return;
+                }
+            }
+        } else if (target instanceof Ordnance) {
+            for (let i in this.ordnanceArray) {
+                if (this.ordnanceArray[i].uuid === target.uuid) {
+                    this.ordnanceArray.splice(i, 1);
+                    return;
+                }
+            }
+        } else {
+            console.error("Player.remove given bad param.");
+            console.log(target);
+            return false;
+        }
     }
 
     getOrdnanceByPoint(point) {

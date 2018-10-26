@@ -55,9 +55,10 @@ class Septikon {
         this.tileArray = [];
         this.createTileArray(); 
 
-        this.queuedTile = null;
-        this.tilesRepairedThisTurn = 0;
-        this.availableClonesToAdd = 0;
+        this.actionTile = null;
+        this.queuedForAction = [];
+        this.readyForConfirmation = false;
+        // this.availableClonesToAdd = 0;
     }
     
     processClick(data) {
@@ -66,173 +67,193 @@ class Septikon {
         //  - send occupant details to client (if any)
         //  - successful interactions (like moving a clone) should emit to client ONLY from this function.
 
-        let player = this.getPlayerBySocketID(data.socketID); // DOES THIS ALLOW BOTH PLAYERS TO INTERACT?!?!
+        let player = this.getPlayerBySocketID(data.socketID); // This is ONLY used for SETUP.
 
         // (1) Check gamestate
         // (2) Check turnphase
         // (3) Check phasestep
 
-        if (this.gameStateEnum.SETUP === this.gameState) {
-            if (data.event === "confirmClicked" && player.readyToStart === false) {
-                if (player.personnelArray.length === player.startingCloneCount) {
-                    this.setPlayerState(data);
-                    // this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
-                }
-            } else if (data.event === "tileClicked" && player.readyToStart === false) {
-                let selectedTile = this.getTile(data.x, data.y);
-                for (let i = 0; i < player.personnelArray.length; i++) {
-                    let personnel = player.personnelArray[i];
-                    if (data.x === personnel.x && data.y === personnel.y) {
-                        player.personnelArray.splice(i,1);
-                        selectedTile.occupied = false;
-                        this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'remove', playerID: player.id}});
+        switch (this.gameState){
+            case this.gameStateEnum.SETUP:            
+                if (data.event === "confirmClicked" && player.readyToStart === false) {
+                    if (player.personnelArray.length === player.startingCloneCount) {
+                        this.setPlayerState(data);
+                        // this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
+                    }
+                } else if (data.event === "tileClicked" && player.readyToStart === false) {
+                    let selectedTile = this.getTile(data.x, data.y);
+                    for (let i = 0; i < player.personnelArray.length; i++) {
+                        let personnel = player.personnelArray[i];
+                        if (data.x === personnel.x && data.y === personnel.y) {
+                            player.personnelArray.splice(i,1);
+                            selectedTile.occupied = false;
+                            this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'remove', playerID: player.id}});
+                            this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
+                            return;
+                        }
+                    }
+                    let clone = this.placeClone(player, data.x, data.y);
+                    if (clone !== false) {
+                        if (selectedTile.type === "surface") {
+                            player.setCloneGunnerByUUID(clone.uuid);
+                        }
+
+                        selectedTile.occupied = true;
+                        this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
                         this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
-                        return;
                     }
                 }
-                let clone = this.placeClone(player, data.x, data.y);
-                if (clone !== false) {
-                    if (selectedTile.type === "surface") {
-                        player.setCloneGunnerByUUID(clone.uuid);
-                    }
-
-                    selectedTile.occupied = true;
-                    this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
-                    this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
-                }
-            }
-        } else if (this.gameStateEnum.GAME === this.gameState) {
-            // This gamestate has phases (or "this.turnstate"):
-            // ---- (1) - rolling die
-            // ---- (2) - moving a clone
-            // (3) - tile activation
-            // (4) - moving biodrone(s)
-            // (5) - moving rockets
-            // (6) - assessing damage
-            // (7) - check victory
-        
-            switch (this.turnState) {
-                case this.turnStateEnum.ROLL:
-                    if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
-                        this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
-                        this.activePlayer.currentLegalPieces = this.getLegalPieces();
-                        this.emit('update', { type: "dice", details: { value: this.currentDiceValue, gamePieces: this.activePlayer.currentLegalPieces } });
-                        this.turnState++;
-                    }
-                    break;
-                case this.turnStateEnum.MOVE:
-                    if (data.event === "tileClicked") {
-                        let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}, "clone");
-                        console.log(selectedClone);
-                        if (selectedClone !== false) {
-                            if (this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedClone) {
-                                console.log("Update the player's selected clone.")
-                                this.activePlayer.selectedPersonnelToMove = selectedClone;
+                break;
+            case this.gameStateEnum.GAME:
+                switch (this.turnState) {
+                    case this.turnStateEnum.ROLL:
+                        if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
+                            this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
+                            this.activePlayer.currentLegalPieces = this.getLegalPieces();
+                            this.emit('update', { type: "dice", details: { value: this.currentDiceValue, gamePieces: this.activePlayer.currentLegalPieces } });
+                            this.turnState++;
+                        }
+                        break;
+                    case this.turnStateEnum.MOVE:
+                        if (data.event === "tileClicked") {
+                            let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}, "clone");
+                            if (selectedClone !== false) {
+                                if (this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedClone) {
+                                    this.activePlayer.selectedPersonnelToMove = selectedClone;
+                                    let pointArray = this.getLegalMoves(selectedClone, this.currentDiceValue, {x:selectedClone.x, y:selectedClone.y});
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    this.emit('action', {callback: 'showTiles', details: {x:data.x, y:data.y}}, this.activePlayer.socketID);
+                                    this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
+                                } else {
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    this.activePlayer.selectedPersonnelToMove = null;
+                                }
                             } else {
-                                console.log("Clear the player's selected clone.")
-                                this.activePlayer.selectedPersonnelToMove = null;
+                                if (this.activePlayer.selectedPersonnelToMove !== null && this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove, { x: data.x, y: data.y }) === true) {
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    let targetTile = this.getTile(data.x, data.y);
+                                    this.processPersonnelMove(this.activePlayer.selectedPersonnelToMove, targetTile);
+                                    if (targetTile.type !== "battle" && targetTile.name !== "nuclearArmory" && targetTile.name !== "prodRepair") {
+                                        this.processTileActivation(targetTile, this.activePlayer);
+                                        this.turnstate += 2;
+                                    } else {
+                                        console.log("moving to action step");
+                                        this.queuedForAction = [];
+                                        this.actionTile = targetTile;
+                                        this.turnState++;
+                                    }
+                                }
                             }
-                        } else { 
-                            console.log("Check if the player has selected a clone.")
-                            if (this.activePlayer.selectedPersonnelToMove !== null || this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove, {x:data.x, y:data.y}) === true) {
-                                console.log("PROCESS THE MOVE!");
+                        }
+                        break;
+                    case this.turnStateEnum.ACTION:
+                        let targetTile = this.getTile(data.x, data.y);
+                        this.emit('action', {callback: 'hideTiles', details: null});
+
+                        if (data.event === "tileClicked") {
+                            if (this.actionTile.type === "battle" && this.actionTile.name !== "repair" && this.actionTile.name !== "repairTwo") {
+                                this.readyForConfirmation = true;
+                                let selectedGunner = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
+                                if (selectedGunner !== false && selectedGunner.isGunner === true) {
+                                    let gunnerUnqueued = false;
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    for (let i in this.queuedForAction) {
+                                        if (this.queuedForAction[i] === selectedGunner) {
+                                            console.log("unqueuing gunner");
+                                            this.queuedForAction.splice(i, 1);
+                                            gunnerUnqueued = true;
+                                        } else {
+                                            this.emit('action', {callback: 'showTiles', details: {x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}});
+                                        }
+                                    }
+                                    if (gunnerUnqueued === false) {
+                                        let resCount = [];
+                                        for (let i in this.actionTile.properties.resourceCostCount) {
+                                            resCount[i] = (this.actionTile.properties.resourceCostCount[i] * (this.queuedForAction.length+1));
+                                        }
+                                        let canAfford = this.activePlayer.checkResource(this.actionTile.properties.resourceCostType, resCount);
+                                        if (canAfford === true) {
+                                            console.log("queuing gunner.");
+                                            this.queuedForAction.push(selectedGunner);
+                                            // TODO: selection isn't working
+                                            this.emit('action', {callback: 'showTiles', details: {x:selectedGunner.x, y:selectedGunner.y}});
+                                        }
+
+                                    }
+                                }
+                            }
+                            // IF tile requires damaged tile, check if selected is a damaged tile and queue/unqueue
+                            else if (this.actionTile.name === "repair" || this.actionTile.name === "repairTwo" || this.actionTile.name === "prodRepair") {
+                                if (targetTile.damaged === true) {
+                                }
+                            }
+                            // IF tile requires a rocket resource, check it selected is a filled rocket resource
+                            // IF tile requires an espionaged clone, check that selected is an espionaged clone.
+
+                        } else if (data.event === "confirmClicked") {
+                            // is the existing selection legal?
+                            // if so, FIRE!!!
+                            if (this.readyForConfirmation === true) {
+                                this.processTileActivation(this.actionTile, this.activePlayer);
+                                this.readyForConfirmation = false;
+                                this.turnState++;
                             }
                         }
-                    }
-
-                    break;
-                case this.turnStateEnum.ACTION:
-                    switch (this.phaseState) {
-                        case this.phaseStateEnum.OBJECT:
-                            break;
-                        case this.phaseStateEnum.TILE:
-                            break;
-                    }
-                    break;
-                case this.turnStateEnum.BIODRONE:
-                    switch (this.phaseState) {
-                        case this.phaseStateEnum.OBJECT:
-                            break;
-                        case this.phaseStateEnum.TILE:
-                            break;
-                        case this.phaseStateEnum.CONFIRM:
-                            break;
-                    }
-                    break;
-                case this.turnStateEnum.ORDNANCE:
-                    switch (this.phaseState) {
-                        case this.phaseStateEnum.OBJECT:
-                            break;
-                        case this.phaseStateEnum.TILE:
-                            break;
-                    }
-                    break;
-                case this.turnStateEnum.END:
-                    break;
-            }
-            if (this.turnStateEnum.ROLL === this.turnState) {
-            } else if (this.turnStateEnum.MOVE === this.turnState && data.event === "tileClicked") {
-                // phase 1: select Clone
-                // phase 2: select Tile
-                // phases can go back and forth until legal tile is selected in phase 2
-
-                let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
-                let doesSelectedCloneHaveLegalMoves = this.activePlayer.checkPersonnelMove(selectedClone);
-
-                if (this.activePlayer.selectedPersonnelToMove === null) {
-                    if (selectedClone === false || doesSelectedCloneHaveLegalMoves === false) {
-                        return;
-                    } else {
-                        this.activePlayer.selectedPersonnelToMove = selectedClone;
-                        let pointArray = this.getLegalMoves(selectedClone, this.currentDiceValue, {x:selectedClone.x, y:selectedClone.y});
-                        this.emit('action', {callback: 'showTiles', details: [{x:data.x, y:data.y}]}, this.activePlayer.socketID);
-                        this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
-                        return;
-                    }
-                } else {
-                    this.emit('action', {callback: 'hideTiles', details: null}, this.activePlayer.socketID);
-                    selectedClone = this.activePlayer.selectedPersonnelToMove;
-                    if (selectedClone.x === data.x && selectedClone.y === data.y) {
-                        this.activePlayer.selectedPersonnelToMove = null;
-                        return;
-                    } else if (this.activePlayer.checkPersonnelMove(selectedClone, {x:data.x, y:data.y}) === true) {
-
-                        let originalTile = this.getTile(selectedClone.x, selectedClone.y);
-                        originalTile.occupied = false;
-                        let newTile = this.getTile(data.x, data.y);
-                        newTile.occupied = true;
-                        selectedClone.move(data.x, data.y);
-                        if (originalTile.type === "surface") {
-                            this.activePlayer.unsetCloneGunnerByUUID(selectedClone.uuid);
+                        break;
+                    case this.turnStateEnum.BIODRONE:
+                        // Check for biodrones in the enemy base
+                        switch (this.phaseState) {
+                            case this.phaseStateEnum.OBJECT:
+                                break;
+                            case this.phaseStateEnum.TILE:
+                                break;
+                            case this.phaseStateEnum.CONFIRM:
+                                break;
                         }
-                        if (newTile.type === "surface") {
-                            this.activePlayer.setCloneGunnerByUUID(selectedClone.uuid);
+                        break;
+                    case this.turnStateEnum.ORDNANCE:
+                        switch (this.phaseState) {
+                            case this.phaseStateEnum.OBJECT:
+                                break;
+                            case this.phaseStateEnum.TILE:
+                                break;
                         }
-                        this.emit('update', {type:"personnel", details: {personnel: selectedClone, action: 'move', playerID: this.activePlayer.id}});
-                        this.emit('update', {type:"tile", details: {x:originalTile.x, y:originalTile.y, tile: originalTile}});
-                        this.emit('update', {type:"tile", details: {x:newTile.x, y:newTile.y, tile: newTile}});
-                        if (originalTile.type === "armory") {
-                            this.activePlayer.removeArms(originalTile.name.toUpperCase());
-                            this.emit('update', {type:"arms", details: {type: originalTile.name, action: "remove"}});
-                        }
-                        if (newTile.type === "armory") {
-                            this.activePlayer.addArms(newTile.name.toUpperCase());
-                            this.emit('update', {type:"arms", details: {type: newTile.name, action: "add"}});
-                        }
-                        this.turnState++;
-                        // TODO: activate battle (optional). Eventually, biodrone movement will have ability to destroy crap too. ;)
-                        // TODO: optional tiles (battle and repair) need client confirmation
-
-                        this.processTileActivation(newTile, player);
-
-                        return;
-                    }
+                        break;
+                    case this.turnStateEnum.END:
+                        break;
                 }
+                break;
+            case this.gameStateEnum.PAUSE:
+            case this.gameStateEnum.GAMEOVER:
+            case this.gameStateEnum.SERVERFULL:
+                break;
             }
-        } else if (this.gameState === this.gameStateEnum.PAUSE) {
-        } else if (this.gameState === this.gameStateEnum.GAMEOVER) {
-        } else if (this.gameState === this.gameStateEnum.SERVERFULL) {
+    }
+
+    processPersonnelMove(personnel, targetTile) {
+        let originalTile = this.getTile(personnel.x, personnel.y);
+        targetTile.occupied = true;
+        originalTile.occupied = false;
+        personnel.move(targetTile.x, targetTile.y);
+        if (originalTile.type === "surface" && personnel.type === personnel.typeEnum["clone".toUpperCase()]) {
+            this.activePlayer.unsetCloneGunnerByUUID(personnel.uuid);
         }
+        if (targetTile.type === "surface") {
+            this.activePlayer.setCloneGunnerByUUID(personnel.uuid);
+        }
+        this.emit('update', { type: "personnel", details: { personnel: personnel, action: 'move', playerID: this.activePlayer.id } });
+        this.emit('update', { type: "tile", details: { x: originalTile.x, y: originalTile.y, tile: originalTile } });
+        this.emit('update', { type: "tile", details: { x: targetTile.x, y: targetTile.y, tile: targetTile } });
+        if (originalTile.type === "armory") {
+            this.activePlayer.removeArms(originalTile.name.toUpperCase());
+            this.emit('update', { type: "arms", details: { type: originalTile.name, action: "remove" } });
+        }
+        if (targetTile.type === "armory") {
+            this.activePlayer.addArms(targetTile.name.toUpperCase());
+            this.emit('update', { type: "arms", details: { type: targetTile.name, action: "add" } });
+        }
+        // TODO: activate battle (optional). Eventually, biodrone movement will have ability to destroy crap too. ;)
+        // TODO: optional tiles (battle and repair) need client confirmation
     }
 
     processTileActivation(newTile, player) {
@@ -382,150 +403,150 @@ class Septikon {
         return false;
     }    
 
-    activateTile(data) {
-        var tile = this.getTile(data.x, data.y);
-        var remainingCount = null;
+    // activateTile(data) {
+    //     var tile = this.getTile(data.x, data.y);
+    //     var remainingCount = null;
         
-        switch (tile.type) {
-            case "surface": 
-                this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}).isGunner = true;
-                break;
-            case "production":
+    //     switch (tile.type) {
+    //         case "surface": 
+    //             this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}).isGunner = true;
+    //             break;
+    //         case "production":
 
-                // Three special cases: 
-                //  - Sensor Cabin does not cost or yield anything. We can handle this immediately)
-                //  - Production Repair costs, but triggers a repair just like the Repair battle tile (We need to check if we can afford)
-                //  - Nuclear Armory produces a nuke which relies on ordnance which has not been built yet
+    //             // Three special cases: 
+    //             //  - Sensor Cabin does not cost or yield anything. We can handle this immediately)
+    //             //  - Production Repair costs, but triggers a repair just like the Repair battle tile (We need to check if we can afford)
+    //             //  - Nuclear Armory produces a nuke which relies on ordnance which has not been built yet
 
-                if(tile.name == "sensorCabin") {
-                    // This is a sensor cabin so just trigger the action and move on.
-                    console.log("sensor cabins are free!");
-                    return;
-                }
+    //             if(tile.name == "sensorCabin") {
+    //                 // This is a sensor cabin so just trigger the action and move on.
+    //                 console.log("sensor cabins are free!");
+    //                 return;
+    //             }
 
-                for (let i in tile.properties.resourceCostType) {
-                    if (this.activePlayer.checkResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i]) === false) {
-                        // Can't afford it
-                        console.log("Can't afford it!");
-                        return false;
-                    }
-                }
+    //             for (let i in tile.properties.resourceCostType) {
+    //                 if (this.activePlayer.checkResource(tile.properties.resourceCostType[i], tile.properties.resourceCostCount[i]) === false) {
+    //                     // Can't afford it
+    //                     console.log("Can't afford it!");
+    //                     return false;
+    //                 }
+    //             }
 
-                for (let j in tile.properties.resourceYieldType) {
-                    if (this.activePlayer.checkResource(tile.properties.resourceYieldType[j], tile.properties.resourceYieldCount[j], true) === false) {
-                        // No room to store it
-                        console.log("can't accept the yield cuz we got no room!");
-                        return false;
-                    }
-                }
+    //             for (let j in tile.properties.resourceYieldType) {
+    //                 if (this.activePlayer.checkResource(tile.properties.resourceYieldType[j], tile.properties.resourceYieldCount[j], true) === false) {
+    //                     // No room to store it
+    //                     console.log("can't accept the yield cuz we got no room!");
+    //                     return false;
+    //                 }
+    //             }
 
-                if (tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" ) {
-                    this.availableClonesToAdd = this.activePlayer.getResourceCount('oxygen') + tile.properties.resourceYieldCount[0] - this.activePlayer.getPersonnel('clone').length;
-                } else if ( tile.name == "airFilter") {
-                    this.availableClonesToAdd = this.activePlayer.getResourceCount('oxygen') + tile.properties.resourceYieldCount[0] - tile.properties.resourceCostCount[0] - this.activePlayer.getPersonnel('clone').length;
-                }
+    //             if (tile.name == "chemicalReactor" || tile.name == "chemicalReactorTwo" ) {
+    //                 this.availableClonesToAdd = this.activePlayer.getResourceCount('oxygen') + tile.properties.resourceYieldCount[0] - this.activePlayer.getPersonnel('clone').length;
+    //             } else if ( tile.name == "airFilter") {
+    //                 this.availableClonesToAdd = this.activePlayer.getResourceCount('oxygen') + tile.properties.resourceYieldCount[0] - tile.properties.resourceCostCount[0] - this.activePlayer.getPersonnel('clone').length;
+    //             }
 
-                for (var k in tile.properties.resourceCostType) {
-                    remainingCount = this.activePlayer.spendResource(tile.properties.resourceCostType[k], tile.properties.resourceCostCount[k]);
-                    console.log("Player " + this.activePlayer.id + " spent " + remainingCount + " " + tile.properties.resourceCostType[k] + ". This leaves them with " + this.activePlayer.getResourceCount(tile.properties.resourceCostType[k]));
-                }
+    //             for (var k in tile.properties.resourceCostType) {
+    //                 remainingCount = this.activePlayer.spendResource(tile.properties.resourceCostType[k], tile.properties.resourceCostCount[k]);
+    //                 console.log("Player " + this.activePlayer.id + " spent " + remainingCount + " " + tile.properties.resourceCostType[k] + ". This leaves them with " + this.activePlayer.getResourceCount(tile.properties.resourceCostType[k]));
+    //             }
 
-                for (var l in tile.properties.resourceYieldType) {
-                    remainingCount = this.activePlayer.acceptResource(tile.properties.resourceYieldType[l], tile.properties.resourceYieldCount[l]);
-                    if (remainingCount) 
-                        console.log("Player " + this.activePlayer.id + " added " + remainingCount + " " + tile.properties.resourceYieldType[l] + ". This leaves them with " + this.activePlayer.getResourceCount(tile.properties.resourceYieldType[l]));
-                }
+    //             for (var l in tile.properties.resourceYieldType) {
+    //                 remainingCount = this.activePlayer.acceptResource(tile.properties.resourceYieldType[l], tile.properties.resourceYieldCount[l]);
+    //                 if (remainingCount) 
+    //                     console.log("Player " + this.activePlayer.id + " added " + remainingCount + " " + tile.properties.resourceYieldType[l] + ". This leaves them with " + this.activePlayer.getResourceCount(tile.properties.resourceYieldType[l]));
+    //             }
 
-                if (tile.name == "oxygen") {
-                    // TODO: Check if oxygen is greater than the number of clones. If so, add a clone.
-                    if (this.activePlayer.getResourceCount('oxygen') > this.activePlayer.getPersonnel('clone')) {
-                        this.queuedTile = tile;
-                    }
-                }
+    //             if (tile.name == "oxygen") {
+    //                 // TODO: Check if oxygen is greater than the number of clones. If so, add a clone.
+    //                 if (this.activePlayer.getResourceCount('oxygen') > this.activePlayer.getPersonnel('clone')) {
+    //                     this.queuedTile = tile;
+    //                 }
+    //             }
 
-                if (tile.name == "prodRepair") {
-                    // Trigger the repair 
-                    this.queuedTile = tile;
-                    return;
-                }
-                console.log ("+++++++");
+    //             if (tile.name == "prodRepair") {
+    //                 // Trigger the repair 
+    //                 this.queuedTile = tile;
+    //                 return;
+    //             }
+    //             console.log ("+++++++");
 
-                // Update player to their new warehouse values
-                break;
+    //             // Update player to their new warehouse values
+    //             break;
             
-            case "armory":
-                this.checkArms(this.activePlayer);
-                // Update player's personnel to be armed
-                // Maybe have three overlapping sprites. Drill, Cannon, Explosives?
-                break;
+    //         case "armory":
+    //             this.checkArms(this.activePlayer);
+    //             // Update player's personnel to be armed
+    //             // Maybe have three overlapping sprites. Drill, Cannon, Explosives?
+    //             break;
 
-            case "battle":
-                switch (tile.name) {
-                    case "shield":
-                    case "biodrone":
-                    case "laser":
-                    case "thermite":
-                    case "satellite":
-                    case "rocket":
-                    case "espionage":
-                    case "takeover":
-                        // this.turnState++; // Set state to ACTION.
-                        var currentResourceCount = 0;
-                        var currentResourceAffordability = 0;
-                        var affordableRounds = null;
-                        var returnArray = [];
-                        var activeGunners = this.activePlayer.getGunners();
+    //         case "battle":
+    //             switch (tile.name) {
+    //                 case "shield":
+    //                 case "biodrone":
+    //                 case "laser":
+    //                 case "thermite":
+    //                 case "satellite":
+    //                 case "rocket":
+    //                 case "espionage":
+    //                 case "takeover":
+    //                     // this.turnState++; // Set state to ACTION.
+    //                     var currentResourceCount = 0;
+    //                     var currentResourceAffordability = 0;
+    //                     var affordableRounds = null;
+    //                     var returnArray = [];
+    //                     var activeGunners = this.activePlayer.getGunners();
 
-                        if (activeGunners.length < 1) {
-                            return; // No gunners! Get out of here.
-                        }
+    //                     if (activeGunners.length < 1) {
+    //                         return; // No gunners! Get out of here.
+    //                     }
 
-                        for (var m in tile.properties.resourceCostType) {
-                            currentResourceCount = this.activePlayer.getResourceCount(tile.properties.resourceCostType[m]);
-                            currentResourceAffordability = currentResourceCount / tile.properties.resourceCostCount;
-                            if (currentResourceAffordability < 1) {
-                                return; // Not enough of a resource!
-                            } 
-                            if (affordableRounds === null || currentResourceAffordability < affordableRounds) {
-                                affordableRounds = currentResourceAffordability;
-                            }
-                        }
-                        console.log("tell player they can afford " + affordableRounds + " gunner(s)");
-                        this.queuedTile = tile;
-                        // TODO: emit showTiles() with array of legal gunners
-                        this.emit('action', {callback:"offerGunners", details:{gunners:activeGunners}}, this.activePlayer.socketID);
-                        // Ready to select gunners! This will take place on the next legal click event.
-                        break;
+    //                     for (var m in tile.properties.resourceCostType) {
+    //                         currentResourceCount = this.activePlayer.getResourceCount(tile.properties.resourceCostType[m]);
+    //                         currentResourceAffordability = currentResourceCount / tile.properties.resourceCostCount;
+    //                         if (currentResourceAffordability < 1) {
+    //                             return; // Not enough of a resource!
+    //                         } 
+    //                         if (affordableRounds === null || currentResourceAffordability < affordableRounds) {
+    //                             affordableRounds = currentResourceAffordability;
+    //                         }
+    //                     }
+    //                     console.log("tell player they can afford " + affordableRounds + " gunner(s)");
+    //                     this.queuedTile = tile;
+    //                     // TODO: emit showTiles() with array of legal gunners
+    //                     this.emit('action', {callback:"offerGunners", details:{gunners:activeGunners}}, this.activePlayer.socketID);
+    //                     // Ready to select gunners! This will take place on the next legal click event.
+    //                     break;
 
 
-                    case "counterEspionage":
-                        // look for clones that are opponent's spied
-                        break;
+    //                 case "counterEspionage":
+    //                     // look for clones that are opponent's spied
+    //                     break;
 
-                    case "repair":
-                    case "repairTwo":
-                        this.queuedTile = tile;
-                        // currentResourceCount = 0;
-                        // var activeDamagedTiles = this.getDamagedTiles(this.activePlayer);
-                        // if (activeDamagedTiles.length < 1) {
-                        //     return;
-                        // }
-                        // // calculate cost of repair
-                        // for (var n in tile.properties.resourceCostType) {
-                        //     currentResourceCount = this.activePlayer.getResourceCount(tile.properties.resourceCostType[n]);
-                        //     if (currentResourceCount < tile.properties.resourceCostCount) {
-                        //         return; // Not enough of a resource!
-                        //     } 
-                        // }
-                        console.log("Tell player that they can afford to fix up the station!");
-                        break;
-                }
-                break;
+    //                 case "repair":
+    //                 case "repairTwo":
+    //                     this.queuedTile = tile;
+    //                     // currentResourceCount = 0;
+    //                     // var activeDamagedTiles = this.getDamagedTiles(this.activePlayer);
+    //                     // if (activeDamagedTiles.length < 1) {
+    //                     //     return;
+    //                     // }
+    //                     // // calculate cost of repair
+    //                     // for (var n in tile.properties.resourceCostType) {
+    //                     //     currentResourceCount = this.activePlayer.getResourceCount(tile.properties.resourceCostType[n]);
+    //                     //     if (currentResourceCount < tile.properties.resourceCostCount) {
+    //                     //         return; // Not enough of a resource!
+    //                     //     } 
+    //                     // }
+    //                     console.log("Tell player that they can afford to fix up the station!");
+    //                     break;
+    //             }
+    //             break;
 
-            default:
-                break;
-        }
-    }
+    //         default:
+    //             break;
+    //     }
+    // }
 
     getTileOccupant(point) {
         var ordnance, personnel;
@@ -536,10 +557,9 @@ class Septikon {
                 return ordnance;
             } else if (personnel !== false) {
                 return personnel;
-            } else {
-                return false;
-            }
+            } 
         }
+        return false;
     }
 
     moveOrdnance(ord) {
@@ -580,10 +600,14 @@ class Septikon {
             }
         }
 
+        console.log("Firing " + gunnerArray.length + " times.");
+
         for (var i = 0; i < gunnerArray.length; i++) {
             var ordnancePoint = {x:gunnerArray[i].x, y:gunnerArray[i].y};
             var impacted = false;
             var ordUUID;
+
+            console.log("Shot number " + i);
 
             switch (weaponTile.name) {
                 case "laser":
@@ -603,8 +627,10 @@ class Septikon {
                             case "space":
                             case "surface":
                                 if (currentTile.occupied === true) {
+                                    let opponent = this.getPlayerOpponent(this.activePlayer);
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    this.activePlayer.remove(currentOccupant);
+                                    opponent.remove(currentOccupant);
+                                    this.emit('action', {callback:"removePersonnel", details:currentOccupant});
                                     currentTile.occupied = false;
                                     impacted = true;
                                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
@@ -612,15 +638,13 @@ class Septikon {
                                 }
                                 break;
                             default:
-                                // You are in the opponent mine.
                                 if (currentTile.occupied === true) {
+                                    let opponent = this.getPlayerOpponent(this.activePlayer);
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    this.activePlayer.removePersonnel(currentOccupant);
-                                    // TODO: emit death animation to clients. (maybe just add that to the removePersonnel()?)
-                                    this.emit('action', {callback:"removePersonnel", details:currentOccupant}, this.activePlayer.socketID);
+                                    opponent.remove(currentOccupant);
+                                    this.emit('action', {callback:"removePersonnel", details:currentOccupant});
                                     currentTile.occupied = false;
-                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
-                                    // TODO: update opponent's client
+                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
                                     impacted = true;
                                     break;
                                 }
@@ -629,8 +653,7 @@ class Septikon {
                                 } else {
                                     currentTile.damaged = true;
                                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
-                                    // TODO: update opponent's client
+                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
                                     impacted = true;
                                     break;
                                 }

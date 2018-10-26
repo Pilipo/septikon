@@ -317,6 +317,10 @@ class Septikon {
     this.game.client.sendInput({ event: "tileClicked", x: 23, y: 9 });
     this.game.client.sendInput({ event: "tileClicked", x: 24, y: 14 });
     this.game.client.sendInput({ event: "tileClicked", x: 24, y: 5 });
+
+    this.game.client.sendInput({ event: "confirmClicked"});
+    this.game.client.sendInput({ event: "diceClicked"});
+
   }
 
   initResources() {
