@@ -7,17 +7,11 @@ class Septikon {
     
 	constructor(io) {
         this.io = io;
-        this.lastPlayerID = 0;
         this.playersArray = [];
         this.gameState = 0;
         this.turnState = 0;
-        this.phaseState = 0;
-        this.uuid = require('uuid/v4')();
-        this.sequence = 0;
-
         this.activePlayer = null;
-        this.currentDiceValue = 3;
-        
+        this.currentDiceValue = 0;
         this.gameStateEnum = Object.freeze({
             SETUP: 0,
             GAME: 1, 
@@ -25,7 +19,6 @@ class Septikon {
             GAMEOVER: 3,
             SERVERFULL: 4
         });
-        
         this.turnStateEnum = Object.freeze({
             ROLL: 0,    // Literally the act of rolling the die
             MOVE: 1,    // Selecting the clone and their target space
@@ -35,30 +28,19 @@ class Septikon {
             ORDNANCE: 5,// move ordnance according to dice roll (this may not require a state...)
             END: 6      // assess ordnance damage and clone/biodrone kills. Assess victory conditions (this may not require a state...)
         });  
-
-        this.phaseStateEnum = Object.freeze({
-            OBJECT: 0,
-            TILE: 1,
-            CONFIRM: 2
-        });
-
         this.directionEnum = Object.freeze({
             NORTH:1,
             EAST:2,
             SOUTH:4,
             WEST:8
         });
-
         this.tileColumns = 31;
         this.tileRows = 21;
-
         this.tileArray = [];
         this.createTileArray(); 
-
         this.actionTile = null;
         this.queuedForAction = [];
         this.readyForConfirmation = false;
-        // this.availableClonesToAdd = 0;
     }
     
     processClick(data) {
@@ -400,11 +382,15 @@ class Septikon {
     }
 
 	addNewPlayer(socketID, uuid) {
-        this.lastPlayerID++;
-        var player = new Player(socketID, this.lastPlayerID, uuid);
-        this.playersArray.push(player);
-        this.emit('action', {callback: 'updatePlayer', details: {id: this.lastPlayerID}}, socketID);
-        return player;
+        let currentPlayerCount = this.playersArray.length;
+        if (this.currentPlayerCount < 2) {
+            let player = new Player(socketID, currentPlayerCount, uuid);
+            this.playersArray.push(player);
+            this.emit('action', {callback: 'updatePlayer', details: {id: currentPlayerCount}}, socketID);
+            return player;
+        } else {
+            return false;
+        }
 	}
 
     addPlayer(player) {
@@ -461,30 +447,7 @@ class Septikon {
         }
         return false;
     }
-
-    getPlayerCount() {
-        return this.playersArray.length;
-    }
-
-    checkArms(player) {
-        player.armsArray = [];
-        for (var i in player.personnelArray) {
-            if (this.tileArray[player.personnelArray[i].x][player.personnelArray[i].y].type == "armory") {
-                player.armsArray.push(this.tileArray[player.personnelArray[i].x][player.personnelArray[i].y].name);
-            }
-        }
-    }
     
-    checkGunners(player) {
-        for (var i in player.personnelArray) {
-            if (this.tileArray[player.personnelArray[i].x][player.personnelArray[i].y].type == "surface") {
-                player.personnelArray[i].isGunner = true;
-            } else {
-                player.personnelArray[i].isGunner = false;
-            }
-        }
-    }
-
     existsPlayerUUID(uuid) {
         for (var i in this.playersArray) {
             if(this.playersArray[i].uuid == uuid)
@@ -505,31 +468,6 @@ class Septikon {
             } 
         }
         return false;
-    }
-
-    moveOrdnance(ord) {
-        let x = ord.x;
-        for (let i = this.currentDiceValue; i>0; i--) {
-            if (this.activePlayer.id === 1) {
-                x++;
-            } else {
-                x--;
-            }
-            let currentOccupantArray = this.getTileOccupant({x:x, y:ord.y});
-            if (currentOccupantArray !== false) {
-                // check for enemy collision in transit (collision destroys ord and enemy occupant)
-                //  - NOTE: friendly ordnance can stack
-                //  - NOTE: enemy shields block the rocket/biodrone movement
-                //  - NOTE: enemy satellites are destroyed by rocket/biodrone collision, not vice versa
-            }
-        }
-
-        ord.x = x;
-        // check for enemy fire vectors on the destination tile
-        let destinationTile = this.getTile(ord.x, ord.y);
-        if (destinationTile.type !== "space" && destinationTile.type !== "surface") {
-            // DESTROY! (or if a biodrone, DEPLOY!)
-        }
     }
 
     fireWeapon(weaponTile, gunnerArray) {
@@ -708,8 +646,7 @@ class Septikon {
             if (player.getPersonnel('clone').length === player.startingCloneCount) {
                 return false;
             }
-            // TODO: THIS IS A TEST BIT
-            if(selectedTile.type == "surface" || selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
+            if(selectedTile.type == "lock" || selectedTile.type == "battle" || selectedTile.type == "armory" || selectedTile.type == "production") {
                 cloneUUID = uuid();
                 clone = player.addPersonnel('clone', x, y, cloneUUID);
                 return clone;
@@ -901,13 +838,6 @@ class Septikon {
                 return false;
         }
 
-    }
-    
-    
-    get(data) {
-        if(typeof(data.property) == 'undefined') {
-            this.emit('response', {details:this[data.property]}, data.socketID);
-        }
     }
     
     emit(msg, data, socketID) {
