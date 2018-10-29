@@ -131,16 +131,6 @@ class Septikon {
     this.game.dice.disable();
   }
 
-  offerGunners(data) {
-    this.choosingTargets = true;
-    this.legalGunners = data.gunners;
-    this.game.go.enable();
-    console.log(
-      "animate some indication of viable gunners on the surface. Maybe a pointer bouncing over them?"
-    );
-    //TODO: Emit an indicator for selecting a gunner
-  }
-
   addPersonnel(personnel, playerID) {
     let point = this.tileToPixels(personnel.x, personnel.y);
     let newPersonnel = null;
@@ -293,15 +283,6 @@ class Septikon {
     //       }
     //   }
     //   return false;
-  }
-
-  removeAllPersonnel() {
-    for (var i = 0; i < this.game.boardGroup.children.length; i++) {
-      if (this.game.boardGroup.children[i].constructor == Clone) {
-        this.game.boardGroup.children[i].destroy();
-        i--;
-      }
-    }
   }
 
   updatePlayer(details) {
