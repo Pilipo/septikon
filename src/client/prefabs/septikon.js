@@ -27,69 +27,27 @@ class Septikon {
   }
 
   updatePersonnel(data) {
-    // MOVE personnel
+    // CRUD on personnel
 
-    if (data.details.action === "add") {
-      console.log("adding personnel");
+    if (data.details.action === "create" || data.details.action === "add") {
       this.addPersonnel(data.details.personnel, data.details.playerID);
-    }
-
-    if (data.details.action === "remove") {
-      console.log("removing personnel");
-      this.removePersonnel(data.details.personnel, data.details.playerID);
-    }
-
-    if (data.details.action === "move") {
-      console.log("moving personnel");
+    } else if (data.details.action === "read") {
+    } else if (data.details.action === "update" || data.details.action === "move") {
       for (let j = 0; j < this.player.personnelArray.length; j++) {
-        let myPerson = this.player.personnelArray[j];
-        if (myPerson.uuid === data.details.personnel.uuid) {
-          let point = this.tileToPixels(
-            data.details.personnel.x,
-            data.details.personnel.y
-          );
-          let distance = Math.abs(
-            myPerson.y - point.y + myPerson.x - point.x
-          ).toFixed(1);
-          this.game.add
-            .tween(myPerson)
-            .to(
-              { x: point.x, y: point.y },
-              distance * 11,
-              Phaser.Easing.Cubic.Out,
-              true
-            );
-          this.player.personnelArray[j] = data.details.personnel;
+        let p = this.player.personnelArray[j];
+        if (p.uuid === data.details.personnel.uuid) {
+          p.move({
+            x:data.details.personnel.x,
+            y:data.details.personnel.y
+          });
         }
       }
+    } else if (data.details.action === "delete" || data.details.action === "remove") {
+      this.removePersonnel(data.details.personnel, data.details.playerID);
+    } else {
+      console.log("Data set is outside of CRUD:");
       console.log(data);
     }
-
-    // for (let j = 0; j < this.player.personnelArray.length; j++) {
-    //     let myPerson = this.player.personnelArray[j];
-    //     if (myPerson.uuid === p.uuid) {
-    //         matchFound = true;
-    //     }
-    // }
-    // var currentPersonnel = null;
-    // if (Array.isArray(data.details) === false) {
-    //     data.details = [data.details];
-    // }
-
-    // if (this.opponent.personnelArray.length === 0 && data.details.length === 5) {
-    //     for (var i in data.details) {
-    //         this.addClone(data.details[i]);
-    //     }
-    // } else {
-    //     for (var p in this.opponent.personnelArray) {
-    //         currentPersonnel = this.opponent.personnelArray[p];
-    //         for (var d in data.details) {
-    //             if (currentPersonnel.uuid == data.details[d].uuid) {
-    //                 this.movePersonnel(data.details[d]);
-    //             }
-    //         }
-    //     }
-    // }
   }
 
   updateOrdnance(data) {}
@@ -305,7 +263,6 @@ class Septikon {
 
     // this.game.client.sendInput({ event: "confirmClicked"});
     // this.game.client.sendInput({ event: "diceClicked"});
-
   }
 
   initResources() {

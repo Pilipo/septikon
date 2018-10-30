@@ -60,7 +60,7 @@ class Septikon {
                 if (data.event === "confirmClicked" && player.readyToStart === false) {
                     if (player.personnelArray.length === player.startingCloneCount) {
                         this.setPlayerState(data);
-                        // this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
+                        this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                     }
                 } else if (data.event === "tileClicked" && player.readyToStart === false) {
                     let selectedTile = this.getTile(data.x, data.y);
@@ -69,8 +69,8 @@ class Septikon {
                         if (data.x === personnel.x && data.y === personnel.y) {
                             player.personnelArray.splice(i,1);
                             selectedTile.occupied = false;
-                            this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'remove', playerID: player.id}});
-                            this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
+                            this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'delete', playerID: player.id}});
+                            this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}});
                             return;
                         }
                     }
@@ -81,8 +81,8 @@ class Septikon {
                         }
 
                         selectedTile.occupied = true;
-                        this.emit('update', {type:"personnel", details: {personnel: clone, action: 'add', playerID: player.id}});
-                        this.emit('update', {type:"tile", details: {x:data.x, y:data.y, tile: selectedTile}});
+                        this.emit('update', {type:"personnel", details: {personnel: clone, action: 'create', playerID: player.id}});
+                        this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}});
                     }
                 }
                 break;
@@ -158,7 +158,7 @@ class Septikon {
                                             this.queuedForAction.splice(i, 1);
                                             gunnerUnqueued = true;
                                         } else {
-                                            this.emit('action', {callback: 'showTiles', details: [{x:queuedForAction[i].x, y:queuedForAction[i].y}]}, this.activePlayer.socketID);
+                                            this.emit('action', {callback: 'showTiles', details: [{x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}]}, this.activePlayer.socketID);
                                         }
                                     }
                                     if (gunnerUnqueued === false) {
@@ -303,16 +303,16 @@ class Septikon {
         if (targetTile.type === "surface") {
             this.activePlayer.setCloneGunnerByUUID(personnel.uuid);
         }
-        this.emit('update', { type: "personnel", details: { personnel: personnel, action: 'move', playerID: this.activePlayer.id } });
-        this.emit('update', { type: "tile", details: { x: originalTile.x, y: originalTile.y, tile: originalTile } });
-        this.emit('update', { type: "tile", details: { x: targetTile.x, y: targetTile.y, tile: targetTile } });
+        this.emit('update', { type: "personnel", details: { personnel: personnel, action: 'update', playerID: this.activePlayer.id } });
+        this.emit('update', { type: "tile", details: { x: originalTile.x, y: originalTile.y, action: 'update', tile: originalTile } });
+        this.emit('update', { type: "tile", details: { x: targetTile.x, y: targetTile.y, action: 'update', tile: targetTile } });
         if (originalTile.type === "armory") {
             this.activePlayer.removeArms(originalTile.name.toUpperCase());
-            this.emit('update', { type: "arms", details: { type: originalTile.name, action: "remove" } });
+            this.emit('update', { type: "arms", details: { type: originalTile.name, action: "delete" } });
         }
         if (targetTile.type === "armory") {
             this.activePlayer.addArms(targetTile.name.toUpperCase());
-            this.emit('update', { type: "arms", details: { type: targetTile.name, action: "add" } });
+            this.emit('update', { type: "arms", details: { type: targetTile.name, action: "create" } });
         }
         // TODO: activate battle (optional). Eventually, biodrone movement will have ability to destroy crap too. ;)
         // TODO: optional tiles (battle and repair) need client confirmation
@@ -334,17 +334,20 @@ class Septikon {
                 return;
             } else if (actionTile.name === "prodRepair") {
                 for (let i in this.queuedForAction) {
-                    this.tileArray[this.queuedForAction[i].x][this.queuedForAction[i].y].damaged = false;
-                    this.emit('action', {callback:"repairTile" ,details:{x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}});
+                    let t = this.tileArray[this.queuedForAction[i].x][this.queuedForAction[i].y];
+                    this.tileArray[t.x][t.y].damaged = false;
+                    this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                    // this.emit('action', {callback:"repairTile" ,details:{x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}});
                 }
-                this.activePlayer.spendResource(this.queuedForAction[i].properties.resourceCostType, this.queuedForAction[i].properties.resourceCostCount);
+                this.activePlayer.spendResource(t.properties.resourceCostType, t.properties.resourceCostCount);
             } else if (actionTile.name === "nuclearArmory") {
                 return;
             } else {
                 // TODO: Oxygen production tests for new clone creation!
 
                 this.activePlayer.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
-                this.emit('update', {type:"resource", details: {resCostType:resCostType, resCostCount:resCostCount, resYieldType:resYieldType, resYieldCount:resYieldCount}});
+                this.emit('update', {type:"resource", details: {action: 'update', resourceArray: this.activePlayer.getResourceArray()}});
+                // this.emit('update', {type:"resource", details: {resCostType:resCostType, resCostCount:resCostCount, resYieldType:resYieldType, resYieldCount:resYieldCount}});
                 return;
             }
         } else if (actionTile.type === "battle") {
@@ -353,10 +356,12 @@ class Septikon {
             if (actionTile.name === "repair" || actionTile.name === "repairTwo" ) {
                 for (let i in this.queuedForAction) {
                     let qAction = this.queuedForAction[i];
-                    this.tileArray[qAction.x][qAction.y].damaged = false;
-                    this.emit('action', {callback:"repairTile" ,details:{x:this.qAction.x, y:qAction.y}});
+                    let t = this.tileArray[qAction.x][qAction.y];
+                    t.damaged = false;
+                    this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                    // this.emit('action', {callback:"repairTile" ,details:{x:this.qAction.x, y:qAction.y}});
                 }
-                this.activePlayer.spendResource(qAction.properties.resourceCostType, qAction.properties.resourceCostCount);
+                this.activePlayer.spendResource(resCostType, resCostCount);
             } else if (actionTile.name === "counterEspionage") {
                 let controlledClones = player.getEspionagedClones();
                 if (controlledClones.length > 0) {
@@ -511,7 +516,8 @@ class Septikon {
                                     let opponent = this.getPlayerOpponent(this.activePlayer);
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
                                     opponent.remove(currentOccupant);
-                                    this.emit('action', {callback:"removePersonnel", details:currentOccupant});
+                                    this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
+                                    // this.emit('action', {callback:"removePersonnel", details:currentOccupant});
                                     currentTile.occupied = false;
                                     impacted = true;
                                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
@@ -523,9 +529,10 @@ class Septikon {
                                     let opponent = this.getPlayerOpponent(this.activePlayer);
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
                                     opponent.remove(currentOccupant);
-                                    this.emit('action', {callback:"removePersonnel", details:currentOccupant});
+                                    this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
                                     currentTile.occupied = false;
-                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
+                                    this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                                    // this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
                                     impacted = true;
                                     break;
                                 }
@@ -534,7 +541,8 @@ class Septikon {
                                 } else {
                                     currentTile.damaged = true;
                                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                                    this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
+                                    this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                                    // this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
                                     impacted = true;
                                     break;
                                 }
@@ -558,7 +566,8 @@ class Septikon {
                     this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
                     // currentTile.isOccupied = true;
                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                    this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    this.emit('action', {type:"ordnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
+                    // this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
                     //TODO: updatePersonnel on opponent client
                     break;
                 case "thermite":
@@ -573,7 +582,8 @@ class Septikon {
                     } else {
                         currentTile.damaged = true;
                         this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                        this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
+                        this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                        // this.emit('action', {callback:"damageTile" ,details:ordnancePoint}, this.activePlayer.socketID);
                         break;
                     }
                     break;
