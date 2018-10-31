@@ -11,6 +11,15 @@ class Client {
             console.log(data);
         });
 
+        this.socket.io('connect', function(data){
+            console.log("connected");
+        });
+
+        this.socket.on('reconnect', function(data){
+            console.log("reconnected");
+            this.socket.emit('newPlayer', {uuid:localStorage.getItem('septUUID')});
+        });
+
         this.socket.on('update', function(data){
             if(data.type == "personnel") {
                 this.septikon.updatePersonnel(data);

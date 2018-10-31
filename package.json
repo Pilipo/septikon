@@ -1,5 +1,5 @@
 {
-  "name": "Septikon",
+  "name": "septikon",
   "version": "0.0.2",
   "description": "Port of the Septikon board game",
   "main": "index.js",
@@ -31,7 +31,7 @@
     "grunt-contrib-watch": "^1.0.0",
     "grunt-express": "^1.4.1",
     "grunt-parallel": "^0.5.1",
-    "jshint": "^2.9.4",
+    "jshint": "^2.9.6",
     "watch": "^1.0.2"
   }
 }

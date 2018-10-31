@@ -28,40 +28,29 @@ io.on('connection',function(socket){
         console.log("New Player. Here's the data: ");
         console.log(data);
 
-        if (games.length > 0) {
-            for (var i in games) {
-                player = games[i].getPlayerByUUID(data.uuid);
-                if (player !== null) {
-                    player.disconnected = false;
-                    socket.game = games[i];
-                    player.socketID = socket.id;
-                    return;
-                } 
-            }
-        } 
-
         if (games.length === 0) {
-            player = new Player(socket.id, 1, data.uuid);
-            var game = new sept(io);
+            console.log("no games found. Creating one and adding first player.");
+            let player = new Player(socket.id, 1, data.uuid);
+            let game = new sept(io);
             game.addPlayer(player);
             socket.game = game;
-            games.push(game);
-        } else if (games[0].playersArray.length === 1) {
-            player = new Player(socket.id, 2, data.uuid);
-            game = games[0];
-            game.addPlayer(player);
-            socket.game = game;
+            games.push(game);        
         } else {
-            console.log("no game slots available.");
-            player = new Player(socket.id, 1, data.uuid);
-            var game = new sept(io);
-            socket.game = game;
-            game.serverFull(player);
-            //TODO: Cleanly deal with slots limit.
+            for (let i in games) {
+                let playerSearch = games[i].getPlayerByUUID(data.uuid);
+                if (playerSearch !== null) {
+                    console.log("Player found in existing game. THis must be a reconnect.");
+                    socket.game = games[i];
+                    playerSearch.socketID = socket.id;
+                    // TODO: refresh client game data (resources, tokens, etc)
+                } else if (games[i].playersArray.length === 1) {
+                    console.log("New player that was not found in an existing game. Adding player now.");
+                    player = new Player(socket.id, 2, data.uuid);
+                    games[i].addPlayer(player);
+                    socket.game = games[i];
+                }
+            }
         }
-
-        console.log("Games UUID: ");
-        console.log(games[games.length-1].uuid);
     });
 
     socket.on('input', function(data) {

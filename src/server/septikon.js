@@ -841,10 +841,10 @@ class Septikon {
     }
     
     emit(msg, data, socketID) {
+        console.log (data);
 
         if(typeof(socketID) == "undefined") {
             this.broadcast(msg, data);
-            return;
         } else {
             this.io.sockets.connected[socketID].emit(msg, data);
         }
@@ -852,7 +852,7 @@ class Septikon {
     
     broadcast(msg, data) {
         for (let i in this.playersArray) {
-            this.emit(msg, data, this.playersArray[i].socketID);
+            this.io.sockets.connected[this.playersArray[i].socketID].emit(msg, data);
         }
     }
     
