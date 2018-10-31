@@ -11,42 +11,34 @@ class Client {
             console.log(data);
         });
 
-        this.socket.io('connect', function(data){
-            console.log("connected");
-        });
-
-        this.socket.on('reconnect', function(data){
-            console.log("reconnected");
-            this.socket.emit('newPlayer', {uuid:localStorage.getItem('septUUID')});
-        });
-
+        // All messages from server contain data.type and data.action
+        // type = one of either "personnel" or "resource" or whatever. 
+        // action = create, read, update, or delete.  
         this.socket.on('update', function(data){
-            if(data.type == "personnel") {
+            if (data.type === "personnel") {
                 this.septikon.updatePersonnel(data);
-            }
-            if(data.type == "ordnance") {
+            } else if (data.type === "ordnance") {
                 this.septikon.updateOrdnance(data);
-            }
-            if(data.type == "resources") {
+            } else if (data.type === "resources") {
                 this.septikon.updateResources(data);
-            }
-            if(data.type == "tile") {
+            } else if (data.type === "tile") {
                 this.septikon.updateTile(data);
-            }
-            if (data.type == "dice") {
+            } else if (data.type === "dice") {
                 this.septikon.game.dice.setValue(data.details.value);
-            }
-            if(data.type == "arms") {
+            } else if (data.type === "arms") {
+                // this may need to be a basic personnel update?
                 console.log("update personnel arms!");
                 console.log(data);
                 this.septikon.updateArms(data);
-            }
-            if (data.type == "info") {
+            } else if (data.type === "info") {
                 console.log(data);
                 // this.septikon.updateInfo(data);
+            } else {
+                console.log(data);
             }
         });
 
+        // Request messages are looking for client response to a modal message
         this.socket.on('request', function(data){
             console.log('REQUEST: ');
             switch(data.details.type) {
@@ -57,6 +49,7 @@ class Client {
             }
         });
 
+        // This goes away
         this.socket.on('action', function(data){
             console.log("ACTION: ");
             if (typeof(this.septikon[data.callback]) === "function") {

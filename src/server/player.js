@@ -275,7 +275,21 @@ class Player {
 
     getResourceArray(type) {
         if (type === undefined) {
-            return false;
+            let recArray = [
+                'energy1', 
+                'energy2',
+                'oxygen',
+                'metal',
+                'biodrone',
+                'rocket',
+                'uranium',
+                'biomass'
+            ];
+            let returnArray = [];
+            for (let i in recArray) {
+                returnArray.push([recArray[i],this.getResourceArray(recArray[i])]);
+            }
+            return returnArray;        
         }
         if (type === "energy") {
             return [this.getResourceArray("energy1"), this.getResourceArray("energy2")];
