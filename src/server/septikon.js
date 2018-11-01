@@ -60,7 +60,7 @@ class Septikon {
                 if (data.event === "confirmClicked" && player.readyToStart === false) {
                     if (player.personnelArray.length === player.startingCloneCount) {
                         this.setPlayerState(data);
-                        this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
+                        // this.emit('request', {callback:"modal", details: {type:"askStart"}}, player.socketID);
                     }
                 } else if (data.event === "tileClicked" && player.readyToStart === false) {
                     let selectedTile = this.getTile(data.x, data.y);
@@ -81,8 +81,8 @@ class Septikon {
                         }
 
                         selectedTile.occupied = true;
-                        this.emit('update', {type:"personnel", details: {personnel: clone, action: 'create', playerID: player.id}});
-                        this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}});
+                        this.emit('update', {type:"personnel", details: {personnel: clone, action: 'create', playerID: player.id}}, data.socketID);
+                        this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}}, data.socketID);
                     }
                 }
                 break;
@@ -410,6 +410,16 @@ class Septikon {
         if (opponent !== false && opponent.readyToStart !== false) {
             this.activePlayer = this.getRandomPlayer();
             this.gameState++;
+            for (let i in this.playersArray) {
+                for (let j in this.playersArray[i].personnelArray) {
+                    let p = this.playersArray[i].personnelArray[j];
+                    let t = this.getTile(p.x, p.y);         
+                    console.log("playerArray - " + i + " :: Personnel - " + j + " :: uuid - " + p.uuid);                      
+                    this.emit('update', {type:"personnel", details: {personnel: p, action: 'create', playerID: (i+1)}});
+                    this.emit('update', {type:"tile", details: {x:p.x, y:p.y, action: 'update', tile: t}});
+                }
+            }
+
         }        
     }
 
@@ -521,6 +531,7 @@ class Septikon {
                                     currentTile.occupied = false;
                                     impacted = true;
                                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
+                                    this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
                                     break;
                                 }
                                 break;
@@ -531,18 +542,15 @@ class Septikon {
                                     opponent.remove(currentOccupant);
                                     this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
                                     currentTile.occupied = false;
+                                    currentTile.damaged = true;
                                     this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
-                                    // this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
                                     impacted = true;
-                                    break;
-                                }
-                                if (currentTile.damaged === true) {
+                                } else if (currentTile.damaged === true) {
                                     break;
                                 } else {
                                     currentTile.damaged = true;
                                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
                                     this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
-                                    // this.emit('action', {callback:"damageTile" ,details:ordnancePoint});
                                     impacted = true;
                                     break;
                                 }
@@ -851,7 +859,8 @@ class Septikon {
     }
     
     emit(msg, data, socketID) {
-        console.log (data);
+        // console.log("emitting " + msg);
+        // console.log (data);
 
         if(typeof(socketID) == "undefined") {
             this.broadcast(msg, data);

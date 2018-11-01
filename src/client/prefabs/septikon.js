@@ -30,11 +30,22 @@ class Septikon {
     // CRUD on personnel
 
     if (data.details.action === "create" || data.details.action === "add") {
-      this.addPersonnel(data.details.personnel, data.details.playerID);
+      this.addPersonnel(data);
     } else if (data.details.action === "read") {
     } else if (data.details.action === "update" || data.details.action === "move") {
+      console.log("Update Personnel");
+      console.log(data);
       for (let j = 0; j < this.player.personnelArray.length; j++) {
         let p = this.player.personnelArray[j];
+        if (p.uuid === data.details.personnel.uuid) {
+          p.move({
+            x:data.details.personnel.x,
+            y:data.details.personnel.y
+          });
+        }
+      }
+      for (let j = 0; j < this.opponent.personnelArray.length; j++) {
+        let p = this.opponent.personnelArray[j];
         if (p.uuid === data.details.personnel.uuid) {
           p.move({
             x:data.details.personnel.x,
@@ -59,8 +70,12 @@ class Septikon {
   }
 
   updateTile(data) {
-    this.tileArray[data.details.x][data.details.y].tileDetail =
-      data.details.tile;
+    let newTile = data.details.tile;
+    let oldTile = this.tileArray[newTile.x][newTile.y].tileDetail;
+    if (oldTile.damaged === false && newTile.damaged === true) {
+      this.damageTile(oldTile);
+    }
+    this.tileArray[newTile.x][newTile.y].tileDetail = newTile;
   }
 
   showModal(type) {
@@ -89,9 +104,27 @@ class Septikon {
     this.game.dice.disable();
   }
 
+  getPersonnel(p) {
+    for (let i in this.player.personnelArray) {
+      if (p.uuid === this.player.personnelArray[i].uuid) {
+        return p;
+      }
+    }
+    for (let i in this.opponent.personnelArray) {
+      if (p.uuid === this.opponent.personnelArray[i].uuid) {
+        return p;
+      }
+    }
+    return false;
+  }
+
   addPersonnel(personnel, playerID) {
     let point = this.tileToPixels(personnel.x, personnel.y);
+    let p = this.getPersonnel(personnel);
     let newPersonnel = null;
+    if (p === false) {
+      this.updatePersonnel();
+    }
     if (personnel.typeEnum.CLONE === personnel.type) {
       newPersonnel = new Clone(
         this.game,
@@ -109,11 +142,17 @@ class Septikon {
         personnel.uuid
       );
     }
+    
     if (playerID == this.player.id) {
       this.player.personnelArray.push(newPersonnel);
     } else {
       this.opponent.personnelArray.push(newPersonnel);
     }
+    console.log("Current personnel set");
+    console.log(this.player.personnelArray);
+    console.log(this.opponent.personnelArray);
+    console.log("-------------");
+
   }
 
   addOrdnance(details) {
@@ -249,17 +288,17 @@ class Septikon {
     }
 
     // DEBUG BLOCK
-    // this.game.client.sendInput({ event: "tileClicked", x: 1, y: 20 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 17 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 16 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 15 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 0, y: 14 });
+    this.game.client.sendInput({ event: "tileClicked", x: 7, y: 20 });
+    this.game.client.sendInput({ event: "tileClicked", x: 7, y: 0 });
+    this.game.client.sendInput({ event: "tileClicked", x: 5, y: 10 });
+    this.game.client.sendInput({ event: "tileClicked", x: 1, y: 8 });
+    this.game.client.sendInput({ event: "tileClicked", x: 1, y: 9 });
 
-    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 6 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 5 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 4 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 30, y: 3 });
-    // this.game.client.sendInput({ event: "tileClicked", x: 29, y: 0 });
+    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 20 });
+    this.game.client.sendInput({ event: "tileClicked", x: 29, y: 12 });
+    this.game.client.sendInput({ event: "tileClicked", x: 24, y: 11 });
+    this.game.client.sendInput({ event: "tileClicked", x: 25, y: 10 });
+    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 0 });
 
     // this.game.client.sendInput({ event: "confirmClicked"});
     // this.game.client.sendInput({ event: "diceClicked"});
@@ -395,8 +434,8 @@ class Septikon {
         var locationCount = obj[prop].locations.length;
         for (var i = 0; i < locationCount; i++) {
           var coords = obj[prop].locations[i].split(",");
-          x = coords[0];
-          y = coords[1];
+          x = parseInt(coords[0]);
+          y = parseInt(coords[1]);
           this.tileArray[x][y].tileDetail = {};
           this.tileArray[x][y].tileDetail.damaged = false;
           this.tileArray[x][y].tileDetail.occupied = false;
@@ -452,11 +491,12 @@ class Septikon {
 
     // DEBUG BLOCK
     console.log("----TILE DETAIL----");
-    console.log("Name: " + obj.tileDetail.name);
-    console.log("Type: " + obj.tileDetail.type);
-    console.log("Occupied: " + obj.tileDetail.occupied);
-    console.log("Damaged: " + obj.tileDetail.damaged);
-    console.log("X: " + obj.tileDetail.x + " Y:" + obj.tileDetail.y);
+    console.log(obj.tileDetail);
+    // console.log("Name: " + obj.tileDetail.name);
+    // console.log("Type: " + obj.tileDetail.type);
+    // console.log("Occupied: " + obj.tileDetail.occupied);
+    // console.log("Damaged: " + obj.tileDetail.damaged);
+    // console.log("X: " + obj.tileDetail.x + " Y:" + obj.tileDetail.y);
     //   this.addOrdnance({point:{x:obj.tileX, y:obj.tileY}, type:'biodrone', uuid:Math.random()});
 
     return;
@@ -488,23 +528,22 @@ class Septikon {
     }
   }
 
-  damageTile(data) {
-    var currentTile = this.tileArray[data.x][data.y];
+  damageTile(targetTile) {
+    let t = this.tileArray[targetTile.x][targetTile.y];
 
-    currentTile.tint = 0x333333;
-    currentTile.alpha = 0.8;
-    currentTile.tileDamaged = true;
+    t.tint = 0x333333;
+    t.alpha = 0.8;
 
-    var test = this.game.add.sprite(
-      currentTile.x,
-      currentTile.y + currentTile.height / 2,
+    var boom = this.game.add.sprite(
+      t.x,
+      t.y + t.height / 2,
       "boom"
     );
-    this.game.boardGroup.add(test);
-    test.angle = 270;
-    test.anchor.set(0.5, 0.7);
-    test.animations.add("boom");
-    test.animations.play("boom", 20, false, true);
+    this.game.boardGroup.add(boom);
+    boom.angle = 90;
+    boom.anchor.set(0.5, 0.7);
+    boom.animations.add("boom");
+    boom.animations.play("boom", 20, false, true);
   }
 
   repairTile(data) {

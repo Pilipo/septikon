@@ -15,8 +15,15 @@ class Client {
         // type = one of either "personnel" or "resource" or whatever. 
         // action = create, read, update, or delete.  
         this.socket.on('update', function(data){
+            console.log(data);
             if (data.type === "personnel") {
-                this.septikon.updatePersonnel(data);
+                if (data.details.action === "create") {
+                    this.septikon.addPersonnel(data);
+                } else if (data.details.action === "update") {
+                    this.septikon.updatePersonnel(data);
+                } else if (data.details.action === "delete") {
+                    this.septikon.deletePersonnel(data);
+                }
             } else if (data.type === "ordnance") {
                 this.septikon.updateOrdnance(data);
             } else if (data.type === "resources") {
