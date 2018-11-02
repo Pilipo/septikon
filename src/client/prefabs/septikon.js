@@ -28,7 +28,8 @@ class Septikon {
 
   updatePersonnel(data) {
     // CRUD on personnel
-
+    console.log("updating");
+console.log(data);
     if (data.details.action === "create" || data.details.action === "add") {
       this.addPersonnel(data);
     } else if (data.details.action === "read") {
@@ -54,7 +55,8 @@ class Septikon {
         }
       }
     } else if (data.details.action === "delete" || data.details.action === "remove") {
-      this.removePersonnel(data.details.personnel, data.details.playerID);
+      this.deletePersonnel(data.details.personnel, data.details.playerID);
+      // this.removePersonnel(data.details.personnel, data.details.playerID);
     } else {
       console.log("Data set is outside of CRUD:");
       console.log(data);
@@ -118,35 +120,38 @@ class Septikon {
     return false;
   }
 
-  addPersonnel(personnel, playerID) {
-    let point = this.tileToPixels(personnel.x, personnel.y);
-    let p = this.getPersonnel(personnel);
-    let newPersonnel = null;
-    if (p === false) {
-      this.updatePersonnel();
-    }
-    if (personnel.typeEnum.CLONE === personnel.type) {
-      newPersonnel = new Clone(
+  addPersonnel(data) {
+    let p = data.details.personnel;
+    let pFound = this.getPersonnel(data.details.personnel);
+    if (pFound !== false) {
+      data.details.action = "update";
+      return this.updatePersonnel(data);
+    } 
+    let c = this.tileToPixels(p.x, p.y);
+    let nP = null;
+    let pID = data.details.playerID;
+    if (p.typeEnum.CLONE === p.type) {
+      nP = new Clone(
         this.game,
-        point.x,
-        point.y,
+        c.x,
+        c.y,
         null,
-        personnel.uuid
+        p.uuid
       );
-    } else if (personnel.typeEnum.BIODRONE === personnel.type) {
-      newPersonnel = new Biodrone(
+    } else if (p.typeEnum.BIODRONE === p.type) {
+      nP = new Biodrone(
         this.game,
-        point.x,
-        point.y,
+        c.x,
+        c.y,
         null,
-        personnel.uuid
+        p.uuid
       );
     }
     
-    if (playerID == this.player.id) {
-      this.player.personnelArray.push(newPersonnel);
+    if (pID == this.player.id) {
+      this.player.personnelArray.push(nP);
     } else {
-      this.opponent.personnelArray.push(newPersonnel);
+      this.opponent.personnelArray.push(nP);
     }
     console.log("Current personnel set");
     console.log(this.player.personnelArray);
@@ -262,13 +267,22 @@ class Septikon {
     }
   }
 
-  removePersonnel(data) {
-    console.log(this.game.personnelGroup.children);
-    for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
-      if (this.game.personnelGroup.children[i].uuid === data.uuid) {
-        this.game.personnelGroup.children[i].destroy();
+  deletePersonnel(data) {
+    // removePersonnel(data) {
+      console.log(this.game.personnelGroup.children);
+    for (let i in this.player.personnelArray) {
+      // for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
+      if (this.player.personnelArray.uuid === data.uuid) {
+        this.player.personnelArray.destroy();
       }
     }
+    for (let i in this.opponent.personnelArray) {
+      // for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
+      if (this.opponent.personnelArray.uuid === data.uuid) {
+        this.opponent.personnelArray.destroy();
+      }
+    }
+          
     console.log(this.game.personnelGroup.children);
     return true;
     //   for (let i = 0; i < this.player.personnelArray.length; i++) {
