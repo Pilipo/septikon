@@ -29,7 +29,7 @@ class Septikon {
   updatePersonnel(data) {
     // CRUD on personnel
     console.log("updating");
-console.log(data);
+    console.log(data);
     if (data.details.action === "create" || data.details.action === "add") {
       this.addPersonnel(data);
     } else if (data.details.action === "read") {
@@ -63,7 +63,25 @@ console.log(data);
     }
   }
 
-  updateOrdnance(data) {}
+  updateOrdnance(data) {
+    console.log("Let's update the ord");
+    let ordArray = [];
+    let svrOrd = data.details.ordnance;
+    if (data.details.playerID == this.player.id) {
+      ordArray = this.player.ordnanceArray;
+    } else {
+      ordArray = this.opponent.ordnanceArray;
+    }
+
+    for (let i in ordArray) {
+      let o = ordArray[i];
+      if (svrOrd.uuid === o.uuid) {
+        if (o.x !== svrOrd.x || o.y !== svrOrd.y) {
+          o.move({x:svrOrd.x, y:svrOrd.y});
+        }
+      }
+    }
+  }
 
   updateResources(data) {}
 
@@ -160,22 +178,40 @@ console.log(data);
 
   }
 
-  addOrdnance(details) {
-    var point = this.tileToPixels(details.point.x, details.point.y);
-    var ord = new Ordnance(
+  createOrdnance(data) {
+    let svrOrd = data.details.ordnance;
+    console.log(svrOrd);
+    let point = this.tileToPixels(svrOrd.x, svrOrd.y);
+    let newOrd = new Ordnance(
       this.game,
       point.x,
       point.y,
       null,
-      details.type,
-      details.uuid
+      data.details.type,
+      svrOrd.uuid
     );
-    if (details.playerID == this.player.id) {
-      this.player.ordnanceArray.push(ord);
+    if (data.details.playerID == this.player.id) {
+      this.player.ordnanceArray.push(newOrd);
     } else {
-      this.opponent.ordnanceArray.push(ord);
+      this.opponent.ordnanceArray.push(newOrd);
     }
-    this.game.boardGroup.add(ord);
+    this.game.boardGroup.add(newOrd);
+  }
+
+  deleteOrdnance(data) {
+    let tO = data.details.ordnance;
+    for (let i in this.player.ordnanceArray) {
+      let o = this.player.ordnanceArray[i];
+      if (o.uuid === tO.uuid) {
+        o.destroy();
+      }
+    }
+    for (let i in this.opponent.ordnanceArray) {
+      let o = this.opponent.ordnanceArray[i];
+      if (o.uuid === tO.uuid) {
+        o.destroy();
+      }
+    }
   }
 
   movePersonnel(data) {
@@ -268,32 +304,20 @@ console.log(data);
   }
 
   deletePersonnel(data) {
-    // removePersonnel(data) {
-      console.log(this.game.personnelGroup.children);
+    let tP = data.details.personnel;
     for (let i in this.player.personnelArray) {
-      // for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
-      if (this.player.personnelArray.uuid === data.uuid) {
-        this.player.personnelArray.destroy();
+      let p = this.player.personnelArray[i];
+      if (p.uuid === tP.uuid) {
+        p.destroy();
       }
     }
     for (let i in this.opponent.personnelArray) {
-      // for (let i = 0; i < this.game.personnelGroup.children.length; i++) {
-      if (this.opponent.personnelArray.uuid === data.uuid) {
-        this.opponent.personnelArray.destroy();
+      let p = this.opponent.personnelArray[i];
+      if (p.uuid === tP.uuid) {
+        p.destroy();
       }
     }
-          
-    console.log(this.game.personnelGroup.children);
     return true;
-    //   for (let i = 0; i < this.player.personnelArray.length; i++) {
-    //       if (this.player.personnelArray[i].uuid == data.uuid) {
-    //           let personnelToDestroy = this.player.personnelArray[i];
-    //           this.player.personnelArray.splice(i,1);
-    //           personnelToDestroy.destroy();
-    //           return true;
-    //       }
-    //   }
-    //   return false;
   }
 
   updatePlayer(details) {

@@ -119,18 +119,12 @@ class Septikon {
                                         this.processTileActivation(targetTile, this.activePlayer);
                                         let biodrones = this.activePlayer.getPersonnel('biodrone');
                                         if (biodrones === false) {
-                                            let ordnance = this.activePlayer.getOrdnance();
-                                            if (ordnance === false) {
-                                                this.turnState += 4;
-                                                
-                                                // TODO: process end of turn
-                                                this.processEndOfTurn();
-                                            } else {
-                                                this.turnState += 3;
-                                                // TODO: process ordnance movement
-                                            }
+                                            this.turnState = this.turnStateEnum.ORDNANCE;
+                                            this.processOrdnanceMovement();
+                                            this.turnState = this.turnStateEnum.END;
+                                            this.processEndOfTurn();
                                         } else {
-                                            this.turnState +=2;
+                                            this.turnState = this.turnStateEnum.BIODRONE;
                                             // TODO: Process biodrone movement
                                         }
                                     } else {
@@ -218,17 +212,12 @@ class Septikon {
                                         this.queuedForAction = [];
                                         let biodrones = this.activePlayer.getPersonnel('biodrone');
                                         if (biodrones === false) {
-                                            let ordnance = this.activePlayer.getOrdnance();
-                                            if (ordnance === false) {
-                                                this.turnState += 3;
-                                                // TODO: process end of turn
-                                                this.processEndOfTurn();
-                                            } else {
-                                                this.turnState += 2;
-                                                // TODO: process ordnance movement
-                                            }
+                                            this.turnState = this.turnStateEnum.ORDNANCE;
+                                            this.processOrdnanceMovement();
+                                            this.turnState = this.turnStateEnum.END;
+                                            this.processEndOfTurn();
                                         } else {
-                                            this.turnState++;
+                                            this.turnState = this.turnStateEnum.BIODRONE;
                                             // TODO: Process biodrone movement
                                         }
                                         // TODO: emit nuke armament.
@@ -246,40 +235,20 @@ class Septikon {
                                 this.queuedForAction = [];
                                 let biodrones = this.activePlayer.getPersonnel('biodrone');
                                 if (biodrones === false) {
-                                    let ordnance = this.activePlayer.getOrdnance();
-                                    if (ordnance === false) {
-                                        this.turnState += 3;
-                                        // TODO: process end of turn
-                                        this.processEndOfTurn();
-                                    } else {
-                                        this.turnState += 2;
-                                        // TODO: process ordnance movement
-                                    }
+                                    this.turnState = this.turnStateEnum.ORDNANCE;
+                                    this.processOrdnanceMovement();
+                                    this.turnState = this.turnStateEnum.END;
+                                    this.processEndOfTurn();
                                 } else {
-                                    this.turnState++;
+                                    this.turnState = this.turnStateEnum.BIODRONE;
                                     // TODO: Process biodrone movement
                                 }
                             }
                         }
                         break;
                     case this.turnStateEnum.BIODRONE:
-                        // Check for biodrones in the enemy base
-                        switch (this.phaseState) {
-                            case this.phaseStateEnum.OBJECT:
-                                break;
-                            case this.phaseStateEnum.TILE:
-                                break;
-                            case this.phaseStateEnum.CONFIRM:
-                                break;
-                        }
                         break;
                     case this.turnStateEnum.ORDNANCE:
-                        switch (this.phaseState) {
-                            case this.phaseStateEnum.OBJECT:
-                                break;
-                            case this.phaseStateEnum.TILE:
-                                break;
-                        }
                         break;
                     case this.turnStateEnum.END:
                         break;
@@ -368,14 +337,77 @@ class Septikon {
                     // Request selection from client
                 }
             } else {
-                let gunnerArray = player.getGunners();
+                // let gunnerArray = player.getGunners();
+                let gunnerArray = this.queuedForAction;
                 if (gunnerArray.length > 0) {
                     this.fireWeapon(actionTile, gunnerArray);
-                    // Request gunner selection from client limited by number of available resources.
                 }
             }
             return;
         }    
+    }
+
+    processOrdnanceMovement() {
+        for (let i in this.playersArray) {
+            let p = this.playersArray[i];
+            for (let j = this.playersArray[i].ordnanceArray.length; j > 0; j--) {
+                let o = this.playersArray[i].ordnanceArray[j-1];
+                let movesLeft = this.currentDiceValue;
+                let oP = {x:o.x, y:o.y};
+                let impacted = false;     
+                let oTile = this.getTile(oP.x, oP.y);
+                let oTileOccupants = this.getTileOccupant(oP);
+                if (oTileOccupants !== false && oTileOccupants.length === 1) {
+                    oTile.occupied = false;        
+                    this.emit('update', { type: "tile", details: { x:oTile.x, y:oTile.y, action: 'update', tile: oTile } });
+                }
+                while (impacted === false && movesLeft > 0) {
+                    movesLeft--;
+                    if (p.id === parseInt(i+1)) {
+                        oP.x++;
+                    } else {
+                        oP.x--;
+                    }
+                    let t = this.getTile(oP.x, oP.y);
+                    if (t === false) {
+                        console.error("bad tile return");
+                        return false;
+                    } else {
+                        if ((t.type === "surface" || t.type === "space") && t.occupied === true) {
+                            let tileOccupants = this.getTileOccupant({x:oP.x, y:oP.y});
+                            for (let k in tileOccupants) {
+                                let tO = tileOccupants[k];
+                                let opponent = this.getPlayerOpponent(p);
+                                if (tO.owner !== o.owner) {
+                                    impacted = true;
+                                    t.occupied = false;
+                                    opponent.remove(tO);
+                                    // TODO: this emit should check for other than personnel...
+                                    this.emit('update', {type:"personnel", details: {personnel: tO, action: 'delete'}});
+                                    // TODO: Check for shield (which recharges)
+                                }
+                            }
+                        } 
+                        if (t.type !== "surface" && t.type !== "space" && movesLeft === 0) {
+                            impacted = true;
+                            t.damaged = true;
+                            this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                        }
+                    }
+                }
+                o.x = oP.x;
+                o.y = oP.y;
+                let newTile = this.getTile(o.x, o.y);
+                newTile.occupied = true;
+                this.emit('update', { type: "tile", details: { x:newTile.x, y:newTile.y, action: 'update', tile: newTile } });
+                if (impacted === true) {
+                    p.remove(o);
+                    this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
+                } else {
+                    this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
+                }
+            }
+        }
     }
 
     processEndOfTurn() {
@@ -419,6 +451,21 @@ class Septikon {
                     this.emit('update', {type:"tile", details: {x:p.x, y:p.y, action: 'update', tile: t}});
                 }
             }
+            // TEST CODE
+
+            let ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:17}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:16}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:18}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:19}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:20}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+
+            // END TEST CODE
+            
 
         }        
     }
@@ -469,20 +516,26 @@ class Septikon {
                 return true;
         }
         return false;
-    }    
-
+    }   
+    
     getTileOccupant(point) {
-        var ordnance, personnel;
+        let returnArray = [];
         for (var pi = 0; pi < this.playersArray.length; pi++) {
-            ordnance = this.playersArray[pi].getOrdnanceByPoint(point);
-            personnel = this.playersArray[pi].getPersonnelByPoint(point);
+            let ordnance = this.playersArray[pi].getOrdnanceByPoint(point);
+            let personnel = this.playersArray[pi].getPersonnelByPoint(point);
             if (ordnance !== false) {
-                return ordnance;
+                returnArray.push(ordnance);
+                // return ordnance;
             } else if (personnel !== false) {
-                return personnel;
+                returnArray.push(personnel);
+                // return personnel;
             } 
         }
-        return false;
+        if (returnArray.length > 0) {
+            return returnArray;
+        } else {
+            return false;
+        }
     }
 
     fireWeapon(weaponTile, gunnerArray) {
@@ -558,25 +611,21 @@ class Septikon {
                     }
                     break;
                 case "shield":
-                case "biodrone":
                 case "satellite":
-                case "rocket":
                     if (this.activePlayer.id == 1) {
                         ordnancePoint.x += this.currentDiceValue;
                     } else {
                         ordnancePoint.x -= this.currentDiceValue;
                     }
+                case "biodrone":
+                case "rocket":
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                     ordUUID = uuid();
-                    // if (currentTile.isOccupied === true) {
-                    //     break;
-                    // }
-                    this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
-                    // currentTile.isOccupied = true;
+                    let o = this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
+                    currentTile.isOccupied = true;
                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                    this.emit('action', {type:"ordnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
-                    // this.emit('action', {callback:"addOrdnance", details:{type:weaponTile.name, playerID: this.activePlayer.id, point:ordnancePoint, uuid:ordUUID}}, this.activePlayer.socketID);
-                    //TODO: updatePersonnel on opponent client
+                    this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'create', playerID: this.activePlayer.id}});
+                    this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
                     break;
                 case "thermite":
                     if (this.activePlayer.id == 1) {

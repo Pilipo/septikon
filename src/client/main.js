@@ -21,6 +21,8 @@ if(typeof(Storage) !== "undefined") {
 // const game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, 'phaser-test-game');
 const game = new Phaser.Game("100", "100", Phaser.AUTO);
 game.septikon = new Septikon(game);
+console.log("Here's game!");
+console.log(game.septikon);
 game.client = new Client(game.septikon);
 
 game.state.add('boot', new Boot());

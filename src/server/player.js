@@ -35,7 +35,7 @@ class Player {
         
     addPersonnel(type, x, y, uuid) {
         if(type == "clone") {
-            var personnel = new Personnel('clone', x, y, uuid);
+            var personnel = new Personnel('clone', x, y, uuid, this.id);
             this.personnelArray.push(personnel);
             return personnel;
         }
@@ -121,7 +121,7 @@ class Player {
     }
 
     addOrdnance(type, point, uuid) {
-        let ord = new Ordnance(type, point.x, point.y, uuid);
+        let ord = new Ordnance(type, point.x, point.y, uuid, this.id);
         this.ordnanceArray.push(ord);
         return ord;
     }
@@ -196,7 +196,7 @@ class Player {
     getOrdnance(type) {
         var returnArray = [];
         for(var i in this.ordnanceArray) {
-            if(type === null || this.ordnanceArray[i].type === this.ordnanceArray[i].typeEnum[type.toUpperCase()])
+            if(type === undefined || this.ordnanceArray[i].type === this.ordnanceArray[i].typeEnum[type.toUpperCase()])
                 returnArray.push(this.ordnanceArray[i]);
         }
         if (returnArray.length === 0) {

@@ -3,7 +3,7 @@ class Ordnance extends Phaser.Sprite {
   //initialization code in the constructor
   constructor(game, x, y, frame, type, uuid) {
     var ordFrame;
-    switch (type) {
+    switch (type.toLowerCase()) {
       case "shield":
         ordFrame = 4;
         break;
@@ -17,8 +17,8 @@ class Ordnance extends Phaser.Sprite {
         ordFrame = 2;
         break;
       default:
-        console.error("Bad ordnance type");
-        break;
+        console.error("Bad ordnance type: " + type);
+        return;
     }
     super(game, x, y, 'ordnance', ordFrame);
         
@@ -39,6 +39,12 @@ class Ordnance extends Phaser.Sprite {
     this.currentTileCoordinates = this.game.septikon.pixelsToTile(this.x, this.y);
     this.game.septikon.tileArray[this.currentTileCoordinates.x][this.currentTileCoordinates.y].tileOccupied = true;
 
+  }
+
+  move(point) {
+    let targetPixels = this.game.septikon.tileToPixels(point.x, point.y);
+    let distance = Math.abs(this.y - targetPixels.y + this.x - targetPixels.x).toFixed(1);
+    let tween = this.game.add.tween(this).to( {x:targetPixels.x, y:targetPixels.y}, 1200, Phaser.Easing.Cubic.Out, true);
   }
   
 }

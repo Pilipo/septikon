@@ -1,6 +1,6 @@
 class Personnel {
 
-    constructor(type, x, y, uuid) {
+    constructor(type, x, y, uuid, playerID) {
         this.typeEnum = Object.freeze({
             CLONE: 0,
             BIODRONE: 1
@@ -12,6 +12,7 @@ class Personnel {
         this.underEspionage = false;
         this.isGunner = false;
         this.type = this.typeEnum[type.toUpperCase()];
+        this.owner = playerID;
         
         switch (type) {
             case 'biodrone':
@@ -28,6 +29,15 @@ class Personnel {
         this.x = x;
         this.y = y;
     }
+    
+    getType() {
+        for (let i in this.typeEnum) {
+            if (this.typeEnum[i] === this.type) {
+                return i;
+            }
+        }
+    }
+
 }
 
 module.exports.Personnel = Personnel;
