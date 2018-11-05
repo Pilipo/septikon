@@ -443,12 +443,16 @@ class Septikon {
             this.activePlayer = this.getRandomPlayer();
             this.gameState++;
             for (let i in this.playersArray) {
-                for (let j in this.playersArray[i].personnelArray) {
-                    let p = this.playersArray[i].personnelArray[j];
-                    let t = this.getTile(p.x, p.y);         
-                    console.log("playerArray - " + i + " :: Personnel - " + j + " :: uuid - " + p.uuid);                      
-                    this.emit('update', {type:"personnel", details: {personnel: p, action: 'create', playerID: (i+1)}});
-                    this.emit('update', {type:"tile", details: {x:p.x, y:p.y, action: 'update', tile: t}});
+                let p = this.playersArray[i];
+                for (let j in p.personnelArray) {
+                    let person = this.playersArray[i].personnelArray[j];
+                    let t = this.getTile(person.x, person.y);         
+                    this.emit('update', {type:"personnel", details: {personnel: person, action: 'create', playerID: p.id}});
+                    this.emit('update', {type:"tile", details: {x:person.x, y:person.y, action: 'update', tile: t}});
+                }
+                for (let r in p.resourceArray) {
+                    let resType = p.resourceArray[r]; 
+                    this.emit('update', {type:"resource", details: {type: r, resourceArray: resType, action: 'create', playerID: p.id}});
                 }
             }
             // TEST CODE

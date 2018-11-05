@@ -32,8 +32,14 @@ class Client {
                 } else if (data.details.action === "delete") {
                     this.septikon.deleteOrdnance(data);
                 }
-            } else if (data.type === "resources") {
-                this.septikon.updateResources(data);
+            } else if (data.type === "resource") {
+                if (data.details.action === "create") {
+                    this.septikon.createResources(data);
+                } else if (data.details.action === "update") {
+                    this.septikon.updateResources(data);
+                } else if (data.details.action === "delete") {
+                    this.septikon.deleteResources(data);
+                }
             } else if (data.type === "tile") {
                 this.septikon.updateTile(data);
             } else if (data.type === "dice") {

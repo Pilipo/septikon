@@ -1,6 +1,7 @@
 import Clone from "../prefabs/clone";
 import Biodrone from "../prefabs/biodrone";
 import Ordnance from "../prefabs/ordnance";
+import Resource from "../prefabs/resources";
 
 class Septikon {
   //initialization code in the constructor
@@ -8,11 +9,13 @@ class Septikon {
     this.game = game;
     this.player = {
       personnelArray: [],
-      ordnanceArray: []
+      ordnanceArray: [],
+      resourceArray:[]
     };
     this.opponent = {
       personnelArray: [],
-      ordnanceArray: []
+      ordnanceArray: [],
+      resourceArray:[]
     };
 
     this.shownTiles = [];
@@ -84,6 +87,83 @@ class Septikon {
   }
 
   updateResources(data) {}
+
+  createResource(data) {
+    if (data.details.resourceArray !== undefined) {
+      let rA = data.details.resourceArray;
+      for (let i in rA) {
+        this.createResource(rA[i]);
+      }
+    } else {
+      let res = new Resource(
+        this.game,
+        0,
+        0,
+        data.details.resource.type,
+        data.details.resource.uuid()
+      );
+    }
+  }
+
+  initResources() {
+    var currentRec = null;
+    var graphics = this.game.add.graphics(0, 0);
+    //graphics.lineStyle(4, 0xffd900, 1);
+    graphics.beginFill(0xffffff, 1);
+    graphics.drawRoundedRect(
+      100,
+      100,
+      this.tileWidth - 4,
+      this.tileHeight - 4,
+      14
+    );
+
+    for (var c in this.tileArray) {
+      for (var r in this.tileArray[c]) {
+        if (
+          this.tileArray[c][r].tileOwner == this.player.id &&
+          this.tileArray[c][r].tileType == "warehouse"
+        ) {
+          if (r < 5 || r > 15) {
+            currentRec = this.game.add.sprite(
+              this.tileArray[c][r].x + this.tileArray[c][r].width / 2,
+              this.tileArray[c][r].y + this.tileArray[c][r].width / 2,
+              graphics.generateTexture()
+            );
+            currentRec.angle = Math.floor(Math.random() * 40) - 20;
+            currentRec.anchor.setTo(0.5);
+            switch (this.tileArray[c][r].tileName) {
+              case "energy":
+                currentRec.tint = 0xfce315;
+                break;
+              case "oxygen":
+                currentRec.tint = 0x00b1f0;
+                break;
+              case "rocket":
+                currentRec.tint = 0xe82a2c;
+                break;
+              case "metal":
+                currentRec.tint = 0xfffffe;
+                break;
+              case "biomass":
+                currentRec.tint = 0x8ac342;
+                break;
+              case "biodrone":
+                currentRec.tint = 0x9f3a9b;
+                break;
+              case "uranium":
+                currentRec.tint = 0xf36520;
+                break;
+              default:
+                break;
+            }
+            this.game.boardGroup.add(currentRec);
+          }
+        }
+      }
+    }
+    graphics.destroy();
+  }
 
   updateArms(data) {
     console.log("shows weapons on clones");
@@ -342,65 +422,7 @@ class Septikon {
     // this.game.client.sendInput({ event: "diceClicked"});
   }
 
-  initResources() {
-    var currentRec = null;
-    var graphics = this.game.add.graphics(0, 0);
-    //graphics.lineStyle(4, 0xffd900, 1);
-    graphics.beginFill(0xffffff, 1);
-    graphics.drawRoundedRect(
-      100,
-      100,
-      this.tileWidth - 4,
-      this.tileHeight - 4,
-      14
-    );
-
-    for (var c in this.tileArray) {
-      for (var r in this.tileArray[c]) {
-        if (
-          this.tileArray[c][r].tileOwner == this.player.id &&
-          this.tileArray[c][r].tileType == "warehouse"
-        ) {
-          if (r < 5 || r > 15) {
-            currentRec = this.game.add.sprite(
-              this.tileArray[c][r].x + this.tileArray[c][r].width / 2,
-              this.tileArray[c][r].y + this.tileArray[c][r].width / 2,
-              graphics.generateTexture()
-            );
-            currentRec.angle = Math.floor(Math.random() * 40) - 20;
-            currentRec.anchor.setTo(0.5);
-            switch (this.tileArray[c][r].tileName) {
-              case "energy":
-                currentRec.tint = 0xfce315;
-                break;
-              case "oxygen":
-                currentRec.tint = 0x00b1f0;
-                break;
-              case "rocket":
-                currentRec.tint = 0xe82a2c;
-                break;
-              case "metal":
-                currentRec.tint = 0xfffffe;
-                break;
-              case "biomass":
-                currentRec.tint = 0x8ac342;
-                break;
-              case "biodrone":
-                currentRec.tint = 0x9f3a9b;
-                break;
-              case "uranium":
-                currentRec.tint = 0xf36520;
-                break;
-              default:
-                break;
-            }
-            this.game.boardGroup.add(currentRec);
-          }
-        }
-      }
-    }
-    graphics.destroy();
-  }
+  
 
   createTileArray(columns, rows, point) {
     this.tileDetail = this.game.cache.getJSON("tileDetail");
