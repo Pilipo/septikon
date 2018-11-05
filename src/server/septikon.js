@@ -382,7 +382,7 @@ class Septikon {
                                     impacted = true;
                                     t.occupied = false;
                                     opponent.remove(tO);
-                                    // TODO: this emit should check for other than personnel...
+                                    // TODO: this emit should check for other than just personnel...
                                     this.emit('update', {type:"personnel", details: {personnel: tO, action: 'delete'}});
                                     // TODO: Check for shield (which recharges)
                                 }
@@ -390,8 +390,10 @@ class Septikon {
                         } 
                         if (t.type !== "surface" && t.type !== "space" && movesLeft === 0) {
                             impacted = true;
-                            t.damaged = true;
-                            this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                            if (o.type === "ROCKET") {
+                                t.damaged = true;
+                                this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                            }
                         }
                     }
                 }
@@ -401,8 +403,17 @@ class Septikon {
                 newTile.occupied = true;
                 this.emit('update', { type: "tile", details: { x:newTile.x, y:newTile.y, action: 'update', tile: newTile } });
                 if (impacted === true) {
-                    p.remove(o);
-                    this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
+                    console.log("Made Impact!");
+                    console.log(o.getType() );
+                    let type = o.getType();
+                    if (type === "BIODRONE") {
+                        // convert biodrone from ordnance to personnel
+                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
+                    } else if (type === "ROCKET") {
+                        p.remove(o);
+                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
+                        this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
+                    }
                 } else {
                     this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
                 }
@@ -457,16 +468,8 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:17}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:16}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:18}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:19}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[0].addOrdnance("rocket", {x:15, y:20}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+            let ord = this.playersArray[0].addOrdnance("biodrone", {x:15, y:17}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
 
             // END TEST CODE
             
