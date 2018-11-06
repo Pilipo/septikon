@@ -97,7 +97,7 @@ class Septikon {
                         }
                         break;
                     case this.turnStateEnum.MOVE:
-                        if (data.event === "tileClicked") {
+                        if (data.event === "tileClicked" && data.socketID === this.activePlayer.socketID) {
                             let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}, "clone");
                             if (selectedClone !== false) {
                                 if (this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedClone) {
@@ -140,7 +140,7 @@ class Septikon {
                         let targetTile = this.getTile(data.x, data.y);
                         this.emit('action', {callback: 'hideTiles', details: null});
 
-                        if (data.event === "tileClicked") {
+                        if (data.event === "tileClicked"  && data.socketID === this.activePlayer.socketID) {
                             if (this.actionTile.type === "battle" && this.actionTile.name !== "repair" && this.actionTile.name !== "repairTwo") {
                                 this.readyForConfirmation = true;
                                 let selectedGunner = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
@@ -226,7 +226,7 @@ class Septikon {
                             } else if (this.actionTile.name === "counterEspionage") {
                                 // IF tile requires an espionaged clone, check that selected is an espionaged clone.
                             }
-                        } else if (data.event === "confirmClicked") {
+                        } else if (data.event === "confirmClicked"  && data.socketID === this.activePlayer.socketID) {
                             if (this.readyForConfirmation === true) {
                                 if (this.queuedForAction.length > 0) {
                                     this.processTileActivation(this.actionTile, this.activePlayer);
@@ -247,6 +247,44 @@ class Septikon {
                         }
                         break;
                     case this.turnStateEnum.BIODRONE:
+                        if (data.event === "tileClicked" && data.socketID === this.activePlayer.socketID) {
+                            let selectedBiodrone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}, "biodrone");
+                            if (selectedBiodrone !== false) {
+                                if (this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedBiodrone) {
+                                    this.activePlayer.selectedPersonnelToMove = selectedBiodrone;
+                                    let pointArray = this.getLegalMoves(selectedBiodrone, this.currentDiceValue, {x:selectedBiodrone.x, y:selectedBiodrone.y});
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    this.emit('action', {callback: 'showTiles', details: [{x:data.x, y:data.y}]}, this.activePlayer.socketID);
+                                    this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
+                                } else {
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    this.activePlayer.selectedPersonnelToMove = null;
+                                }
+                            } else {
+                                if (this.activePlayer.selectedPersonnelToMove !== null && this.activePlayer.checkPersonnelMove(this.activePlayer.selectedPersonnelToMove, { x: data.x, y: data.y }) === true) {
+                                    let foundInQueue = false;
+                                    for (let i in this.queuedForAction) {
+                                        let testItem = this.queuedForAction[i];
+                                        if (testItem === this.activePlayer.selectedPersonnelToMove) {
+                                            foundInQueue = true;
+                                        }
+                                    }
+                                    if (foundInQueue === false) {
+                                        this.emit('action', {callback: 'hideTiles', details: null});
+                                        let targetTile = this.getTile(data.x, data.y);
+                                        this.processPersonnelMove(this.activePlayer.selectedPersonnelToMove, targetTile);
+                                        this.queuedForAction.push(this.activePlayer.selectedPersonnelToMove);
+                                    }
+                                }
+                            }
+                        } else if (data.event === "confirmClicked"  && data.socketID === this.activePlayer.socketID) {
+                            this.queuedForAction = [];
+                            this.turnState = this.turnStateEnum.ORDNANCE;
+                            this.processOrdnanceMovement();
+                            this.turnState = this.turnStateEnum.END;
+                            this.processEndOfTurn();
+                            this.turnState++;
+                        }
                         break;
                     case this.turnStateEnum.ORDNANCE:
                         break;
@@ -390,10 +428,8 @@ class Septikon {
                         } 
                         if (t.type !== "surface" && t.type !== "space" && movesLeft === 0) {
                             impacted = true;
-                            if (o.type === "ROCKET") {
-                                t.damaged = true;
-                                this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
-                            }
+                            t.damaged = true;
+                            this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
                         }
                     }
                 }
@@ -403,8 +439,6 @@ class Septikon {
                 newTile.occupied = true;
                 this.emit('update', { type: "tile", details: { x:newTile.x, y:newTile.y, action: 'update', tile: newTile } });
                 if (impacted === true) {
-                    console.log("Made Impact!");
-                    console.log(o.getType() );
                     let type = o.getType();
                     if (type === "BIODRONE") {
                         // convert biodrone from ordnance to personnel
@@ -473,6 +507,8 @@ class Septikon {
             // TEST CODE
 
             let ord = this.playersArray[0].addOrdnance("biodrone", {x:15, y:17}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
+            ord = this.playersArray[0].addOrdnance("biodrone", {x:12, y:10}, uuid());
             this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
 
             // END TEST CODE
