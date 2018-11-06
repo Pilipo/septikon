@@ -34,8 +34,13 @@ class Player {
     }
         
     addPersonnel(type, x, y, uuid) {
+        let personnel = null;
         if(type == "clone") {
-            var personnel = new Personnel('clone', x, y, uuid, this.id);
+            personnel = new Personnel('clone', x, y, uuid, this.id);
+            this.personnelArray.push(personnel);
+            return personnel;
+        } else if (type == "biodrone") {
+            personnel = new Personnel('biodrone', x, y, uuid, this.id);
             this.personnelArray.push(personnel);
             return personnel;
         }

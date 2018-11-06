@@ -408,10 +408,14 @@ class Septikon {
                     let type = o.getType();
                     if (type === "BIODRONE") {
                         // convert biodrone from ordnance to personnel
-                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
+                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
+                        let person = p.addPersonnel('biodrone', o.x, o.y, o.uuid);
+                        this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
+                        p.remove(o);
+                        this.emit('update', {type:"personnel", details: {personnel: person, action: 'create'}});
                     } else if (type === "ROCKET") {
                         p.remove(o);
-                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
+                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
                         this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
                     }
                 } else {
