@@ -283,7 +283,6 @@ class Septikon {
                             this.processOrdnanceMovement();
                             this.turnState = this.turnStateEnum.END;
                             this.processEndOfTurn();
-                            this.turnState++;
                         }
                         break;
                     case this.turnStateEnum.ORDNANCE:
@@ -392,7 +391,8 @@ class Septikon {
                 let o = this.playersArray[i].ordnanceArray[j-1];
                 let movesLeft = this.currentDiceValue;
                 let oP = {x:o.x, y:o.y};
-                let impacted = false;     
+                let impacted = false;
+                let bioDestroy = false; //It's ugly, but I'm tired... 
                 let oTile = this.getTile(oP.x, oP.y);
                 let oTileOccupants = this.getTileOccupant(oP);
                 if (oTileOccupants !== false && oTileOccupants.length === 1) {
@@ -411,25 +411,32 @@ class Septikon {
                         console.error("bad tile return");
                         return false;
                     } else {
-                        if ((t.type === "surface" || t.type === "space") && t.occupied === true) {
+                        if (t.occupied === true) {
                             let tileOccupants = this.getTileOccupant({x:oP.x, y:oP.y});
                             for (let k in tileOccupants) {
                                 let tO = tileOccupants[k];
                                 let opponent = this.getPlayerOpponent(p);
                                 if (tO.owner !== o.owner) {
                                     impacted = true;
-                                    t.occupied = false;
+                                    t.occupied = false; //TODO: This is not necessarily true...
                                     opponent.remove(tO);
                                     // TODO: this emit should check for other than just personnel...
                                     this.emit('update', {type:"personnel", details: {personnel: tO, action: 'delete'}});
                                     // TODO: Check for shield (which recharges)
+                                    let type = o.getType();
+                                    if (type === "BIODRONE") {
+                                        bioDestroy = true;
+                                    }                            
                                 }
                             }
-                        } 
-                        if (t.type !== "surface" && t.type !== "space" && movesLeft === 0) {
+                        }
+                        if (t.type !== "surface" && t.type !== "space" && (movesLeft === 0 || impacted === true)) {
                             impacted = true;
-                            t.damaged = true;
-                            this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                            let type = o.getType();
+                            if (type === "ROCKET") {
+                                t.damaged = true;
+                                this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                            }
                         }
                     }
                 }
@@ -439,21 +446,17 @@ class Septikon {
                 newTile.occupied = true;
                 this.emit('update', { type: "tile", details: { x:newTile.x, y:newTile.y, action: 'update', tile: newTile } });
                 if (impacted === true) {
+                    p.remove(o);
+                    this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
+                    this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
                     let type = o.getType();
-                    if (type === "BIODRONE") {
+                    if (type === "BIODRONE" && bioDestroy === false) {
                         // convert biodrone from ordnance to personnel
-                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
                         let person = p.addPersonnel('biodrone', o.x, o.y, o.uuid);
-                        this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
-                        p.remove(o);
                         this.emit('update', {type:"personnel", details: {personnel: person, action: 'create'}});
-                    } else if (type === "ROCKET") {
-                        p.remove(o);
-                        this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
-                        this.emit('update', {type:"ordnance", details: {type: o.getType(), ordnance:o, action: 'delete'}});
-                    }
+                    } 
                 } else {
-                    this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: parseInt(i+1)}});
+                    this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
                 }
             }
         }
@@ -508,7 +511,7 @@ class Septikon {
 
             let ord = this.playersArray[0].addOrdnance("biodrone", {x:15, y:17}, uuid());
             this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[0].addOrdnance("biodrone", {x:12, y:10}, uuid());
+            ord = this.playersArray[0].addOrdnance("biodrone", {x:12, y:20}, uuid());
             this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
 
             // END TEST CODE
@@ -619,32 +622,37 @@ class Septikon {
                         if (currentTile === false) {
                             return false;
                         }
+                        
                         switch (currentTile.name) {
                             case "space":
                             case "surface":
                                 if (currentTile.occupied === true) {
                                     let opponent = this.getPlayerOpponent(this.activePlayer);
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    opponent.remove(currentOccupant);
-                                    this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
-                                    // this.emit('action', {callback:"removePersonnel", details:currentOccupant});
-                                    currentTile.occupied = false;
-                                    impacted = true;
-                                    this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                                    this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
-                                    break;
+                                    if (currentOccupant.owner === opponent.id) {
+                                        opponent.remove(currentOccupant);
+                                        this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
+                                        // this.emit('action', {callback:"removePersonnel", details:currentOccupant});
+                                        currentTile.occupied = false;
+                                        impacted = true;
+                                        this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
+                                        this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                                        break;
+                                    }
                                 }
                                 break;
                             default:
                                 if (currentTile.occupied === true) {
                                     let opponent = this.getPlayerOpponent(this.activePlayer);
                                     currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    opponent.remove(currentOccupant);
-                                    this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
-                                    currentTile.occupied = false;
-                                    currentTile.damaged = true;
-                                    this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
-                                    impacted = true;
+                                    if (currentOccupant.owner === opponent.id) {
+                                        opponent.remove(currentOccupant);
+                                        this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
+                                        currentTile.occupied = false;
+                                        currentTile.damaged = true;
+                                        this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                                        impacted = true;
+                                    }
                                 } else if (currentTile.damaged === true) {
                                     break;
                                 } else {
@@ -859,7 +867,6 @@ class Septikon {
 
     getLegalMoves(gamePieceType, moves, currentCoord, previousCoord){
         if (moves < 1) {
-            console.error("Illegal move number! This could result in infinite loop.");
             return false;
         }
         var legalMoves = [];
@@ -904,6 +911,16 @@ class Septikon {
             if (nextTileToCheck.damaged === true) { continue; }
             if (nextTileToCheck.type === "space") { continue; }
             if (this.checkWall(this.directionEnum[direction], currentCoord) === false) { continue; }
+            let occupants = this.getTileOccupant({x:nextTileToCheck.x, y:nextTileToCheck.y});
+            if (occupants !== false) {
+                let impasse = false;
+                for (let i in occupants) {
+                    if (occupants[i].getType() === "BIODRONE" && occupants[i].owner !== this.activePlayer.id) {
+                        impasse = true;
+                    }
+                }
+                if (impasse === true) { continue; }
+            }
 
             if((typeof previousCoord === 'undefined') || ((typeof previousCoord !== 'undefined') && (JSON.stringify(nextMoveToCheck) !== JSON.stringify(previousCoord)) )) {
                 // Check if tile is occupied
