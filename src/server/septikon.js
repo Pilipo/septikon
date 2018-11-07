@@ -979,7 +979,7 @@ class Septikon {
             if (occupants !== false) {
                 let impasse = false;
                 for (let i in occupants) {
-                    if (occupants[i].getType() === "BIODRONE" && occupants[i].owner !== this.activePlayer.id) {
+                    if ((occupants[i].getType() === "BIODRONE" || occupants[i].getType() === "CLONE") && occupants[i].owner !== this.activePlayer.id) {
                         impasse = true;
                     }
                 }
