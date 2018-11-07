@@ -436,6 +436,41 @@ class Septikon {
                         t.damaged = true;
                         this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
                     }
+                    if (o.getType() === "WARHEAD") {
+                        let tileArray = [
+                            this.getTile(t.x+1, t.y+1),
+                            this.getTile(t.x+1, t.y-1),
+                            this.getTile(t.x-1, t.y+1),
+                            this.getTile(t.x-1, t.y-1)
+                        ];
+
+                        t.damaged = true;
+                        this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
+                        for (let t in tileArray) {
+                            let curTile = tileArray[t];
+                            if (curTile.type !== "surface" && curTile.type !== "space") {
+                                curTile.damaged = true;
+                                this.emit('update', { type: "tile", details: { x:curTile.x, y:curTile.y, action: 'update', tile: curTile } });
+                            }
+                        
+                            if (curTile.occupied === true) {
+                                let curOccupants = this.getTileOccupant({x:oP.x, y:oP.y});
+                                for (let ok in curOccupants) {
+                                    let curTO = tileOccupants[ok];
+                                    let opponent = this.getPlayerOpponent(p);
+                                    if (curTO.owner !== o.owner) {
+                                        impacted = true;
+                                        curTile.occupied = false; //TODO: This is not necessarily true...
+                                        opponent.remove(curTO);
+                                        // TODO: this emit should check for other than just personnel...
+                                        this.emit('update', {type:"personnel", details: {personnel: curTO, action: 'delete'}});
+                                        // TODO: Check for shield (which recharges)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                 }
                 o.x = oP.x;
                 o.y = oP.y;
@@ -544,16 +579,8 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("rocket", {x:10, y:10}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[1].addOrdnance("satellite", {x:18, y:10}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "satellite", ordnance:ord, action: 'create', playerID: 2}});
-
-             ord = this.playersArray[1].addOrdnance("rocket", {x:18, y:4}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 2}});
-            ord = this.playersArray[0].addOrdnance("satellite", {x:10, y:4}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "satellite", ordnance:ord, action: 'create', playerID: 1}});
-
+            let ord = this.playersArray[0].addOrdnance("warhead", {x:10, y:10}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "warhead", ordnance:ord, action: 'create', playerID: 1}});
 
             // END TEST CODE
             

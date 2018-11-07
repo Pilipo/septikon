@@ -16,6 +16,9 @@ class Ordnance extends Phaser.Sprite {
       case "rocket":
         ordFrame = 2;
         break;
+      case "warhead":
+        ordFrame = 2;
+        break;
       default:
         console.error("Bad ordnance type: " + type);
         return;

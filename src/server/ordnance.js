@@ -5,7 +5,8 @@ class Ordnance {
             SHIELD: 0,
             BIODRONE: 1,
             SATELLITE: 2,
-            ROCKET: 3
+            ROCKET: 3,
+            WARHEAD: 4
         });
         
         this.x = x;
@@ -13,7 +14,6 @@ class Ordnance {
         this.uuid = uuid;
         this.type = this.typeEnum[type.toUpperCase()];
         this.owner = playerID;
-        this.warhead = false;
     }
 
     move(x, y) {
