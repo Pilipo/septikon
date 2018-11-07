@@ -13,6 +13,7 @@ class Ordnance {
         this.uuid = uuid;
         this.type = this.typeEnum[type.toUpperCase()];
         this.owner = playerID;
+        this.warhead = false;
     }
 
     move(x, y) {

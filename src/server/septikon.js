@@ -1,5 +1,7 @@
 //  This is the server-side rule engine. It processes the rules and states and then emits directions back to the client.
-
+var Personnel = require('./personnel').Personnel;
+var Resource = require('./resource').Resource;
+var Ordnance = require('./ordnance').Ordnance;
 var Player = require('./player').Player;
 var uuid = require('uuid/v4');
 
@@ -389,6 +391,10 @@ class Septikon {
             let p = this.playersArray[i];
             for (let j = this.playersArray[i].ordnanceArray.length; j > 0; j--) {
                 let o = this.playersArray[i].ordnanceArray[j-1];
+                let type = o.getType();
+                if (type !== "ROCKET" && type !== "BIODRONE" && type !== "WARHEAD") {
+                    continue;
+                }
                 let oP = {x:o.x, y:o.y};
                 let impacted = false;
                 let bioDestroy = false; //It's ugly, but I'm tired... 
@@ -454,6 +460,44 @@ class Septikon {
     }
 
     processEndOfTurn() {
+        console.log("assessing satellite firing. Starting with active player.");
+        let opponent = this.getPlayerOpponent(this.activePlayer); 
+        let playerArray = [this.activePlayer, opponent];
+        for (let playerIndex in playerArray) {
+            for (let i in playerArray[playerIndex].ordnanceArray) {
+                let o = playerArray[playerIndex].ordnanceArray[i];
+                let type = o.getType();
+                if (type === "SATELLITE") {
+                    let occupants = [];
+                    console.log ("origin is x:" + (o.x) + " | y: " + (o.y));
+                    for (let xi = 0; xi < 4; xi++) {
+                        for (let yi = 0; yi < 4; yi++) {
+                            if (xi === 0 && yi === 0) { continue; }
+                            if (xi !== yi && xi !== 0 && yi !== 0) { continue; }
+                            let test1 = this.getTileOccupant({x:o.x+xi, y:o.y+yi});
+                            let test2 = this.getTileOccupant({x:o.x+xi, y:o.y-yi});
+                            let test3 = this.getTileOccupant({x:o.x-xi, y:o.y+yi});
+                            let test4 = this.getTileOccupant({x:o.x-xi, y:o.y-yi});
+                            if (test1 !== false) {occupants = occupants.concat(test1);}
+                            if (test2 !== false) {occupants = occupants.concat(test2);}
+                            if (test3 !== false) {occupants = occupants.concat(test3);}
+                            if (test4 !== false) {occupants = occupants.concat(test4);}
+                        }                    
+                    }
+                    for (let j in occupants) {
+                        if (occupants[j].owner !== o.owner) {
+                            let currentOpponent = this.getPlayerOpponent(playerArray[playerIndex]);
+                            currentOpponent.remove(occupants[j]);
+                            if (occupants[j] instanceof Personnel) {
+                                this.emit('update', {type:"personnel", details: {personnel: occupants[j], action: 'delete'}});
+                            } else {
+                                this.emit('update', {type:"ordnance", details: {ordnance: occupants[j], action: 'delete'}});
+                            }
+                        }
+                    }
+                }
+            }
+        }
         console.log ("next player's turn");
         this.changeActivePlayer();
         this.actionTile = null;
@@ -500,10 +544,16 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("biodrone", {x:15, y:17}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
-            ord = this.playersArray[0].addOrdnance("biodrone", {x:12, y:20}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
+            let ord = this.playersArray[0].addOrdnance("rocket", {x:10, y:10}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 1}});
+            ord = this.playersArray[1].addOrdnance("satellite", {x:18, y:10}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "satellite", ordnance:ord, action: 'create', playerID: 2}});
+
+             ord = this.playersArray[1].addOrdnance("rocket", {x:18, y:4}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "rocket", ordnance:ord, action: 'create', playerID: 2}});
+            ord = this.playersArray[0].addOrdnance("satellite", {x:10, y:4}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "satellite", ordnance:ord, action: 'create', playerID: 1}});
+
 
             // END TEST CODE
             

@@ -21,7 +21,7 @@ class Ordnance extends Phaser.Sprite {
         return;
     }
     super(game, x, y, 'ordnance', ordFrame);
-        
+
     //setup physics properties
     this.anchor.setTo(0.5, 0.5);
     this.game.physics.arcade.enableBody(this);
