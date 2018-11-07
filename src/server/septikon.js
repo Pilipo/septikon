@@ -389,7 +389,6 @@ class Septikon {
             let p = this.playersArray[i];
             for (let j = this.playersArray[i].ordnanceArray.length; j > 0; j--) {
                 let o = this.playersArray[i].ordnanceArray[j-1];
-                // let movesLeft = this.currentDiceValue;
                 let oP = {x:o.x, y:o.y};
                 let impacted = false;
                 let bioDestroy = false; //It's ugly, but I'm tired... 
@@ -432,48 +431,6 @@ class Septikon {
                         this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
                     }
                 }
-
-                // while (impacted === false && movesLeft > 0) {
-                //     movesLeft--;
-                //     if (p.id === parseInt(i+1)) {
-                //         oP.x++;
-                //     } else {
-                //         oP.x--;
-                //     }
-                //     let t = this.getTile(oP.x, oP.y);
-                //     if (t === false) {
-                //         console.error("bad tile return");
-                //         return false;
-                //     } else {
-                //         if (t.occupied === true) {
-                //             let tileOccupants = this.getTileOccupant({x:oP.x, y:oP.y});
-                //             for (let k in tileOccupants) {
-                //                 let tO = tileOccupants[k];
-                //                 let opponent = this.getPlayerOpponent(p);
-                //                 if (tO.owner !== o.owner) {
-                //                     impacted = true;
-                //                     t.occupied = false; //TODO: This is not necessarily true...
-                //                     opponent.remove(tO);
-                //                     // TODO: this emit should check for other than just personnel...
-                //                     this.emit('update', {type:"personnel", details: {personnel: tO, action: 'delete'}});
-                //                     // TODO: Check for shield (which recharges)
-                //                     let type = o.getType();
-                //                     if (type === "BIODRONE") {
-                //                         bioDestroy = true;
-                //                     }                            
-                //                 }
-                //             }
-                //         }
-                //         if (t.type !== "surface" && t.type !== "space" && (movesLeft === 0 || impacted === true)) {
-                //             impacted = true;
-                //             let type = o.getType();
-                //             if (type === "ROCKET") {
-                //                 t.damaged = true;
-                //                 this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
-                //             }
-                //         }
-                //     }
-                // }
                 o.x = oP.x;
                 o.y = oP.y;
                 let newTile = this.getTile(o.x, o.y);
