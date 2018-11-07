@@ -869,32 +869,28 @@ class Septikon {
         if (moves < 1) {
             return false;
         }
+        moves--;
         var legalMoves = [];
         var returnArray = [];
         var nextMoveToCheck = null;
         var nextTileToCheck = null;
-        moves--;
+        let currentTile = this.getTile(currentCoord.x, currentCoord.y);
+        
 
-        if (typeof previousCoord === 'undefined') {
+        if (typeof previousCoord === 'undefined') { // This is the first iteration, thus locks are accessible.
             var locks = this.getLocks(this.activePlayer);
-            var isLock = false;
 
-            for (var l in locks) {
-                if (locks[l].x == currentCoord.x && locks[l].y == currentCoord.y) {
-                    isLock = true;
-                }
-            }
-
-            if (isLock === true) {
-                for (var i in locks) {
-                    if (currentCoord.x == locks[i].x && currentCoord.y == locks[i].y) { continue; } // don't include the lock you're sitting on
-                    if (this.tileArray[locks[i].x][locks[i].y].occupied === true) { continue; } // don't include lock that others are sitting on
+            if (currentTile.type === "lock") {
+                for (let i in locks) {
+                    let l = locks[i];
+                    if (currentTile.x == l.x && currentTile.y == l.y) { continue; } // don't include the lock you're sitting on
+                    if (this.tileArray[l.x][l.y].occupied === true) { continue; } // don't include lock that others are sitting on
                     if (moves > 1) {
-                        returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, {x:locks[i].x, y:locks[i].y}, currentCoord));
+                        returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, {x:l.x, y:l.y}, currentCoord));
                     } else {
-                        returnArray.push(locks[i]);
+                        returnArray.push(l);
                     }
-                    for (var c in returnArray) {
+                    for (let c in returnArray) {
                         if(returnArray[c].x !== currentCoord.x || returnArray[c].y !== currentCoord.y)
                             legalMoves.push(returnArray[c]);
                     }
