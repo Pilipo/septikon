@@ -1,11 +1,12 @@
 Septikon - Uranium Wars
 ========
 
-Port of the above game
+Phaser / JS port of the above game
 
 ## Dev
 * Clone the repo
-* init the git submodule
 * npm update and install
 * npm start
-* heroku??
+
+## Notes
+This game is a mess currently. Especially the client side. The server is almost completely functional, but will be in need of major rafactoring efforts. It is safe to say that the client is currently use for little more than testing the server side code.
