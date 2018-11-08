@@ -115,6 +115,17 @@ class Player {
         this.armsArray[type] = false;
     }
 
+    getArms () {
+        let returnArray = [];
+        for (let a in this.armsArray) {
+            if (this.armsArray[a] === false) {
+                continue;
+            }
+            returnArray.push(this.armsEnum[a]);
+        }
+        return returnArray;
+    }
+
     unsetCloneGunnerByUUID (uuid) {
         let clone = this.getPersonnelByUUID(uuid);
         clone.isGunner = false;

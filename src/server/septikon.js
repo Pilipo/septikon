@@ -73,6 +73,11 @@ class Septikon {
                             selectedTile.occupied = false;
                             this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'delete', playerID: player.id}});
                             this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}});
+                            if (selectedTile.type === "armory") {
+                                player.removeArms(originalTile.name.toUpperCase());
+                                this.emit('update', { type: "arms", details: { type: selectedTile.name, action: "delete" } });
+                            }
+    
                             return;
                         }
                     }
@@ -85,6 +90,10 @@ class Septikon {
                         selectedTile.occupied = true;
                         this.emit('update', {type:"personnel", details: {personnel: clone, action: 'create', playerID: player.id}}, data.socketID);
                         this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}}, data.socketID);
+                        if (selectedTile.type === "armory") {
+                            player.addArms(selectedTile.name.toUpperCase());
+                            this.emit('update', { type: "arms", details: { type: selectedTile.name, action: "create" } });
+                        }
                     }
                 }
                 break;
@@ -314,11 +323,11 @@ class Septikon {
         this.emit('update', { type: "personnel", details: { personnel: personnel, action: 'update', playerID: this.activePlayer.id } });
         this.emit('update', { type: "tile", details: { x: originalTile.x, y: originalTile.y, action: 'update', tile: originalTile } });
         this.emit('update', { type: "tile", details: { x: targetTile.x, y: targetTile.y, action: 'update', tile: targetTile } });
-        if (originalTile.type === "armory") {
+        if (originalTile.type === "armory" && personnel.getType() !== "BIODRONE") {
             this.activePlayer.removeArms(originalTile.name.toUpperCase());
             this.emit('update', { type: "arms", details: { type: originalTile.name, action: "delete" } });
         }
-        if (targetTile.type === "armory") {
+        if (targetTile.type === "armory" && personnel.getType() !== "BIODRONE") {
             this.activePlayer.addArms(targetTile.name.toUpperCase());
             this.emit('update', { type: "arms", details: { type: targetTile.name, action: "create" } });
         }
@@ -496,6 +505,102 @@ class Septikon {
 
     processEndOfTurn() {
         console.log("assessing satellite firing. Starting with active player.");
+        this.checkPersonnelArms();
+        this.checkSatelliteFire();
+        console.log ("next player's turn");
+        this.changeActivePlayer();
+        this.actionTile = null;
+        this.queuedForAction = [];
+        this.readyForConfirmation = false;
+    }
+
+    checkPersonnelArms() {
+        let apa = this.activePlayer.getArms();
+        let opponent = this.getPlayerOpponent(this.activePlayer);
+        let oa = opponent.getArms();
+        // activePlayer - biodrones
+        if ( apa.length !== 0) {
+            let ab = this.activePlayer.getPersonnel("biodrone");
+            for (let i in ab) {
+                let p = ab[i];
+                this.fireArms({x:p.x, y:p.y}, apa, this.activePlayer.id);
+            }
+        }
+        // opponent - biodrones
+        if (oa.length !== 0) {
+            let ob = opponent.getPersonnel("biodrone");
+            for (let i in ob) {
+                let p = ob[i];
+                this.fireArms({x:p.x, y:p.y}, oa, opponent.id);
+            }
+        }
+        // activePlayer - clones (and spies)
+        if ( apa.length !== 0) {
+            let ac = this.activePlayer.getPersonnel("clone");
+            for (let i in ac) {
+                let p = ac[i];
+                this.fireArms({x:p.x, y:p.y}, apa, this.activePlayer.id);
+            }
+        }
+        // opponent - clones (and spies)
+        if (oa.length !== 0) {
+            let oc = opponent.getPersonnel("clone");
+            for (let i in oc) {
+                let p = oc[i];
+                this.fireArms({x:p.x, y:p.y}, oa, opponent.id);
+            }
+        }
+    }
+
+    fireArms(origin, rangeArray, owner) {
+        let options = [1,0,-1];
+        let fireCoords = [];
+        for (let i in options) {
+            for (let j in options) {
+                let xi = options[i];
+                let yi = options[j];
+                if (xi === 0 && yi === 0) {continue;}
+                for (let r in rangeArray) {
+                    let fireX = origin.x + (xi*rangeArray[r]);
+                    let fireY = origin.y + (yi*rangeArray[r]);
+                    if (fireY < 0 || fireY > this.tileRows-1 || fireX < 0 || fireX > this.tileColumns-1) {continue;}
+                    let curCoord = {x:(origin.x + (xi*rangeArray[r])), y:(origin.y + (yi*rangeArray[r]))};
+                    let found = false;
+                    for (let k in fireCoords) {
+                        if (fireCoords[k] === curCoord) {
+                            found = true;
+                        }
+                    }
+                    if (found === false) {
+                        fireCoords.push(curCoord);
+                    }
+                }
+            }
+        }
+        for (let i in fireCoords) {
+            let coord = fireCoords[i];
+            if (this.tileArray[coord.x][coord.y].occupied === true) {
+                let occupants = this.getTileOccupant(coord);
+                if (occupants === false) {
+                    // BUG TEST
+                    console.error("Bad 'isOccupied' value!");
+                }
+                for (let o in occupants) {
+                    if (occupants[o].owner === owner) {continue;}
+                    console.log("blow this guy up!", occupants[o]);
+                    let pOwner = this.playersArray[occupants[o].owner-1];
+                    pOwner.remove(occupants[o]);
+                    this.emit('update', {type:"personnel", details: {personnel: occupants[o], action: 'delete'}});
+                    this.tileArray[coord.x][coord.y].occupied = false;
+                    this.emit('update', {type:"tile", details: {x:coord.x, y:coord.y, action: 'update', tile: this.tileArray[coord.x][coord.y]}});
+                }
+            }
+        }
+        // console.log(fireCoords);
+        // this.emit('action', {callback: 'showTiles', details: fireCoords}, this.activePlayer.socketID);
+    }
+
+    checkSatelliteFire() {
         let opponent = this.getPlayerOpponent(this.activePlayer); 
         let playerArray = [this.activePlayer, opponent];
         for (let playerIndex in playerArray) {
@@ -533,11 +638,6 @@ class Septikon {
                 }
             }
         }
-        console.log ("next player's turn");
-        this.changeActivePlayer();
-        this.actionTile = null;
-        this.queuedForAction = [];
-        this.readyForConfirmation = false;
     }
 
 	addNewPlayer(socketID, uuid) {
@@ -579,8 +679,8 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("warhead", {x:10, y:10}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "warhead", ordnance:ord, action: 'create', playerID: 1}});
+            let ord = this.playersArray[0].addOrdnance("biodrone", {x:10, y:10}, uuid());
+            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
 
             // END TEST CODE
             

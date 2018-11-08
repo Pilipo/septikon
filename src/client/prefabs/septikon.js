@@ -408,7 +408,7 @@ class Septikon {
     // DEBUG BLOCK
     this.game.client.sendInput({ event: "tileClicked", x: 7, y: 20 });
     this.game.client.sendInput({ event: "tileClicked", x: 7, y: 0 });
-    this.game.client.sendInput({ event: "tileClicked", x: 5, y: 10 });
+    this.game.client.sendInput({ event: "tileClicked", x: 3, y: 10 });
     this.game.client.sendInput({ event: "tileClicked", x: 1, y: 8 });
     this.game.client.sendInput({ event: "tileClicked", x: 1, y: 9 });
 
