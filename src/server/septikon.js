@@ -1053,7 +1053,7 @@ class Septikon {
                     let l = locks[i];
                     if (currentTile.x == l.x && currentTile.y == l.y) { continue; } // don't include the lock you're sitting on
                     if (this.tileArray[l.x][l.y].occupied === true) { continue; } // don't include lock that others are sitting on
-                    if (moves > 1) {
+                    if (moves > 0) {
                         returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, {x:l.x, y:l.y}, currentCoord));
                     } else {
                         returnArray.push(l);
