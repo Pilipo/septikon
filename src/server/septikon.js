@@ -910,30 +910,40 @@ class Septikon {
                             case "surface":
                                 if (currentTile.occupied === true) {
                                     let opponent = this.getPlayerOpponent(this.activePlayer);
-                                    currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    if (currentOccupant.owner === opponent.id) {
-                                        opponent.remove(currentOccupant);
-                                        this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
-                                        // this.emit('action', {callback:"removePersonnel", details:currentOccupant});
-                                        currentTile.occupied = false;
-                                        impacted = true;
-                                        this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                                        this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
-                                        break;
+                                    let coa = this.getTileOccupant(ordnancePoint);
+                                    for (let i in coa) {
+                                        let currentOccupant = coa[i];
+                                        if (currentOccupant.owner === opponent.id) {
+                                            opponent.remove(currentOccupant);
+                                            if (currentOccupant instanceof Personnel) {
+                                                this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
+                                            } else {
+                                                this.emit('update', {type:"ordnance", details: {ordnance: currentOccupant, action: 'delete'}});
+                                            }
+                                            // this.emit('action', {callback:"removePersonnel", details:currentOccupant});
+                                            currentTile.occupied = false;
+                                            impacted = true;
+                                            this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
+                                            this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                                            break;
+                                        }
                                     }
                                 }
                                 break;
                             default:
                                 if (currentTile.occupied === true) {
                                     let opponent = this.getPlayerOpponent(this.activePlayer);
-                                    currentOccupant = this.getTileOccupant(ordnancePoint);
-                                    if (currentOccupant.owner === opponent.id) {
-                                        opponent.remove(currentOccupant);
-                                        this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
-                                        currentTile.occupied = false;
-                                        currentTile.damaged = true;
-                                        this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
-                                        impacted = true;
+                                    let coa = this.getTileOccupant(ordnancePoint);
+                                    for (let i in coa) {
+                                        let currentOccupant = coa[i];
+                                        if (currentOccupant.owner === opponent.id) {
+                                            opponent.remove(currentOccupant);
+                                            this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
+                                            currentTile.occupied = false;
+                                            currentTile.damaged = true;
+                                            this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
+                                            impacted = true;
+                                        }
                                     }
                                 } else if (currentTile.damaged === true) {
                                     break;
