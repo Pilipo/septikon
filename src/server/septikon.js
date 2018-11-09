@@ -294,9 +294,7 @@ class Septikon {
                             } else if (this.actionTile.name === "counterEspionage") {
                                 let opponent = this.getPlayerOpponent(this.activePlayer);
                                 let selectedSpy = opponent.getSpyByPoint({x:data.x, y:data.y});
-                                // let selectedSpy = this.activePlayer.getSpyByPoint({x:data.x, y:data.y});
                                 if (selectedSpy !== false && selectedSpy.spy === true) {
-                                    // TODO: free the spy and progress the turn phase
                                     this.queuedForAction.push(selectedSpy);
                                     this.emit('action', {callback: 'hideTiles', details: null});
                                     this.processTileActivation(this.actionTile, this.activePlayer);
@@ -304,7 +302,6 @@ class Septikon {
                                         this.espionageActivationMode = false;
                                         this.activePlayer = this.getPlayerOpponent(this.activePlayer);
                                     }
-    
                                     this.readyForConfirmation = false;
                                     this.queuedForAction = [];
                                     let biodrones = this.activePlayer.getPersonnel('biodrone');
@@ -316,31 +313,35 @@ class Septikon {
                                         return;
                                     } else {
                                         this.turnState = this.turnStateEnum.BIODRONE;
-                                        // TODO: Process biodrone movement
                                     }
                                 }
                             } else if (this.actionTile.name === "sensorCabin") {
                                 let opponent = this.getPlayerOpponent(this.activePlayer);
                                 let selectedBio = opponent.getPersonnelByPoint({x:data.x, y:data.y});
+                                let tile = this.getTile(data.x, data.y);
                                 if (selectedBio !== false && selectedBio.getType() === "BIODRONE") {
                                     this.queuedForAction = [selectedBio];
                                     this.emit('action', {callback: 'hideTiles', details: null});
-                                    this.processTileActivation(this.actionTile, this.activePlayer);
-                                    if (this.espionageActivationMode === true) {
-                                        this.espionageActivationMode = false;
-                                        this.activePlayer = this.getPlayerOpponent(this.activePlayer);
-                                    }
-                                    this.readyForConfirmation = false;
-                                    this.queuedForAction = [];
-                                    let biodrones = this.activePlayer.getPersonnel('biodrone');
-                                    if (biodrones === false) {
-                                        this.turnState = this.turnStateEnum.ORDNANCE;
-                                        this.processOrdnanceMovement();
-                                        this.turnState = this.turnStateEnum.END;
-                                        this.processEndOfTurn();
-                                        return;
-                                    } else {
-                                        this.turnState = this.turnStateEnum.BIODRONE;
+                                } else if (this.queuedForAction.length !== 0 && tile.type === "warehouse"){
+                                    if (this.activePlayer.checkResource([tile.name], [1], true) !== false) {
+                                        this.queuedSecondaryAction = [tile.name];
+                                        this.processTileActivation(this.actionTile, this.activePlayer);
+                                        if (this.espionageActivationMode === true) {
+                                            this.espionageActivationMode = false;
+                                            this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+                                        }
+                                        this.readyForConfirmation = false;
+                                        this.queuedForAction = [];
+                                        let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                        if (biodrones === false) {
+                                            this.turnState = this.turnStateEnum.ORDNANCE;
+                                            this.processOrdnanceMovement();
+                                            this.turnState = this.turnStateEnum.END;
+                                            this.processEndOfTurn();
+                                            return;
+                                        } else {
+                                            this.turnState = this.turnStateEnum.BIODRONE;
+                                        }
                                     }
                                 }
                             } 
@@ -523,6 +524,10 @@ class Septikon {
                     let opponent = this.getPlayerOpponent(this.activePlayer);
                     opponent.remove(bio);
                     this.emit('update', { type: "personnel", details: { personnel: bio, action: 'delete', playerID: bio.owner } });
+                }
+                for (let i in this.queuedSecondaryAction) {
+                    let resType = this.queuedSecondaryAction[i];
+                    player.acceptResource([resType], [1]);
                 }
             } else if (actionTile.name === "prodRepair") {
                 let t = null;
