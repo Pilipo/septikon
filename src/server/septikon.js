@@ -404,10 +404,10 @@ class Septikon {
         targetTile.occupied = true;
         originalTile.occupied = false;
         personnel.move(targetTile.x, targetTile.y);
-        if (originalTile.type === "surface" && personnel.type === personnel.typeEnum["clone".toUpperCase()]) {
+        if (originalTile.type === "surface" && personnel.getType() === "CLONE") {
             this.activePlayer.unsetCloneGunnerByUUID(personnel.uuid);
         }
-        if (targetTile.type === "surface") {
+        if (targetTile.type === "surface" && personnel.getType() === "CLONE") {
             this.activePlayer.setCloneGunnerByUUID(personnel.uuid);
         }
         this.emit('update', { type: "personnel", details: { personnel: personnel, action: 'update', playerID: this.activePlayer.id } });
