@@ -59,6 +59,14 @@ class Player {
         }
     }
 
+    removeSpy(spy) {
+        for (let i in this.spyArray) {
+            if (this.spyArray[i].uuid === spy.uuid) {
+                this.spyArray.splice(i, 1);
+            }
+        }
+    }
+
     getSpies() {
         return this.spyArray;
     }
@@ -194,17 +202,6 @@ class Player {
                 this.currentLegalPieces.splice(i,1);
             }
         }
-    }
-
-    getEspionagedClones() {
-        let returnArray = [];
-        let clones = this.getPersonnel('clone');
-        for (let i in clones) {
-            if (clones[i].underEspionage === true) {
-                returnArray.push(clones[i]);
-            }
-        }
-        return returnArray;
     }
 
     getGunners() {

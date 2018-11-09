@@ -162,7 +162,17 @@ class Septikon {
                                             } else {
                                                 this.turnState = this.turnStateEnum.BIODRONE;
                                             }
-                                        }        
+                                        }
+                                        if (targetTile.name === "counterEspionage") {
+                                            this.emit('action', {callback: 'hideTiles', details: null});
+                                            let opponent = this.getPlayerOpponent(this.activePlayer);
+                                            let spies = opponent.getSpies();
+                                            let pointArray = [];
+                                            for (let i in spies) {
+                                                pointArray.push({x:spies[i].x,y:spies[i].y});
+                                            }
+                                            this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
+                                        }
                                         this.queuedForAction = [];
                                         this.queuedSecondaryAction = [];
                                         this.actionTile = targetTile;
@@ -177,7 +187,7 @@ class Septikon {
                         let targetTile = this.getTile(data.x, data.y);
                         this.emit('action', {callback: 'hideTiles', details: null});
                         if (data.event === "tileClicked"  && data.socketID === this.activePlayer.socketID) {
-                            if (this.actionTile.type === "battle" && this.actionTile.name !== "repair" && this.actionTile.name !== "repairTwo") {
+                            if (this.actionTile.type === "battle" && this.actionTile.name !== "repair" && this.actionTile.name !== "repairTwo" && this.actionTile.name !== "counterEspionage") {
                                 this.readyForConfirmation = true;
                                 let selectedGunner = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y});
                                 if (selectedGunner !== false && selectedGunner.isGunner === true) {
@@ -266,7 +276,34 @@ class Septikon {
                                     }
                                 }
                             } else if (this.actionTile.name === "counterEspionage") {
-                                // IF tile requires an espionaged clone, check that selected is an espionaged clone.
+                                // this is looking for active. it should be opponent
+                                let opponent = this.getPlayerOpponent(this.activePlayer);
+                                let selectedSpy = opponent.getSpyByPoint({x:data.x, y:data.y});
+                                // let selectedSpy = this.activePlayer.getSpyByPoint({x:data.x, y:data.y});
+                                if (selectedSpy !== false && selectedSpy.spy === true) {
+                                    // TODO: free the spy and progress the turn phase
+                                    this.queuedForAction.push(selectedSpy);
+                                    this.emit('action', {callback: 'hideTiles', details: null});
+                                    this.processTileActivation(this.actionTile, this.activePlayer);
+                                    if (this.espionageActivationMode === true) {
+                                        this.espionageActivationMode = false;
+                                        this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+                                    }
+    
+                                    this.readyForConfirmation = false;
+                                    this.queuedForAction = [];
+                                    let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                    if (biodrones === false) {
+                                        this.turnState = this.turnStateEnum.ORDNANCE;
+                                        this.processOrdnanceMovement();
+                                        this.turnState = this.turnStateEnum.END;
+                                        this.processEndOfTurn();
+                                        return;
+                                    } else {
+                                        this.turnState = this.turnStateEnum.BIODRONE;
+                                        // TODO: Process biodrone movement
+                                    }
+                                }
                             } 
                             if (this.actionTile.name === "espionage" && this.queuedForAction.length !== 0) {
                                 for (let i in this.queuedForAction) { // There is a gunner selected
@@ -467,9 +504,12 @@ class Septikon {
                 }
                 this.activePlayer.spendResource(resCostType, resCostCount);
             } else if (actionTile.name === "counterEspionage") {
-                let controlledClones = player.getEspionagedClones();
-                if (controlledClones.length > 0) {
-                    // Request selection from client
+                for (let i in this.queuedForAction) {
+                    let spy = this.queuedForAction[i];
+                    let opponent = this.getPlayerOpponent(this.activePlayer);
+                    spy.spy = false;
+                    opponent.removeSpy(spy);
+                    this.emit('update', { type: "personnel", details: { personnel: spy, action: 'update', playerID: opponent.id } });
                 }
             } else {
                 // let gunnerArray = player.getGunners();
