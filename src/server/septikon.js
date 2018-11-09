@@ -43,6 +43,7 @@ class Septikon {
         this.actionTile = null;
         this.queuedForAction = [];
         this.queuedSecondaryAction = [];
+        this.espionageActivationMode = false;
         this.readyForConfirmation = false;
     }
     
@@ -144,6 +145,13 @@ class Septikon {
                                             // TODO: Process biodrone movement
                                         }
                                     } else {
+                                        // TODO: issue #14: Check for spy. If the selected clone is a spy and this is battle, nuke, or repair, the opponent gets to select the gunner(s)
+                                        // Maybe we set the activePlayer to the opponent long enough to select gunners. At confirm, activePlayer reverts?
+                                        // Maybe set a variable that indicate we are in espionage activation mode?
+                                        if (this.activePlayer.selectedPersonnelToMove.spy === true && this.activePlayer.selectedPersonnelToMove.owner !== this.activePlayer.id) {
+                                            this.espionageActivationMode = true;
+                                            this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+                                        }
                                         this.queuedForAction = [];
                                         this.queuedSecondaryAction = [];
                                         this.actionTile = targetTile;
@@ -230,6 +238,10 @@ class Septikon {
                                         return;
                                     } else {
                                         rocket.isNuke = true;
+                                        if (this.espionageActivationMode === true) {
+                                            this.espionageActivationMode = false;
+                                            this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+                                        }        
                                         this.readyForConfirmation = false;
                                         this.queuedForAction = [];
                                         this.queuedSecondaryAction = [];
@@ -275,6 +287,10 @@ class Septikon {
                                             }
                                             this.emit('action', {callback: 'showTiles', details: coords}, this.activePlayer.socketID);
                                         } else {
+                                            if (this.espionageActivationMode === true) {
+                                                this.espionageActivationMode = false;
+                                                this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+                                            }            
                                             this.readyForConfirmation = false;
                                             this.queuedForAction = [];
                                             this.queuedSecondaryAction = [];
@@ -297,6 +313,11 @@ class Septikon {
                                 if (this.queuedForAction.length > 0) {
                                     this.processTileActivation(this.actionTile, this.activePlayer);
                                 }
+                                if (this.espionageActivationMode === true) {
+                                    this.espionageActivationMode = false;
+                                    this.activePlayer = this.getPlayerOpponent(this.activePlayer);
+                                }
+
                                 this.readyForConfirmation = false;
                                 this.queuedForAction = [];
                                 let biodrones = this.activePlayer.getPersonnel('biodrone');
@@ -362,6 +383,10 @@ class Septikon {
             case this.gameStateEnum.SERVERFULL:
                 break;
             }
+    }
+
+    advanceTurnState() {
+
     }
 
     processPersonnelMove(personnel, targetTile) {
