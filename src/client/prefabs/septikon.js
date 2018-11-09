@@ -252,7 +252,10 @@ class Septikon {
       this.opponent.personnelArray.push(nP);
     }
     console.log("Current personnel set");
+    console.log("new pID is " + pID);
+    console.log("player " + this.player.id);
     console.log(this.player.personnelArray);
+    console.log("opponent " + this.opponent.id);
     console.log(this.opponent.personnelArray);
     console.log("-------------");
 
@@ -412,11 +415,11 @@ class Septikon {
     this.game.client.sendInput({ event: "tileClicked", x: 6, y: 17 });
     this.game.client.sendInput({ event: "tileClicked", x: 7, y: 14 });
 
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 20 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 19 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 18 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 17 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 16 });
+    this.game.client.sendInput({ event: "tileClicked", x: 30, y: 2 });
+    this.game.client.sendInput({ event: "tileClicked", x: 30, y: 3 });
+    this.game.client.sendInput({ event: "tileClicked", x: 30, y: 4 });
+    this.game.client.sendInput({ event: "tileClicked", x: 30, y: 5 });
+    this.game.client.sendInput({ event: "tileClicked", x: 30, y: 6 });
 
     // this.game.client.sendInput({ event: "confirmClicked"});
     // this.game.client.sendInput({ event: "diceClicked"});
