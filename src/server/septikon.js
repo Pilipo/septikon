@@ -1127,10 +1127,10 @@ class Septikon {
         if (typeof previousCoord === 'undefined') { // This is the first iteration, thus locks are accessible.
 
             var locks = null;
-            if (personnel.spy === false ) {
-                this.getLocks(this.activePlayer);
+            if (personnel.spy === true && personnel.owner === opponent.id) {
+                locks = this.getLocks(opponent);
             } else {
-                this.getLocks(opponent);
+                locks = this.getLocks(this.activePlayer);
             }
 
             if (currentTile.type === "lock") {
