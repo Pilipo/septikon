@@ -145,13 +145,26 @@ class Septikon {
                                             // TODO: Process biodrone movement
                                         }
                                     } else {
-                                        // TODO: issue #14: Check for spy. If the selected clone is a spy and this is battle, nuke, or repair, the opponent gets to select the gunner(s)
-                                        // Maybe we set the activePlayer to the opponent long enough to select gunners. At confirm, activePlayer reverts?
-                                        // Maybe set a variable that indicate we are in espionage activation mode?
+                                        // TODO: Check if can afford. IF NOT then skip the ACTION state
                                         if (this.activePlayer.selectedPersonnelToMove.spy === true && this.activePlayer.selectedPersonnelToMove.owner !== this.activePlayer.id) {
                                             this.espionageActivationMode = true;
                                             this.activePlayer = this.getPlayerOpponent(this.activePlayer);
                                         }
+                                        let canAfford = this.activePlayer.checkResource(targetTile.properties.resourceCostType, targetTile.properties.resourceCostCount);
+                                        if (canAfford === false) {
+                                            this.espionageActivationMode = false;
+                                            this.activePlayer = this.getPlayerOpponent(this.activePlayer);                                                
+                                            let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                            if (biodrones === false) {
+                                                this.turnState = this.turnStateEnum.ORDNANCE;
+                                                this.processOrdnanceMovement();
+                                                this.turnState = this.turnStateEnum.END;
+                                                this.processEndOfTurn();
+                                            } else {
+                                                this.turnState = this.turnStateEnum.BIODRONE;
+                                                // TODO: Process biodrone movement
+                                            }
+                                        }        
                                         this.queuedForAction = [];
                                         this.queuedSecondaryAction = [];
                                         this.actionTile = targetTile;
@@ -200,23 +213,20 @@ class Septikon {
                                 }
                             }
                             else if (this.actionTile.name === "repair" || this.actionTile.name === "repairTwo" || this.actionTile.name === "prodRepair") {
-                                this.readyForConfirmation = true;
-                                let canAfford = this.activePlayer.checkResource(this.actionTile.properties.resourceCostType, this.actionTile.properties.resourceCostCount);
-                                if (canAfford === false) {
-                                    return;
-                                } else if (targetTile.damaged === true) {
-                                    for (let i in this.queuedForAction) {
+                                this.readyForConfirmation = true; // allow confirmation to progress the turn phase
+                                if (targetTile.damaged === true) {
+                                    for (let i in this.queuedForAction) { // remove this damage tile from selection
                                         if (targetTile === this.queuedForAction[i]) {
                                             this.queuedForAction.splice(i, 1);
                                             return;
                                         }
                                     }
-                                    if (this.actionTile.name === "repairTwo") {
+                                    if (this.actionTile.name === "repairTwo") { // only two tiles can be fixed, so shift the first selected.
                                         if (this.queuedForAction.length === 2) {
                                             this.queuedForAction.shift();
                                         }
                                     } else {
-                                        if (this.queuedForAction.length === 1) {
+                                        if (this.queuedForAction.length === 1) { // only one tile can be fixed, so shift the first selected.
                                             this.queuedForAction.shift();
                                         }
                                     }
@@ -430,8 +440,9 @@ class Septikon {
             if (actionTile.name === "sensorCabin") {
                 return;
             } else if (actionTile.name === "prodRepair") {
-                for (let i in this.queuedForAction) {
-                    let t = this.tileArray[this.queuedForAction[i].x][this.queuedForAction[i].y];
+                let t = null;
+                for (var i in this.queuedForAction) {
+                    t = this.tileArray[this.queuedForAction[i].x][this.queuedForAction[i].y];
                     this.tileArray[t.x][t.y].damaged = false;
                     this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
                     // this.emit('action', {callback:"repairTile" ,details:{x:this.queuedForAction[i].x, y:this.queuedForAction[i].y}});
