@@ -42,6 +42,7 @@ class Septikon {
         this.createTileArray(); 
         this.actionTile = null;
         this.queuedForAction = [];
+        this.queuedSecondaryAction = [];
         this.readyForConfirmation = false;
     }
     
@@ -110,8 +111,12 @@ class Septikon {
                     case this.turnStateEnum.MOVE:
                         if (data.event === "tileClicked" && data.socketID === this.activePlayer.socketID) {
                             let selectedClone = this.activePlayer.getPersonnelByPoint({x:data.x, y:data.y}, "clone");
+                            // if (selectedClone === false) {
+                            //     selectedClone = this.activePlayer.getSpyByPoint({x:data.x, y:data.y});
+                            // }
+                            console.log("clone selected", selectedClone);
                             if (selectedClone !== false) {
-                                if (this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedClone) {
+                                if ((this.activePlayer.selectedPersonnelToMove === null || this.activePlayer.selectedPersonnelToMove !== selectedClone) && (selectedClone.spy === false || selectedClone.owner !== this.activePlayer.id)) {
                                     this.activePlayer.selectedPersonnelToMove = selectedClone;
                                     let pointArray = this.getLegalMoves(selectedClone, this.currentDiceValue, {x:selectedClone.x, y:selectedClone.y});
                                     this.emit('action', {callback: 'hideTiles', details: null});
@@ -140,6 +145,7 @@ class Septikon {
                                         }
                                     } else {
                                         this.queuedForAction = [];
+                                        this.queuedSecondaryAction = [];
                                         this.actionTile = targetTile;
                                         this.turnState++;
                                     }
@@ -173,6 +179,11 @@ class Septikon {
                                         }
                                         let canAfford = this.activePlayer.checkResource(this.actionTile.properties.resourceCostType, resCount);
                                         if (canAfford === true) {
+                                            if (this.actionTile.name === "espionage") {
+                                                this.emit('action', {callback: 'hideTiles', details: null});
+                                                this.queuedForAction = [];
+                                                this.queuedSecondaryAction = [];
+                                            }
                                             this.queuedForAction.push(selectedGunner);
                                             this.emit('action', {callback: 'showTiles', details: [{x:selectedGunner.x, y:selectedGunner.y}]});
                                         }
@@ -221,6 +232,7 @@ class Septikon {
                                         rocket.isNuke = true;
                                         this.readyForConfirmation = false;
                                         this.queuedForAction = [];
+                                        this.queuedSecondaryAction = [];
                                         let biodrones = this.activePlayer.getPersonnel('biodrone');
                                         if (biodrones === false) {
                                             this.turnState = this.turnStateEnum.ORDNANCE;
@@ -236,8 +248,51 @@ class Septikon {
                                 }
                             } else if (this.actionTile.name === "counterEspionage") {
                                 // IF tile requires an espionaged clone, check that selected is an espionaged clone.
-                            }
-                        } else if (data.event === "confirmClicked"  && data.socketID === this.activePlayer.socketID) {
+                            } 
+                            if (this.actionTile.name === "espionage" && this.queuedForAction.length !== 0) {
+                                for (let i in this.queuedForAction) { // There is a gunner selected
+                                    let currentGunner = this.queuedForAction[i];
+                                    this.queuedSecondaryAction = this.getEspionageTargets({x:currentGunner.x, y:currentGunner.y});
+                                    if (this.queuedSecondaryAction.length !== 0) { // The gunner has targets in sight
+                                        let found = false;
+                                        if (targetTile.occupied === true) {
+                                            let targetTileOccupants = this.getTileOccupant(targetTile);
+                                            for (let j in this.queuedSecondaryAction) {
+                                                if (this.queuedSecondaryAction[j] === targetTileOccupants[0]) {
+                                                    console.log("Target selected. Steal his mind!");
+                                                    targetTileOccupants[0].spy = true;
+                                                    this.activePlayer.addSpy(targetTileOccupants[0]);
+                                                    this.emit('update', { type: "personnel", details: { personnel: targetTileOccupants[0], action: 'update', playerID: targetTileOccupants[0].owner } });
+                                                    found = true;
+                                                }
+                                            }
+                                        }
+                                        if (found === false) {
+                                            this.emit('action', {callback: 'hideTiles', details: null});
+                                            let coords = [];
+                                            for (let tile in this.queuedSecondaryAction) {
+                                                coords.push({x:this.queuedSecondaryAction[tile].x,y:this.queuedSecondaryAction[tile].y});
+                                            }
+                                            this.emit('action', {callback: 'showTiles', details: coords}, this.activePlayer.socketID);
+                                        } else {
+                                            this.readyForConfirmation = false;
+                                            this.queuedForAction = [];
+                                            this.queuedSecondaryAction = [];
+                                            let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                            if (biodrones === false) {
+                                                this.turnState = this.turnStateEnum.ORDNANCE;
+                                                this.processOrdnanceMovement();
+                                                this.turnState = this.turnStateEnum.END;
+                                                this.processEndOfTurn();
+                                            } else {
+                                                this.turnState = this.turnStateEnum.BIODRONE;
+                                                // TODO: Process biodrone movement
+                                            }
+                                        }
+                                    }
+                                }
+                            } 
+                    } else if (data.event === "confirmClicked"  && data.socketID === this.activePlayer.socketID) {
                             if (this.readyForConfirmation === true) {
                                 if (this.queuedForAction.length > 0) {
                                     this.processTileActivation(this.actionTile, this.activePlayer);
@@ -640,6 +695,29 @@ class Septikon {
         }
     }
 
+    getEspionageTargets(origin) {
+        let tile = this.getTile(origin.x, origin.y);
+        let returnArray = [];
+        while (origin.x > 0 && origin.x < this.tileColumns-1) {
+            if (this.activePlayer.id === 1) {
+                origin.x++;
+            } else {
+                origin.x--;
+            }
+            tile = this.getTile(origin.x, origin.y);
+            if (tile.type !== "space" && tile.occupied === true) {
+                let occupants = this.getTileOccupant(origin);
+                for (let i in occupants) {
+                    let o = occupants[i];
+                    if (o.getType() === "CLONE" && o.owner !== this.activePlayer.id && o.spy === false) {
+                        returnArray.push(o);
+                    }
+                }
+            }
+        }
+        return returnArray;
+    }
+
 	addNewPlayer(socketID, uuid) {
         let currentPlayerCount = this.playersArray.length;
         if (this.currentPlayerCount < 2) {
@@ -679,8 +757,8 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("biodrone", {x:10, y:10}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
+            // let ord = this.playersArray[0].addOrdnance("biodrone", {x:10, y:10}, uuid());
+            // this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: 1}});
 
             // END TEST CODE
             
@@ -1011,6 +1089,7 @@ class Septikon {
 
     getLegalPieces() {
         var personnelArray = this.activePlayer.getPersonnel();
+        personnelArray = personnelArray.concat(this.activePlayer.getSpies());
         var returnArray = [];
         var movesArray = [];
 
@@ -1033,7 +1112,7 @@ class Septikon {
             return {x:(parseInt(originCoord.x) + parseInt(dir[direction].x)), y:(parseInt(originCoord.y) + parseInt(dir[direction].y))};            
     }
 
-    getLegalMoves(gamePieceType, moves, currentCoord, previousCoord){
+    getLegalMoves(personnel, moves, currentCoord, previousCoord){
         if (moves < 1) {
             return false;
         }
@@ -1043,10 +1122,16 @@ class Septikon {
         var nextMoveToCheck = null;
         var nextTileToCheck = null;
         let currentTile = this.getTile(currentCoord.x, currentCoord.y);
-        
+        let opponent = this.getPlayerOpponent(this.activePlayer);
 
         if (typeof previousCoord === 'undefined') { // This is the first iteration, thus locks are accessible.
-            var locks = this.getLocks(this.activePlayer);
+
+            var locks = null;
+            if (personnel.spy === false ) {
+                this.getLocks(this.activePlayer);
+            } else {
+                this.getLocks(opponent);
+            }
 
             if (currentTile.type === "lock") {
                 for (let i in locks) {
@@ -1054,7 +1139,7 @@ class Septikon {
                     if (currentTile.x == l.x && currentTile.y == l.y) { continue; } // don't include the lock you're sitting on
                     if (this.tileArray[l.x][l.y].occupied === true) { continue; } // don't include lock that others are sitting on
                     if (moves > 0) {
-                        returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, {x:l.x, y:l.y}, currentCoord));
+                        returnArray = returnArray.concat(this.getLegalMoves(personnel, moves, {x:l.x, y:l.y}, currentCoord));
                     } else {
                         returnArray.push(l);
                     }
@@ -1079,7 +1164,7 @@ class Septikon {
             if (occupants !== false) {
                 let impasse = false;
                 for (let i in occupants) {
-                    if ((occupants[i].getType() === "BIODRONE" || occupants[i].getType() === "CLONE") && occupants[i].owner !== this.activePlayer.id) {
+                    if ((occupants[i].getType() === "BIODRONE" || occupants[i].getType() === "CLONE") && occupants[i].owner !== personnel.owner) {
                         impasse = true;
                     }
                 }
@@ -1094,7 +1179,7 @@ class Septikon {
                     }
                 }
                 else {
-                    returnArray = returnArray.concat(this.getLegalMoves(gamePieceType, moves, nextMoveToCheck, currentCoord));
+                    returnArray = returnArray.concat(this.getLegalMoves(personnel, moves, nextMoveToCheck, currentCoord));
                     for(var index in returnArray) {
                         if(returnArray[index].x !== currentCoord.x || returnArray[index].y !== currentCoord.y)
                             legalMoves.push(returnArray[index]);

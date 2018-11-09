@@ -12,6 +12,7 @@ class Player {
         this.personnelArray = [];
         this.resourceArray = [];
         this.ordnanceArray = [];
+        this.spyArray = [];
         this.readyToStart = false;
         this.startingCloneCount = 5;
         this.armsArray = [false, false, false];
@@ -31,6 +32,10 @@ class Player {
         this.selectedPersonnelToMove = null;
         this.selectedGunners = [];
         this.currentLegalPieces = [];
+    }
+
+    addSpy(personnel) {
+        this.spyArray.push(personnel);
     }
         
     addPersonnel(type, x, y, uuid) {
@@ -54,6 +59,10 @@ class Player {
         }
     }
 
+    getSpies() {
+        return this.spyArray;
+    }
+
     getPersonnel(type) {
         var returnArray = [];
         for (var i = 0; i < this.personnelArray.length; i++) {
@@ -67,8 +76,19 @@ class Player {
         return returnArray;
     }
 
+    getSpysByUUID(uuid) {
+        let spies = this.getSpies();
+        for (let i in spies) {
+            if (spies[i].uuid === uuid) {
+                return spies[i];
+            }
+        }
+        return false;
+    }
+
     getPersonnelByUUID(uuid, type) {
         var personnel = this.getPersonnel();
+        personnel = personnel.concat(this.getSpies());
         for (var i in personnel) {
             if (personnel[i].uuid === uuid) {
                 if (type === undefined || personnel[i].type === personnel[i].typeEnum[type.toUpperCase()])
@@ -78,8 +98,19 @@ class Player {
         return false;
     }
 
+    getSpyByPoint(point) {
+        let spies = this.spyArray;
+        for (let i in spies) {
+            if (spies[i].x === point.x && spies[i].y === point.y) {
+                return spies[i];
+            }
+        }
+        return false;
+    }
+
     getPersonnelByPoint(point, type) {
         var personnels = this.getPersonnel();
+        personnels = personnels.concat(this.getSpies());
         for (var i = 0; i < personnels.length; i++) {
             if (personnels[i].x === point.x && personnels[i].y === point.y) {
                 if (type === undefined || personnels[i].type === personnels[i].typeEnum[type.toUpperCase()]) {

@@ -9,7 +9,7 @@ class Personnel {
         this.x = x;
         this.y = y;
         this.uuid = uuid;
-        this.underEspionage = false;
+        this.spy = false;
         this.isGunner = false;
         this.type = this.typeEnum[type.toUpperCase()];
         this.owner = playerID;

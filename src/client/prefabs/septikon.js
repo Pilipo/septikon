@@ -408,15 +408,15 @@ class Septikon {
     // DEBUG BLOCK
     this.game.client.sendInput({ event: "tileClicked", x: 7, y: 20 });
     this.game.client.sendInput({ event: "tileClicked", x: 7, y: 0 });
-    this.game.client.sendInput({ event: "tileClicked", x: 3, y: 10 });
-    this.game.client.sendInput({ event: "tileClicked", x: 1, y: 8 });
-    this.game.client.sendInput({ event: "tileClicked", x: 1, y: 9 });
+    this.game.client.sendInput({ event: "tileClicked", x: 5, y: 10 });
+    this.game.client.sendInput({ event: "tileClicked", x: 6, y: 17 });
+    this.game.client.sendInput({ event: "tileClicked", x: 7, y: 14 });
 
     this.game.client.sendInput({ event: "tileClicked", x: 23, y: 20 });
-    this.game.client.sendInput({ event: "tileClicked", x: 29, y: 12 });
-    this.game.client.sendInput({ event: "tileClicked", x: 24, y: 11 });
-    this.game.client.sendInput({ event: "tileClicked", x: 25, y: 10 });
-    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 0 });
+    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 19 });
+    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 18 });
+    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 17 });
+    this.game.client.sendInput({ event: "tileClicked", x: 23, y: 16 });
 
     // this.game.client.sendInput({ event: "confirmClicked"});
     // this.game.client.sendInput({ event: "diceClicked"});
