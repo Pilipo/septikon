@@ -145,7 +145,6 @@ class Septikon {
                                             // TODO: Process biodrone movement
                                         }
                                     } else {
-                                        // TODO: Check if can afford. IF NOT then skip the ACTION state
                                         if (this.activePlayer.selectedPersonnelToMove.spy === true && this.activePlayer.selectedPersonnelToMove.owner !== this.activePlayer.id) {
                                             this.espionageActivationMode = true;
                                             this.activePlayer = this.getPlayerOpponent(this.activePlayer);
@@ -162,13 +161,13 @@ class Septikon {
                                                 this.processEndOfTurn();
                                             } else {
                                                 this.turnState = this.turnStateEnum.BIODRONE;
-                                                // TODO: Process biodrone movement
                                             }
                                         }        
                                         this.queuedForAction = [];
                                         this.queuedSecondaryAction = [];
                                         this.actionTile = targetTile;
                                         this.turnState++;
+                                        this.readyForConfirmation = true;
                                     }
                                 }
                             }
@@ -177,7 +176,6 @@ class Septikon {
                     case this.turnStateEnum.ACTION:
                         let targetTile = this.getTile(data.x, data.y);
                         this.emit('action', {callback: 'hideTiles', details: null});
-
                         if (data.event === "tileClicked"  && data.socketID === this.activePlayer.socketID) {
                             if (this.actionTile.type === "battle" && this.actionTile.name !== "repair" && this.actionTile.name !== "repairTwo") {
                                 this.readyForConfirmation = true;
@@ -263,7 +261,6 @@ class Septikon {
                                             this.processEndOfTurn();
                                         } else {
                                             this.turnState = this.turnStateEnum.BIODRONE;
-                                            // TODO: Process biodrone movement
                                         }
                                         // TODO: emit nuke armament.
                                     }
@@ -312,7 +309,6 @@ class Septikon {
                                                 this.processEndOfTurn();
                                             } else {
                                                 this.turnState = this.turnStateEnum.BIODRONE;
-                                                // TODO: Process biodrone movement
                                             }
                                         }
                                     }
