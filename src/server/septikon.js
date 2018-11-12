@@ -631,7 +631,7 @@ class Septikon {
                         }
                     }
                 }
-                if ((t.type !== "surface" && t.type !== "space") || impacted === true) {
+                if ((o.getType() === "BIODRONE" && t.type === "surface") || (t.type !== "surface" && t.type !== "space") || impacted === true) {
                     impacted = true;
                     if (o.getType() === "ROCKET") {
                         t.damaged = true;
@@ -671,7 +671,6 @@ class Septikon {
                             }
                         }
                     }
-
                 }
                 o.x = oP.x;
                 o.y = oP.y;
