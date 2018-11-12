@@ -24,7 +24,7 @@ class Player {
         this.selectedPersonnelToMove = null;
         this.selectedGunners = [];
         this.currentLegalPieces = [];
-
+        this.resourceMap = require('../../assets/resourceMap.json');
         this.initResources();
     }
 
@@ -340,6 +340,24 @@ class Player {
         } else {
             return [this.resourceArray[type]];
         }
+    }
+
+    getResourceByPoint(point, resType) {
+        if (point.x < 2 || (point.x > 5 && point.x < 25) || point.x > 28 || point.y === 10) {
+            return false;
+        }
+        for (var map in this.resourceMap[resType]) {
+            if (parseInt(map)+1 !== this.id) {continue;}
+            var res = this.resourceMap[resType][map];
+            if (point.x === res.row){
+                if (res.min > 0) {
+                    return this.resourceArray[resType][20-point.y];
+                } else {
+                    return this.resourceArray[resType][point.y];
+                }
+            }
+        }
+        return;
     }
 
     getResourceCount(type) {
