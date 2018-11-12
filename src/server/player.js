@@ -357,7 +357,30 @@ class Player {
                 }
             }
         }
-        return;
+        return false;
+    }
+
+    removeResourceByPoint(point, resType) {
+        if (point.x < 2 || (point.x > 5 && point.x < 25) || point.x > 28 || point.y === 10) {
+            return false;
+        }
+        var resReturn = null;
+        for (var map in this.resourceMap[resType]) {
+            if (parseInt(map)+1 !== this.id) {continue;}
+            var res = this.resourceMap[resType][map];
+            if (point.x === res.row){
+                if (res.min > 0) {
+                    resReturn = this.resourceArray[resType][20-point.y];
+                    this.resourceArray[resType][20-point.y] = null;
+                    return resReturn;
+                } else {
+                    resReturn = this.resourceArray[resType][point.y];
+                    this.resourceArray[resType][point.y] = null;
+                    return resReturn;
+                }
+            }
+        }
+        return false;
     }
 
     getResourceCount(type) {

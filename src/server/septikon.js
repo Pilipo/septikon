@@ -103,6 +103,10 @@ class Septikon {
             case this.gameStateEnum.GAME:
                 switch (this.turnState) {
                     case this.turnStateEnum.ROLL:
+                        if (data.event === "tileClicked") {
+                            let tile = this.getTile(data.x, data.y);
+                            console.log(this.activePlayer.getResourceByPoint({x:data.x, y:data.y}, tile.name));
+                        }
                         if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
                             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
                             this.activePlayer.currentLegalPieces = this.getLegalPieces();
@@ -502,6 +506,10 @@ class Septikon {
             this.activePlayer.addArms(targetTile.name.toUpperCase());
             this.emit('update', { type: "arms", details: { type: targetTile.name, action: "create" } });
         }
+        if (targetTile.type === "warehouse" && personnel.getType() === "BIODRONE") {
+            this.playersArray[parseInt(targetTile.owner)-1].removeResourceByPoint({x:targetTile.x, y:targetTile.y}, targetTile.name);
+            // TODO: Emit resource destruction.
+        }
         // TODO: activate battle (optional). Eventually, biodrone movement will have ability to destroy crap too. ;)
         // TODO: optional tiles (battle and repair) need client confirmation
     }
@@ -679,6 +687,10 @@ class Septikon {
                         // convert biodrone from ordnance to personnel
                         let person = p.addPersonnel('biodrone', o.x, o.y, o.uuid);
                         this.emit('update', {type:"personnel", details: {personnel: person, action: 'create', playerID: p.id}});
+                        if (newTile.type === "warehouse") {
+                            var res = this.playersArray[newTile.owner-1].removeResourceByPoint({x:o.x, y:o.y}, newTile.name);
+                            // TODO: emit resource destruction
+                        }
                     } 
                 } else {
                     this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
@@ -886,7 +898,7 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("biodrone", {x:19, y:10}, uuid());
+            let ord = this.playersArray[0].addOrdnance("biodrone", {x:19, y:5}, uuid());
             this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: ord.owner}});
 
             // END TEST CODE
