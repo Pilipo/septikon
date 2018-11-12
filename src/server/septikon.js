@@ -103,10 +103,12 @@ class Septikon {
             case this.gameStateEnum.GAME:
                 switch (this.turnState) {
                     case this.turnStateEnum.ROLL:
+                    // TEST CODE
                         if (data.event === "tileClicked") {
                             let tile = this.getTile(data.x, data.y);
                             console.log(this.activePlayer.getResourceByPoint({x:data.x, y:data.y}, tile.name));
                         }
+                        // END TEST CODE
                         if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
                             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
                             this.activePlayer.currentLegalPieces = this.getLegalPieces();
