@@ -416,7 +416,7 @@ class Septikon {
     this.game.client.sendInput({ event: "tileClicked", x: 7, y: 14 });
 
     this.game.client.sendInput({ event: "tileClicked", x: 30, y: 2 });
-    this.game.client.sendInput({ event: "tileClicked", x: 30, y: 3 });
+    this.game.client.sendInput({ event: "tileClicked", x: 26, y: 10 });
     this.game.client.sendInput({ event: "tileClicked", x: 30, y: 4 });
     this.game.client.sendInput({ event: "tileClicked", x: 30, y: 5 });
     this.game.client.sendInput({ event: "tileClicked", x: 30, y: 6 });

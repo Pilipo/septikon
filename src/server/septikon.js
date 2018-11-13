@@ -45,6 +45,7 @@ class Septikon {
         this.queuedSecondaryAction = [];
         this.espionageActivationMode = false;
         this.readyForConfirmation = false;
+        this.theftableTiles = null;
     }
     
     processClick(data) {
@@ -105,11 +106,34 @@ class Septikon {
                     case this.turnStateEnum.ROLL:
                     // TEST CODE
                         if (data.event === "tileClicked") {
-                            let tile = this.getTile(data.x, data.y);
-                            console.log(this.activePlayer.getResourceByPoint({x:data.x, y:data.y}, tile.name));
+                            if (this.activePlayer.spyArray.length === 0) {
+                                let tile = this.getTile(data.x, data.y);
+                                let opponent = this.getPlayerOpponent(this.activePlayer);
+                                let clone = opponent.getPersonnelByPoint({x:data.x, y:data.y});
+                                this.activePlayer.addSpy(clone);
+                            }
+                            // let theftable = this.activePlayer.getTheftableResourcePoints({x:data.x, y:data.y});
+                            // console.log("testing: ",theftable);
+                            // this.emit('action', {callback: 'showTiles', details: [{x:theftable[0].x,y:theftable[0].y},{x:theftable[1].x,y:theftable[1].y}]}, this.activePlayer.socketID);
                         }
                         // END TEST CODE
+
+                        if (data.event === "tileClicked" && this.theftableTiles !== null) {
+                            for (let i in this.theftableTiles) {
+                                if (data.x === this.theftableTiles[i].x && data.y === this.theftableTiles[i].y) {
+                                    this.theftableTiles = null;
+                                    let tile = this.getTile(data.x, data.y);
+                                    if (this.activePlayer.checkResource([tile.name],[1],true) === true) {
+                                        let opponent = this.getPlayerOpponent(this.activePlayer);
+                                        opponent.spendResource([tile.name],[1]);
+                                        this.activePlayer.acceptResource([tile.name],[1]);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
                         if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
+                            this.theftableTiles = null;
                             this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
                             this.activePlayer.currentLegalPieces = this.getLegalPieces();
                             this.emit('update', { type: "dice", details: { value: this.currentDiceValue, gamePieces: this.activePlayer.currentLegalPieces } });
@@ -709,6 +733,37 @@ class Septikon {
         this.actionTile = null;
         this.queuedForAction = [];
         this.readyForConfirmation = false;
+        this.processStartOfTurn();
+    }
+
+    processStartOfTurn() {
+        this.checkSpyTheft();
+    }
+
+    checkSpyTheft() {
+        var spies = this.activePlayer.getSpies();
+        var theftable = null;
+        var opponent = this.getPlayerOpponent(this.activePlayer);
+        for (let i in spies) {
+            var spy = spies[i];
+            if (this.activePlayer.id === 1) {
+                if (spy.y === 10 && (spy.x >= 25 && spy.x <= 28)) {
+                    theftable = opponent.getTheftableResourcePoints({x:spy.x, y:spy.y});
+                }
+            } else {
+                if (spy.y === 10 && (spy.x >= 2 && spy.x <= 5)) {
+                    theftable = opponent.getTheftableResourcePoints({x:spy.x, y:spy.y});
+                }
+            }
+        }   
+        if (theftable !== null) {
+            let showArray = [];
+            for (let i in theftable) {
+                showArray.push({x:theftable[i].x, y:theftable[i].y});
+            }
+            this.emit('action', {callback: 'showTiles', details: showArray}, this.activePlayer.socketID);
+        }
+        this.theftableTiles = theftable;
     }
 
     checkPersonnelArms() {

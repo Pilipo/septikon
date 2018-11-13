@@ -383,6 +383,35 @@ class Player {
         return false;
     }
 
+    getTheftableResourcePoints(point) {
+        if (point.x < 2 || (point.x > 5 && point.x < 25) || point.x > 28 || point.y !== 10) {
+            return false;
+        }
+        var resReturn = [];
+        for (let res in this.resourceMap) {
+            let obj = this.resourceMap[res][this.id-1];
+            if (obj.row === point.x) {
+                if (this.checkResource([res], [1]) === false) { continue; }
+                let found = false;
+                let searchY = point.y;
+                let firstResource = null;
+                while (found === false) {
+                    if (obj.min > 0) {
+                        searchY++;
+                    } else {
+                        searchY--;
+                    }
+                    firstResource = this.getResourceByPoint({x:point.x, y:searchY}, res);
+                    if (firstResource !== null && firstResource !== false && firstResource !== undefined) {
+                        found = true;
+                        resReturn.push({x:point.x, y:searchY, resource:res});
+                    }
+                }
+            }
+        }
+        return resReturn;
+    }
+
     getResourceCount(type) {
         if (type === undefined) {
             let recArray = [
