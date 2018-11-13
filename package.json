@@ -2,7 +2,7 @@
   "name": "septikon",
   "version": "0.0.2",
   "description": "Port of the Septikon board game",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
