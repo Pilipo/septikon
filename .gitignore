@@ -3,7 +3,6 @@
 build/
 node_modules/
 .env
-js/bundle*
 /Board Set On Table.xmind
 /*.xlsx
 .jshintrc
