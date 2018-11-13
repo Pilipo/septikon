@@ -6,6 +6,7 @@ class Personnel {
             BIODRONE: 1
         });
         
+        this.objectType = "personnel";
         this.x = x;
         this.y = y;
         this.uuid = uuid;

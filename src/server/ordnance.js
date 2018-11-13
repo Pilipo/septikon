@@ -9,6 +9,7 @@ class Ordnance {
             WARHEAD: 4
         });
         
+        this.objectType = "ordnance";
         this.x = x;
         this.y = y;
         this.uuid = uuid;

@@ -106,16 +106,18 @@ class Game extends Phaser.State {
     this.game.boardGroup.x = this.game.world.centerX;
     this.game.personnelGroup.x = this.game.ordnanceGroup.x = this.game.resourcesGroup.x = this.game.boardGroup.x;
     
-    if(this.game.septikon.player.id == 1) {
+    if(this.game.septikon.player.id === 1) {
         this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = -90; 
         //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
         //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
         this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
-    } else {
+    } else if(this.game.septikon.player.id === 2) {
         this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = 90; 
         //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
         //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
         this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
+    } else {
+        console.log("player id not legal: ", this.game.septikon.player.id);
     }
 
   }

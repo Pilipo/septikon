@@ -46,6 +46,9 @@ class Septikon {
         this.espionageActivationMode = false;
         this.readyForConfirmation = false;
         this.theftableTiles = null;
+        this.clientUpdatePackage = {
+            tiles: this.tileArray
+        }
     }
     
     processClick(data) {
@@ -104,20 +107,6 @@ class Septikon {
             case this.gameStateEnum.GAME:
                 switch (this.turnState) {
                     case this.turnStateEnum.ROLL:
-                    // TEST CODE
-                        if (data.event === "tileClicked") {
-                            if (this.activePlayer.spyArray.length === 0) {
-                                let tile = this.getTile(data.x, data.y);
-                                let opponent = this.getPlayerOpponent(this.activePlayer);
-                                let clone = opponent.getPersonnelByPoint({x:data.x, y:data.y});
-                                this.activePlayer.addSpy(clone);
-                            }
-                            // let theftable = this.activePlayer.getTheftableResourcePoints({x:data.x, y:data.y});
-                            // console.log("testing: ",theftable);
-                            // this.emit('action', {callback: 'showTiles', details: [{x:theftable[0].x,y:theftable[0].y},{x:theftable[1].x,y:theftable[1].y}]}, this.activePlayer.socketID);
-                        }
-                        // END TEST CODE
-
                         if (data.event === "tileClicked" && this.theftableTiles !== null) {
                             for (let i in this.theftableTiles) {
                                 if (data.x === this.theftableTiles[i].x && data.y === this.theftableTiles[i].y) {
@@ -928,8 +917,18 @@ class Septikon {
 	}
 
     addPlayer(player) {
-        this.playersArray.push(player);
-        this.emit('action', {callback: 'updatePlayer', details: {id: player.id}}, player.socketID);
+        let found = false;
+        for (let i in this.playersArray) {
+            if (player.uuid === this.playersArray[i].uuid) {
+                this.playersArray[i] = player;
+                found = true;
+            }
+        }
+        if (found === false) {
+            this.playersArray.push(player);
+        }
+        this.emit('action', {callback: 'updatePlayer', details: player.clientUpdatePackage}, player.socketID);
+        this.emit('action', {callback: 'updatePlayer', details: this.clientUpdatePackage}, player.socketID);
     }
 
     setPlayerState(data) {

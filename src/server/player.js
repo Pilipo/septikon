@@ -26,6 +26,13 @@ class Player {
         this.currentLegalPieces = [];
         this.resourceMap = require('../../assets/resourceMap.json');
         this.initResources();
+        this.clientUpdatePackage = {
+            id: this.id,
+            personnelArray: this.personnelArray,
+            resourceArray: this.resourceArray,
+            ordnanceArray: this.ordnanceArray,
+            spyArray: this.spyArray
+            };
     }
 
     clearQueues() {

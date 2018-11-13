@@ -64,7 +64,9 @@ class Client {
                 case "askStart":
                     this.septikon.showModal('askStart');
                     break;
-
+                case "uuid":
+                    this.emit('newPlayer', {uuid:localStorage.getItem('septUUID')});
+                    break;
             }
         });
 
@@ -81,7 +83,7 @@ class Client {
         });
 	}
 
-	askNewPlayer() {
+	sendPlayerDetails() {
 		this.socket.emit('newPlayer', {uuid:localStorage.getItem('septUUID')});
 	}
     

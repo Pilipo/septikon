@@ -21,8 +21,11 @@ server.listen(process.env.PORT || 3000, function(){
 });
 
 io.on('connection',function(socket){
-    var player = null;
+
+    let player = null;
     console.log("New Connection: " + socket.id);
+    console.log("here are the games: ", games);
+    this.emit('request', {details:{type:'uuid'}}, socket.id);
 
     socket.on('newPlayer', function(data){
         console.log("New Player. Here's the data: ");
@@ -39,9 +42,10 @@ io.on('connection',function(socket){
             for (let i in games) {
                 let playerSearch = games[i].getPlayerByUUID(data.uuid);
                 if (playerSearch !== null) {
-                    console.log("Player found in existing game. THis must be a reconnect.");
+                    console.log("Player found in existing game. Refreshing the client.");
                     socket.game = games[i];
                     playerSearch.socketID = socket.id;
+                    socket.game.addPlayer(playerSearch);
                     // TODO: refresh client game data (resources, tokens, etc)
                 } else if (games[i].playersArray.length === 1) {
                     console.log("New player that was not found in an existing game. Adding player now.");
