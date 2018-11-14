@@ -218,6 +218,22 @@ class Septikon {
                                             }
                                             this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
                                         }
+                                        if (targetTile.name === "nuclearArmory") {
+                                            this.emit('action', {callback: 'hideTiles', details: null});
+                                            let pointArray = [];
+                                            for (let i in this.activePlayer.resourceMap) {
+                                                if (i === "rocket") {
+                                                    let obj = this.activePlayer.resourceMap[i][this.activePlayer.id-1];
+                                                    for (let j = obj.min; j < obj.max; j++) {
+                                                        let found = this.activePlayer.getResourceByPoint({x:obj.row, y:j},"rocket");
+                                                        if (found !== false && found !== null) {
+                                                            pointArray.push({x:obj.row, y:j});
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            this.emit('action', {callback: 'showTiles', details: pointArray}, this.activePlayer.socketID);
+                                        }
                                         this.queuedForAction = [];
                                         this.queuedSecondaryAction = [];
                                         this.actionTile = targetTile;
