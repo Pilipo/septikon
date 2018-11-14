@@ -1312,7 +1312,10 @@ class Septikon {
 
     getLegalPieces() {
         var personnelArray = this.activePlayer.getPersonnel();
-        personnelArray = personnelArray.concat(this.activePlayer.getSpies());
+        var spiesArray = this.activePlayer.getSpies();
+        if (spiesArray !== false) {
+            personnelArray = personnelArray.concat();
+        }
         var returnArray = [];
         var movesArray = [];
 
