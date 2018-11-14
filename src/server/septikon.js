@@ -224,7 +224,7 @@ class Septikon {
                                             for (let i in this.activePlayer.resourceMap) {
                                                 if (i === "rocket") {
                                                     let obj = this.activePlayer.resourceMap[i][this.activePlayer.id-1];
-                                                    for (let j = obj.min; j < obj.max; j++) {
+                                                    for (let j = Math.min(obj.min,obj.max); j <= Math.max(obj.min,obj.max); j++) {
                                                         let found = this.activePlayer.getResourceByPoint({x:obj.row, y:j},"rocket");
                                                         if (found !== false && found !== null) {
                                                             pointArray.push({x:obj.row, y:j});
