@@ -78,7 +78,7 @@ class Septikon {
                             this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'delete', playerID: player.id}});
                             this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: selectedTile}});
                             if (selectedTile.type === "armory") {
-                                player.removeArms(originalTile.name.toUpperCase());
+                                player.removeArms(selectedTile.name.toUpperCase());
                                 this.emit('update', { type: "arms", details: { type: selectedTile.name, action: "delete" } });
                             }
     
@@ -269,7 +269,7 @@ class Septikon {
                                         }
                                         let canAfford = this.activePlayer.checkResource(this.actionTile.properties.resourceCostType, resCount);
                                         if (this.actionTile.properties.resourceCostType !== undefined && canAfford === true) {
-                                            if (this.actionTile.name === "espionage") {
+                                            if (this.actionTile.name === "espionage" || this.actionTile.name === "takeover") {
                                                 this.emit('action', {callback: 'hideTiles', details: null});
                                                 this.queuedForAction = [];
                                                 this.queuedSecondaryAction = [];
@@ -391,20 +391,34 @@ class Septikon {
                                     }
                                 }
                             } 
-                            if (this.actionTile.name === "espionage" && this.queuedForAction.length !== 0) {
+                            if ((this.actionTile.name === "espionage" || this.actionTile.name === 'takeover') && this.queuedForAction.length !== 0) {
                                 for (let i in this.queuedForAction) { // There is a gunner selected
                                     let currentGunner = this.queuedForAction[i];
-                                    this.queuedSecondaryAction = this.getEspionageTargets({x:currentGunner.x, y:currentGunner.y});
+                                    if (this.actionTile.name === "espionage") {
+                                        this.queuedSecondaryAction = this.getEspionageTargets({x:currentGunner.x, y:currentGunner.y});
+                                    } else if (this.actionTile.name === 'takeover') {
+                                        this.queuedSecondaryAction = this.getTakeoverTargets({x:currentGunner.x, y:currentGunner.y});
+                                    }
                                     if (this.queuedSecondaryAction.length !== 0) { // The gunner has targets in sight
                                         let found = false;
                                         if (targetTile.occupied === true) {
                                             let targetTileOccupants = this.getTileOccupant(targetTile);
                                             for (let j in this.queuedSecondaryAction) {
                                                 if (this.queuedSecondaryAction[j] === targetTileOccupants[0]) {
-                                                    console.log("Target selected. Steal his mind!");
-                                                    targetTileOccupants[0].spy = true;
-                                                    this.activePlayer.addSpy(targetTileOccupants[0]);
-                                                    this.emit('update', { type: "personnel", details: { personnel: targetTileOccupants[0], action: 'update', playerID: targetTileOccupants[0].owner } });
+                                                    if (this.actionTile.name === "espionage") {
+                                                        console.log("Target selected. Steal his mind!");
+                                                        targetTileOccupants[0].spy = true;
+                                                        this.activePlayer.addSpy(targetTileOccupants[0]);
+                                                        this.emit('update', { type: "personnel", details: { personnel: targetTileOccupants[0], action: 'update', playerID: targetTileOccupants[0].owner } });
+                                                    } else if (this.actionTile.name === "takeover") {
+                                                        console.log("Target selected. Steal that satellite!");
+                                                        targetTileOccupants[0].owner = this.activePlayer.id;
+                                                        this.activePlayer.addOrdnance(targetTileOccupants[0].getType(), {x:0,y:0}, targetTileOccupants[0].uuid);
+                                                        let opponent = this.getPlayerOpponent(this.activePlayer);
+                                                        opponent.remove(targetTileOccupants[0]);
+                                                        this.emit('update', { type: "ordnance", details: { ordnance: targetTileOccupants[0], type:"satellite", action: 'delete', playerID: opponent.id } });
+                                                        this.emit('update', { type: "ordnance", details: { ordnance: targetTileOccupants[0], type:"satellite", action: 'create', playerID: this.activePlayer.id } });
+                                                    }
                                                     found = true;
                                                 }
                                             }
@@ -908,6 +922,29 @@ class Septikon {
         }
     }
 
+    getTakeoverTargets(origin) {
+        let tile = this.getTile(origin.x, origin.y);
+        let returnArray = [];
+        while (origin.x > 0 && origin.x < this.tileColumns-1) {
+            if (this.activePlayer.id === 1) {
+                origin.x++;
+            } else {
+                origin.x--;
+            }
+            tile = this.getTile(origin.x, origin.y);
+            if (tile.type === "space" && tile.occupied === true) {
+                let occupants = this.getTileOccupant(origin);
+                for (let i in occupants) {
+                    let o = occupants[i];
+                    if (o.getType() === "SATELLITE" && o.owner !== this.activePlayer.id) {
+                        returnArray.push(o);
+                    }
+                }
+            }
+        }
+        return returnArray;
+    }
+
     getEspionageTargets(origin) {
         let tile = this.getTile(origin.x, origin.y);
         let returnArray = [];
@@ -1146,7 +1183,7 @@ class Septikon {
                     currentTile = this.getTile(ordnancePoint.x, ordnancePoint.y);
                     ordUUID = uuid();
                     let o = this.activePlayer.addOrdnance(weaponTile.name, ordnancePoint, ordUUID);
-                    currentTile.isOccupied = true;
+                    currentTile.occupied = true;
                     this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
                     this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'create', playerID: this.activePlayer.id}});
                     this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
