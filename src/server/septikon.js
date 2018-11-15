@@ -135,7 +135,7 @@ class Septikon {
                         }
                         if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
                             this.theftableTiles = null;
-                            this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
+                            this.currentDiceValue = 1;//Math.floor(Math.random() * 6) + 1;
                             this.activePlayer.currentLegalPieces = this.getLegalPieces();
                             this.emit('update', { type: "dice", details: { value: this.currentDiceValue, gamePieces: this.activePlayer.currentLegalPieces } });
                             this.turnState++;
@@ -724,6 +724,7 @@ class Septikon {
                             t.occupied = false; //TODO: This is not necessarily true...
                             opponent.remove(tO);
                             // TODO: this emit should check for other than just personnel...
+                            this.emit('update', { type: "tile", details: { x:t.x, y:t.y, action: 'update', tile: t } });
                             this.emit('update', {type:"personnel", details: {personnel: tO, action: 'delete'}});
                             // TODO: Check for shield (which recharges)
                             let type = o.getType();
@@ -777,8 +778,6 @@ class Septikon {
                 o.x = oP.x;
                 o.y = oP.y;
                 let newTile = this.getTile(o.x, o.y);
-                newTile.occupied = true;
-                this.emit('update', { type: "tile", details: { x:newTile.x, y:newTile.y, action: 'update', tile: newTile } });
                 if (impacted === true) {
                     p.remove(o);
                     this.emit('update', {type:"ordnance", details:{type: o.getType(), ordnance:o, action: 'update', playerID: p.id}});
@@ -786,6 +785,8 @@ class Septikon {
                     let type = o.getType();
                     if (type === "BIODRONE" && bioDestroy === false) {
                         // convert biodrone from ordnance to personnel
+                        newTile.occupied = true;
+                        this.emit('update', { type: "tile", details: { x:newTile.x, y:newTile.y, action: 'update', tile: newTile } });
                         let person = p.addPersonnel('biodrone', o.x, o.y, o.uuid);
                         this.emit('update', {type:"personnel", details: {personnel: person, action: 'create', playerID: p.id}});
                         if (newTile.type === "warehouse") {
@@ -1100,7 +1101,7 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("biodrone", {x:19, y:5}, uuid());
+            let ord = this.playersArray[0].addOrdnance("biodrone", {x:18, y:0}, uuid());
             this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: ord.owner}});
 
             // END TEST CODE
