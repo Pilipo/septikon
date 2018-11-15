@@ -476,6 +476,12 @@ class Player {
         if (accept === undefined) {
             accept = false;
         }
+        if (Array.isArray(type) === false) {
+            type = [type];
+        }
+        if (Array.isArray(count) === false) {
+            count = [count];
+        }
         for (let j in type) {
             let thisType = type[j];
             let thisCount = count[j];
@@ -522,6 +528,12 @@ class Player {
     }      
 
     spendResource(type, count) {
+        if (Array.isArray(type) === false) {
+            type = [type];
+        }
+        if (Array.isArray(count) === false) {
+            count = [count];
+        }
         for (let j in type) {
             let thisType = type[j];
             let thisCount = count[j];

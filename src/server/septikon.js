@@ -809,6 +809,7 @@ class Septikon {
         this.actionTile = null;
         this.queuedForAction = [];
         this.readyForConfirmation = false;
+        this.shieldPrimedForDestruction = null;
         this.processStartOfTurn();
     }
 
@@ -1220,17 +1221,33 @@ class Septikon {
                                     for (let i in coa) {
                                         let currentOccupant = coa[i];
                                         if (currentOccupant.owner === opponent.id) {
-                                            opponent.remove(currentOccupant);
-                                            if (currentOccupant instanceof Personnel) {
-                                                this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
-                                            } else {
-                                                this.emit('update', {type:"ordnance", details: {ordnance: currentOccupant, action: 'delete'}});
+                                            // TODO: Is this a shield? If so, offer ability to restore by spending an energy.
+                                            // Check if shield owner has energy to spend
+                                            // Offer available energy
+                                            // If energy is then clicked, save shield and spend energy
+                                            // If NOT, then destroy shield
+                                            let destroyShield = true;
+                                            if (currentOccupant.getType() === "SHIELD"){
+                                                let owner = this.playersArray[currentOccupant.owner-1];
+                                                let canAfford = owner.checkResource("energy", 1);
+                                                if (canAfford === true) {
+                                                    owner.spendResource("energy", 1);
+                                                    destroyShield = false;
+                                                    impacted = true;
+                                                } 
+                                            } 
+                                            if (destroyShield === true) {
+                                                opponent.remove(currentOccupant);
+                                                if (currentOccupant instanceof Personnel) {
+                                                    this.emit('update', {type:"personnel", details: {personnel: currentOccupant, action: 'delete'}});
+                                                } else {
+                                                    this.emit('update', {type:"ordnance", details: {ordnance: currentOccupant, action: 'delete'}});
+                                                }
+                                                currentTile.occupied = false;
+                                                impacted = true;
+                                                this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
+                                                this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
                                             }
-                                            // this.emit('action', {callback:"removePersonnel", details:currentOccupant});
-                                            currentTile.occupied = false;
-                                            impacted = true;
-                                            this.activePlayer.spendResource(weaponTile.properties.resourceCostType, weaponTile.properties.resourceCostCount);
-                                            this.emit('update', { type: "tile", details: { x:currentTile.x, y:currentTile.y, action: 'update', tile: currentTile } });
                                             break;
                                         }
                                     }
