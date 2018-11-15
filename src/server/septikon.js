@@ -46,6 +46,7 @@ class Septikon {
         this.espionageActivationMode = false;
         this.readyForConfirmation = false;
         this.theftableTiles = null;
+        this.clonesToThaw = 0;
     }
     
     processClick(data) {
@@ -163,18 +164,25 @@ class Septikon {
                                     this.emit('action', {callback: 'hideTiles', details: null});
                                     let targetTile = this.getTile(data.x, data.y);
                                     this.processPersonnelMove(this.activePlayer.selectedPersonnelToMove, targetTile);
-                                    if (targetTile.type !== "battle" && targetTile.name !== "nuclearArmory" && targetTile.name !== "prodRepair" && targetTile.name !== "sensorCabin") {
+                                    if (targetTile.type !== "battle" && targetTile.name !== "nuclearArmory" && targetTile.name !== "prodRepair" && targetTile.name !== "sensorCabin"  ) {                                        
                                         this.processTileActivation(targetTile, this.activePlayer);
-                                        let biodrones = this.activePlayer.getPersonnel('biodrone');
-                                        if (biodrones === false) {
-                                            this.turnState = this.turnStateEnum.ORDNANCE;
-                                            this.processOrdnanceMovement();
-                                            this.turnState = this.turnStateEnum.END;
-                                            this.processEndOfTurn();
-                                            return;
+                                        if (targetTile.name === "airFilter" || targetTile.name === "chemicalReactor"  || targetTile.name === "chemicalReactorTwo") {
+                                            this.queuedForAction = [];
+                                            this.queuedSecondaryAction = [];
+                                            this.actionTile = targetTile;
+                                            this.turnState++;
+                                            this.readyForConfirmation = true;
                                         } else {
-                                            this.turnState = this.turnStateEnum.BIODRONE;
-                                            // TODO: Process biodrone movement
+                                            let biodrones = this.activePlayer.getPersonnel('biodrone');
+                                            if (biodrones === false) {
+                                                this.turnState = this.turnStateEnum.ORDNANCE;
+                                                this.processOrdnanceMovement();
+                                                this.turnState = this.turnStateEnum.END;
+                                                this.processEndOfTurn();
+                                                return;
+                                            } else {
+                                                this.turnState = this.turnStateEnum.BIODRONE;
+                                            }
                                         }
                                     } else {
                                         if (this.activePlayer.selectedPersonnelToMove.spy === true && this.activePlayer.selectedPersonnelToMove.owner !== this.activePlayer.id) {
@@ -391,6 +399,45 @@ class Septikon {
                                     }
                                 }
                             } 
+                            if (this.actionTile.name === "airFilter" ||this.actionTile.name === "chemicalReactor" ||this.actionTile.name === "chemicalReactorTwo" ) {
+                                if (targetTile.type !== "lock") {return;} //is this right?
+                                if (targetTile.occupied === true) {
+                                    for (let i in this.queuedSecondaryAction) {
+                                        let personnel  = this.queuedSecondaryAction[i];
+                                        if (data.x === personnel.x && data.y === personnel.y) {
+                                            this.activePlayer.remove(personnel);
+                                            this.queuedSecondaryAction.splice(i,1);
+                                            targetTile.occupied = false;
+                                            this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'delete', playerID: player.id}});
+                                            this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: targetTile}});
+                                            this.clonesToThaw++;
+                                            return;
+                                        }
+                                    }
+                                    return;
+                                } else {
+                                    if (this.clonesToThaw === 0 && this.queuedSecondaryAction.length > 0) {
+                                        let personnel = this.queuedSecondaryAction.shift();
+                                        this.activePlayer.remove(personnel);
+                                        let previousTile = this.getTile(personnel.x, personnel.y);
+                                        previousTile.occupied = false;
+                                        this.emit('update', {type:"personnel", details: {personnel: personnel, action: 'delete', playerID: player.id}});
+                                        this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: previousTile}});
+                                        this.clonesToThaw++;
+                                    }
+                                    if (this.clonesToThaw > 0) {
+                                        let clone = this.placeClone(this.activePlayer, data.x, data.y);
+                                        if (clone !== false) {   
+                                            this.clonesToThaw--;            
+                                            this.queuedSecondaryAction.push(clone);
+                                            targetTile.occupied = true;
+                                            this.emit('update', {type:"personnel", details: {personnel: clone, action: 'create', playerID: player.id}}, data.socketID);
+                                            this.emit('update', {type:"tile", details: {x:data.x, y:data.y, action: 'update', tile: targetTile}}, data.socketID);
+                                        }
+                                    }
+                                    return;
+                                }                        
+                            }
                             if ((this.actionTile.name === "espionage" || this.actionTile.name === 'takeover') && this.queuedForAction.length !== 0) {
                                 for (let i in this.queuedForAction) { // There is a gunner selected
                                     let currentGunner = this.queuedForAction[i];
@@ -605,8 +652,7 @@ class Septikon {
             } else if (actionTile.name === "nuclearArmory") {
                 return;
             } else {
-                // TODO: Oxygen production tests for new clone creation!
-
+                this.checkForCloneCreation(resCostType, resCostCount, resYieldType, resYieldCount);
                 this.activePlayer.produceResource(resCostType, resCostCount, resYieldType, resYieldCount);
                 this.emit('update', {type:"resource", details: {action: 'update', resourceArray: this.activePlayer.getResourceArray()}});
                 // this.emit('update', {type:"resource", details: {resCostType:resCostType, resCostCount:resCostCount, resYieldType:resYieldType, resYieldCount:resYieldCount}});
@@ -768,6 +814,52 @@ class Septikon {
 
     processStartOfTurn() {
         this.checkSpyTheft();
+    }
+
+    checkForCloneCreation(cType, cCount, yType, yCount) {
+        if (yType[0] !== "oxygen") {return;}
+        let startO = this.activePlayer.getResourceCount("oxygen");
+        let costO = 0;
+        let yieldO = 0;
+        let minO = 0;
+        let maxO = 0;
+        let startC = this.activePlayer.getPersonnel("clone");
+        if (startC !== false) {
+            startC = startC.length;
+        }
+        let cloneCount = 0;
+        for (let i in cType) {
+            if (cType[i] === "oxygen") {
+                costO = cCount[i];
+                break;
+            }
+        }
+        for (let i in yType) {
+            if (yType[i] === "oxygen") {
+                yieldO = yCount[i];
+                break;
+            }
+        }
+        minO = startO - costO;
+        maxO = startO + yieldO;
+        for (let i = minO; i <= maxO; i++) {
+            if (i > startC) {
+                cloneCount++;
+            }
+        }
+        this.clonesToThaw = cloneCount;
+        if (cloneCount > 0) {
+            let locks = this.getLocks(this.activePlayer);
+            let locksOfLove = [];
+            for (let l of locks) {
+                if (l.occupied === false) {
+                    locksOfLove.push({x:l.x,y:l.y});
+                }
+            }
+            if (locksOfLove.length > 0) {
+                this.emit('action', {callback: 'showTiles', details: locksOfLove}, this.activePlayer.socketID);
+            }
+        }
     }
 
     checkSpyTheft() {
