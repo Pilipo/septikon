@@ -135,7 +135,7 @@ class Septikon {
                         }
                         if (data.event === "diceClicked" && this.activePlayer.socketID === data.socketID) {
                             this.theftableTiles = null;
-                            this.currentDiceValue = 1;//Math.floor(Math.random() * 6) + 1;
+                            this.currentDiceValue = Math.floor(Math.random() * 6) + 1;
                             this.activePlayer.currentLegalPieces = this.getLegalPieces();
                             this.emit('update', { type: "dice", details: { value: this.currentDiceValue, gamePieces: this.activePlayer.currentLegalPieces } });
                             this.turnState++;
@@ -613,8 +613,16 @@ class Septikon {
             this.playersArray[parseInt(targetTile.owner)-1].removeResourceByPoint({x:targetTile.x, y:targetTile.y}, targetTile.name);
             // TODO: Emit resource destruction.
         }
-        // TODO: activate battle (optional). Eventually, biodrone movement will have ability to destroy crap too. ;)
-        // TODO: optional tiles (battle and repair) need client confirmation
+        if (originalTile.type !== "surface" && personnel.getType() === "BIODRONE") {
+            let arms = this.activePlayer.getArms();
+            for (let a of arms) {
+                if (a === 0) {
+                    originalTile.damaged = true;
+                    this.emit('update', { type: "tile", details: { x: originalTile.x, y: originalTile.y, action: 'update', tile: originalTile } });
+                }
+            }
+            console.log(arms);
+        }
     }
 
     processTileActivation(actionTile, player) {

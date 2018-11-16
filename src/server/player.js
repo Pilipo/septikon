@@ -467,7 +467,7 @@ class Player {
 
     // "Accept" set to TRUE checks for room to accept a yield
     checkResource(type, count, accept) {
-        if (type === undefined || type === null) {
+        if (type === undefined || type === null || type[0] === null) {
             return false;
         }
         if (count === undefined || count === 0) {
