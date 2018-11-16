@@ -43,12 +43,60 @@ class Game extends Phaser.State {
     this.game.boardGroup.add(this.background);
 
     this.game.septikon.createTileArray(31, 21, {x:0-this.background.width/2, y:0-this.background.height/2});
-
-
+    this.game.input.keyboard.addCallbacks(this, null, null, this.keyPress);
+    this.game.input.onUp.add(this.mouseUp, this);
+    this.game.input.onDown.add(this.mouseDown, this);
+    this.view = 2;
     this.refreshBoard();
 
   }
+    mouseDown() {
+        this.mouseIsDown = true;
+        this.startX = this.game.input.x;
+        console.log("down");
+        this.viewChangeComplete = false;
+    }
 
+    mouseUp() {
+        this.mouseIsDown = false;
+        console.log("up");
+    }
+
+    swipeDone() {
+        if (this.viewChangeComplete === false) {
+            let endX = this.game.input.x;
+            if (endX < this.startX) {
+                this.game.debug.text('Swiped left', 700, 95);
+                this.view--;
+            } else {
+                this.game.debug.text('Swipe right', 700, 95);   
+                this.view++;     
+            }
+            if (this.view > 4) {
+                this.view = 1;
+            }
+            if (this.view < 1) {
+                this.view = 4;
+            }
+            this.viewChangeComplete = true;
+        }
+    }
+
+    keyPress(char) {
+      this.lastKey = char;
+      if (char === "1") {
+          this.view = 1;
+        }
+        if (char === "2") {
+            this.view = 2;
+          }
+          if (char === "3") {
+            this.view = 3;
+          }
+          if (char === "4") {
+            this.view = 4;
+          }
+  }
 
   createModals() {
       this.game.modal.createModal(
@@ -93,8 +141,12 @@ class Game extends Phaser.State {
   }
 
   refreshBoard() {
-
-    var scale = window.innerWidth/this.background.height;
+    var scale = null;
+    if (this.view === 1  || this.view === 3) {
+        scale = window.innerWidth/this.background.height;
+    } else {
+        scale = window.innerHeight *0.8/this.background.height;
+    }
     if(scale > 1.9) {
         scale = 1.9;
     }
@@ -106,16 +158,30 @@ class Game extends Phaser.State {
     this.game.boardGroup.x = this.game.world.centerX;
     this.game.personnelGroup.x = this.game.ordnanceGroup.x = this.game.resourcesGroup.x = this.game.boardGroup.x;
     
-    if(this.game.septikon.player.id == 1) {
+    if(this.view === 1) {
+        // if(this.game.septikon.player.id == 1) {
         this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = -90; 
         //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
         //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
         this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
-    } else {
+    } 
+    if (this.view === 3){
         this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = 90; 
         //this.game.boardGroup.y = this.game.world.centerY; // Centered on Septikon Logo
         //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
         this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
+    }
+    if (this.view === 2){
+        this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = 0; 
+        this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY + window.innerHeight *0.1; // Centered on Septikon Logo
+        //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
+        // this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
+    }
+    if (this.view === 4){
+        this.game.personnelGroup.angle = this.game.ordnanceGroup.angle = this.game.resourcesGroup.angle = this.game.boardGroup.angle = 180; 
+        this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY + window.innerHeight *0.1; // Centered on Septikon Logo
+        //this.game.boardGroup.y = this.game.world.centerY + ((this.background.width*scale)-window.innerHeight)/2; // Centered on opponent's side
+        // this.game.personnelGroup.y = this.game.ordnanceGroup.y = this.game.resourcesGroup.y = this.game.boardGroup.y = this.game.world.centerY - ((this.background.width*scale)-window.innerHeight)/2; // Centered on this player's side
     }
 
   }
@@ -123,10 +189,20 @@ class Game extends Phaser.State {
   
   update() {
     //   this.dice.frame = Math.floor(Math.random() * 6) + 1;
-    // this.game.debug.text('Mouse', 700, 32);
+    this.game.debug.text('Keyboard', 700, 32);
     
-    // this.game.debug.text('Mouse X: ' + this.game.input.x, 700, 64);
-    // this.game.debug.text('Mouse Y: ' + this.game.input.y, 700, 92);
+    // let current = Phaser.Keyboard.
+    this.game.debug.text('Key pressed: ' + this.lastKey, 700, 64);
+
+    
+    this.game.debug.text('Mouse X: ' + this.game.input.x, 700, 200);
+    this.game.debug.text('Mouse Y: ' + this.game.input.y, 700, 230);
+    if (this.mouseIsDown === true) {
+        let distX = Math.abs(this.game.input.x - this.startX);
+        if (distX > 50) {
+            this.swipeDone();
+        }
+    }
   }
   
   render () {
