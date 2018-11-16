@@ -621,7 +621,6 @@ class Septikon {
                     this.emit('update', { type: "tile", details: { x: originalTile.x, y: originalTile.y, action: 'update', tile: originalTile } });
                 }
             }
-            console.log(arms);
         }
     }
 
@@ -1109,8 +1108,8 @@ class Septikon {
             }
             // TEST CODE
 
-            let ord = this.playersArray[0].addOrdnance("biodrone", {x:18, y:0}, uuid());
-            this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: ord.owner}});
+            // let ord = this.playersArray[0].addOrdnance("biodrone", {x:18, y:0}, uuid());
+            // this.emit('update', {type:"ordnance", details:{type: "biodrone", ordnance:ord, action: 'create', playerID: ord.owner}});
 
             // END TEST CODE
             
